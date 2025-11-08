@@ -1,0 +1,77 @@
+.btn {
+    @apply no-underline gap-2 h-10 px-6 rounded-md border inline-flex  cursor-pointer select-none whitespace-nowrap;
+    @apply items-center justify-center border-transparent text-center transition duration-200 ease-in-out text-sm;
+    &:active:hover,
+    &:active:focus {
+        transform: scale(0.95);
+    }
+
+    &-contained {
+        @apply bg-primary text-white;
+        @media (hover: hover) {
+            
+            &:disabled{
+                @apply bg-[#e3e3e4] text-[#a1a1a1]
+            }
+            &:disabled:hover{
+                @apply shadow-none
+            }
+            &:hover {
+                @apply shadow-md;
+            }
+        }
+    }
+    &-bordered {
+        @apply text-primary bg-white/0 border-primary;
+        @media (hover: hover) {
+            &:disabled{
+                @apply bg-white/0 text-[#a1a1a1] border-[#a1a1a1]
+            }
+            &:disabled:hover{
+                @apply shadow-none
+            }
+            &:active {
+                @apply bg-primary/5;
+            }
+            &:hover {
+                @apply bg-primary/10;
+            }
+        }
+    }
+    &-text {
+        @apply text-primary bg-white/0 border-white/0 font-semibold ;
+        @media (hover: hover) {
+            &:disabled{
+                @apply bg-white/0 text-[#a1a1a1]
+            }
+            &:disabled:hover{
+                @apply shadow-none
+            }
+            &:active {
+                @apply bg-primary/5;
+            }
+            &:hover {
+                @apply bg-primary/10;
+            }
+        }
+    }
+    &-icon {
+        @apply bg-white/0 font-semibold rounded-full p-0 ;
+        @media (hover: hover) {
+            &:disabled{
+                @apply bg-white/0;
+                @apply opacity-35;
+            }
+            &:disabled:hover{
+                @apply shadow-none
+            }
+            &:active {
+                @apply bg-primary/5;
+            }
+            &:hover {
+                @apply bg-primary/5;
+            }
+        }
+    }
+   
+}

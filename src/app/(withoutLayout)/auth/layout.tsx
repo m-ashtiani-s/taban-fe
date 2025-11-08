@@ -1,0 +1,27 @@
+"use client";
+
+import { AuthGuard } from "@/app/_components/authGuard/authGuard";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+	const pathname = usePathname();
+	const router = useRouter();
+
+	useEffect(() => {
+		setTimeout(() => {
+			if (pathname !== "/auth" && pathname !== "/auth/login") {
+				router.push("/auth");
+			}
+		}, 500);
+	}, []);
+	return (
+		<div className="flex h-screen">
+			<div className="w-full flex items-center justify-center mx-auto">
+				<div className="lg:!w-[400px]">
+					<AuthGuard>{children}</AuthGuard>
+				</div>
+			</div>
+		</div>
+	);
+}

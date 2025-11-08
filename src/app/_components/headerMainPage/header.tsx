@@ -1,0 +1,177 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { MenuPopup } from "./_components/menu/menu";
+import { IconArrow, IconCart, IconUser } from "../icon/icons";
+import TabanButton from "../common/tabanButton/tabanButton";
+import { useProfiletore } from "@/stores/profile";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
+import { useCartStore } from "@/stores/cart";
+import CartMenu from "./_components/CartMenu/CartMenu";
+import ProfleMenu from "./_components/ProfleMenu/ProfleMenu";
+import TabanModal from "../common/tabanModal/tabanModal";
+
+const menu = [
+	{
+		title: "خانه",
+		href: "/",
+	},
+	{
+		title: "طراح هوشمند",
+		href: "/intelligent-architect",
+	},
+	{
+		title: "فروشگاه",
+		href: "/shop",
+	},
+	{
+		title: "مجله معمار",
+		href: "/blog",
+	},
+	{
+		title: "درباره ما",
+		href: "/about-us",
+	},
+	{
+		title: "تماس با ما",
+		href: "/contact-us",
+	},
+];
+
+export const Header = () => {
+	const { profile, setProfile } = useProfiletore();
+	const { cart, cartLoading } = useCartStore();
+	const [scrollPosition, setScrollPosition] = useState<number>(0);
+	const [open, setOpen] = useState<boolean>(false);
+	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
+
+	const menuHandler = () => {
+		setOpen(true);
+	};
+
+	useEffect(() => {
+		const handleScroll = () => {
+			setScrollPosition(window.scrollY);
+		};
+		window.addEventListener("scroll", handleScroll);
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+		};
+	}, []);
+
+	const logoutHandler = async () => {
+		await localStorage.removeItem("token");
+		setProfile(null);
+		setLogoutOpen(false);
+	};
+
+	return (
+		<>
+			<TabanModal onClose={() => {}} open={logoutOpen} setOpen={setLogoutOpen} title="خروج از حساب کابری">
+				<div className="">
+					آیا برای خروج از حساب کاربری اطمینان دارید؟
+					<div className="mt-10 flex justify-end gap-4">
+						<TabanButton onClick={() => setLogoutOpen(false)} variant="bordered">
+							انصراف
+						</TabanButton>
+						<TabanButton onClick={logoutHandler}>خروج از حساب</TabanButton>
+					</div>
+				</div>
+			</TabanModal>
+			<header
+				className={`max-lg:!hidden ease-in-out ${scrollPosition > 32 ? "w-full top-0 right-0 rounded-none border-white border-b-neutral-200 fixed opacity-100" : " fixed w-[90%] right-[5%]  -top-40 rounded-lg border-neutral-200 opacity-0 "} duration-300 px-0 lg:!px-6 z-[100] bg-white shadow-sm border `}
+			>
+				<MenuPopup open={open} setOpen={setOpen} />
+				<div className="container mx-auto flex justify-between items-center border-b border-b-neutral-200/80 py-2">
+					<div className="flex gap-8 items-center">
+						<Link href="/" className="flex items-center">
+							<Image src="/images/logoArchpin.svg" width={144} height={48} alt="logo" />
+						</Link>
+					</div>
+					<div className="flex items-center">
+						{!!profile ? (
+							<div className="flex items-center gap-4">
+								<div className="group relative w-10 h-10 rounded-lg hover:!bg-primary/15 flex items-center justify-center duration-200 cursor-pointer">
+									<IconCart strokeWidth={0.2} fill="#404040" stroke="#404040" />
+									{!!cart && (
+										<span className="absolute left-0 top-0 text-sm font-semibold bg-primary rounded-full w-5 h-5 flex items-center justify-center text-white">
+											{convertToPersianNumber(cart?.products?.length)}
+										</span>
+									)}
+									<div className="hidden group-hover:!flex pt-2 absolute top-10  left-0 ">
+										<div className="w-96 bg-white border-neutral-300 shadow-sm border p-4 rounded">
+											<CartMenu />
+										</div>
+									</div>
+								</div>
+								<div className="h-6 w-[1px] bg-neutral-400 "></div>
+								<div className="relative group py-2 flex items-center gap-1 cursor-pointer">
+									<IconUser stroke="black" className="-top-0.5" />
+									{profile?.name ? profile?.name : convertToPersianNumber(profile?.username)}
+									<IconArrow
+										strokeWidth={0.5}
+										fill="#404040"
+										className="rotate-180 relative -top-0.5"
+										width={20}
+										height={20}
+									/>
+									<div className="hidden group-hover:!flex pt-2 absolute top-10 left-0">
+										<div className="w-64 bg-white border-neutral-300 shadow-sm border p-2 rounded">
+											<ProfleMenu setLogoutOpen={setLogoutOpen} />
+										</div>
+									</div>
+								</div>
+							</div>
+						) : (
+							<TabanButton
+								variant="bordered"
+								isLink
+								href="/auth"
+								className="!text-neutral-800 font-semibold group !border-none rounded  py-2 px-4 flex items-center gap-2 !bg-primary/15 shadow hover:!bg-primary hover:!text-white"
+							>
+								<IconUser stroke="black" className="group-hover:!stroke-white  duration-200" />
+								ورود/ثبت نام
+							</TabanButton>
+						)}
+					</div>
+				</div>
+				<div className="container mx-auto pt-3 pb-2">
+					<div className="flex justify-between">
+						<div className="flex gap-8">
+							<div className=" gap-6 hidden lg:!flex">
+								{menu?.map((it) => (
+									<Link
+										className="flex gap-2 items-center relative font-medium text-sm duration-200 border-b-2 border-b-primary/0 hover:!border-b-neutral-5 pb-2 mt-2 text-neutral-5 hover:!text-neutral-6"
+										href={it?.href}
+									>
+										{it?.title}
+									</Link>
+								))}
+							</div>
+						</div>
+					</div>
+				</div>
+			</header>
+
+			<header
+				className={`lg:!hidden w-full top-0 right-0 rounded-none border-white border-b-neutral-200 fixed duration-300  z-[100] bg-white shadow-sm border py-1`}
+			>
+				<MenuPopup open={open} setOpen={setOpen} />
+				<div className="w-full ">
+					<div className="flex w-full">
+						<div className="flex lg:!hidden justify-between px-6 items-center w-full">
+							<span onClick={menuHandler} className="cursor-pointer lg:!hidden">
+								<Image src="/images/menu.svg" alt="menu" width={24} height={24} />
+							</span>
+							<Link href="/" className=" relative">
+								<Image width={90} height={56} src="/images/logo.svg" alt="logo" className="max-lg:!w-14 py-2" />
+							</Link>
+						</div>
+					</div>
+				</div>
+			</header>
+		</>
+	);
+};
