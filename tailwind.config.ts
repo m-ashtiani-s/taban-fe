@@ -2,13 +2,15 @@ import { nextui } from "@nextui-org/theme";
 import type { Config } from "tailwindcss";
 
 export const tailwindColors: { [key: string]: string } = {
+	primary: "#1a3047",
+	secondary: "#b8a27c",
+	suppliment: "#b8a27c",
+	"suppliment-full": "#b8a27c",
 	current: "#0e0e0e",
 	transparent: "transparent",
 	white: "#ffffff",
-	primary: "#f5a900",
 	link: "#0078D6",
 	"primary-content": "#ffffff",
-	secondary: "#0c3833",
 	"secondary-content": "#FFFFFF",
 	accent: "#1FB2A5",
 	"accent-content": "#FFFFFF",
