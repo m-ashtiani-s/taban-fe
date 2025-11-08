@@ -1,0 +1,40 @@
+.header {
+	.sub-group1:hover {
+		.sub-wrap1 {
+			transition-duration: 200ms;
+			visibility: visible;
+			opacity: 100;
+		}
+	}
+	.sub-wrap1 {
+		transition-duration: 200ms;
+		visibility: hidden;
+		opacity: 0;
+	}
+
+    .sub-group2:hover {
+		.sub-wrap2 {
+			transition-duration: 200ms;
+			visibility: visible;
+			opacity: 100;
+		}
+	}
+	.sub-wrap2 {
+		transition-duration: 200ms;
+		visibility: hidden;
+		opacity: 0;
+	}
+
+     .sub-group3:hover {
+		.sub-wrap3 {
+			transition-duration: 200ms;
+			visibility: visible;
+			opacity: 100;
+		}
+	}
+	.sub-wrap3 {
+		transition-duration: 200ms;
+		visibility: hidden;
+		opacity: 0;
+	}
+}
