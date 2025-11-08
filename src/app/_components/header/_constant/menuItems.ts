@@ -135,7 +135,7 @@ export const menuItems = [
 		],
 	},
 	{
-		title: "ترجمه رسمی همزمان | ترجمه همزمان",
+		title: "ترجمه همزمان",
 		href: "/ترجمه-حضوری-و-همزمان/",
 		childrens: [
 			{ title: "ترجمه حضوری در دفاتر اسناد رسمی", href: "/ترجمه-حضوری-در-دفاتر-اسناد-رسمی/", childrens: [] },
@@ -206,30 +206,37 @@ export const menuItems = [
 		],
 	},
 	{
-		title: "نگارش مدارک پذیرش تحصیلی",
+		title: "نگارش مدارک",
 		href: "#",
 		childrens: [
 			{
-				title: "نگارش توصیه نامه Recommendation Letter",
-				href: "/نگارش-توصیه-نامه-recommendation-letter/",
-				childrens: [],
+				title: "نگارش مدارک پذیرش تحصیلی",
+				href: "#",
+				childrens: [
+					{
+						title: "نگارش توصیه نامه Recommendation Letter",
+						href: "/نگارش-توصیه-نامه-recommendation-letter/",
+						childrens: [],
+					},
+					{ title: "نگارش نامه هدف LOI", href: "/نگارش-نامه-هدف-loi/", childrens: [] },
+					{ title: "نگارش رزومه CV", href: "/نگارش-رزومه-cv/", childrens: [] },
+					{ title: "نگارش بیانیه شخصی PS", href: "/نگارش-بیانیه-شخصی-ps/", childrens: [] },
+					{ title: "نگارش Study plan", href: "/نگارش-study-plan/", childrens: [] },
+					{ title: "نگارش انگیزه نامه | نگارش SOP", href: "/نگارش-انگیزه-نامه-sop/", childrens: [] },
+				],
 			},
-			{ title: "نگارش نامه هدف LOI", href: "/نگارش-نامه-هدف-loi/", childrens: [] },
-			{ title: "نگارش رزومه CV", href: "/نگارش-رزومه-cv/", childrens: [] },
-			{ title: "نگارش بیانیه شخصی PS", href: "/نگارش-بیانیه-شخصی-ps/", childrens: [] },
-			{ title: "نگارش Study plan", href: "/نگارش-study-plan/", childrens: [] },
-			{ title: "نگارش انگیزه نامه | نگارش SOP", href: "/نگارش-انگیزه-نامه-sop/", childrens: [] },
+			{
+				title: "نگارش مدارک ویزای توریستی",
+				href: "#",
+				childrens: [
+					{ title: "نگارش دعوتنامه Invitation Letter", href: "/نگارش-دعوتنامه-invitation-letter/", childrens: [] },
+					{ title: "نگارش کاور لتر Cover Letter", href: "/نگارش-کاور-لتر-cover-letter/", childrens: [] },
+					{ title: "نگارش نامه هدف POT", href: "/نگارش-نامه-هدف-pot/", childrens: [] },
+				],
+			},
 		],
 	},
-	{
-		title: "نگارش مدارک ویزای توریستی",
-		href: "#",
-		childrens: [
-			{ title: "نگارش دعوتنامه Invitation Letter", href: "/نگارش-دعوتنامه-invitation-letter/", childrens: [] },
-			{ title: "نگارش کاور لتر Cover Letter", href: "/نگارش-کاور-لتر-cover-letter/", childrens: [] },
-			{ title: "نگارش نامه هدف POT", href: "/نگارش-نامه-هدف-pot/", childrens: [] },
-		],
-	},
+
 	{
 		title: "تماس با ما",
 		href: "/contact-us/",

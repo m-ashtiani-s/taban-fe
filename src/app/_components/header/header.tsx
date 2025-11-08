@@ -16,23 +16,26 @@ import TabanModal from "../common/tabanModal/tabanModal";
 import { menuItems } from "./_constant/menuItems";
 import { MenuItem } from "@/types/menuItem.type";
 
-function HeaderMenu({ children,number }: { children: MenuItem[],number:number }) {
+function HeaderMenu({ children, number }: { children: MenuItem[]; number: number }) {
 	return (
-		<span className={`sub-wrap${number} absolute top-0 right-full p-1 duration-200`}>
-			<span className="flex flex-col bg-white p-4 rounded-lg">
+		<span className={`sub-wrap${number} absolute top-0 right-full duration-200 p-3`}>
+			<span className="flex flex-col bg-white p-2 rounded-lg">
 				{children?.map((child) => (
 					<Link
 						key={child?.title}
 						href={child?.href}
-						className={`relative sub-group${number+1} py-2 flex items-center justify-between gap-4 whitespace-nowrap text-primary/80 hover:!text-primary bg-neutral-50/0 hover:!bg-neutral-200/80 rounded-lg duration-200 px-4`}
+						className={`relative !text-sm sub-group${number + 1} py-2 flex items-center justify-between gap-4 whitespace-nowrap text-primary/80 hover:!text-primary bg-neutral-50/0 hover:!bg-neutral-200/80 rounded-lg duration-200`}
 					>
-						{child?.title}
-						{child?.childrens?.length > 0 && (
-							<IconArrow className="-rotate-90 fill-primary" height={24} width={24} strokeWidth={0} />
-						)}
+						<Link href={child?.href} className="flex gap-8 items-center px-2 w-full justify-between">
+							{child?.title}
+							{child?.childrens?.length > 0 && (
+								<IconArrow className="-rotate-90 fill-primary" height={24} width={24} strokeWidth={0} />
+							)}
+						</Link>
+
 						{child?.childrens?.length > 0 && (
 							<Fragment key={child?.title}>
-								<HeaderMenu children={child?.childrens} number={number+1} />
+								<HeaderMenu children={child?.childrens} number={number + 1} />
 							</Fragment>
 						)}
 					</Link>
@@ -90,8 +93,64 @@ export const Header = () => {
 				<div className="container mx-auto flex justify-between items-center border-b border-b-neutral-200/80 py-2">
 					<div className="flex gap-8 items-center">
 						<Link href="/" className="flex items-center">
-							<Image src="/images/logoArchpin.svg" width={144} height={48} alt="logo" />
+							<Image src="/images/logoWhite.svg" width={72} height={48} alt="logo" />
 						</Link>
+						<div className=" gap-3 hidden lg:!flex text-sm">
+							{menuItems?.map((it) => (
+								<div
+									key={it?.title}
+									className="group cursor-pointer relative font-medium text-sm duration-200 border-b-2 border-b-primary/0 hover:!border-b-neutral-200 pb-2 mt-2 text-neutral-200 hover:!text-neutral-200"
+								>
+									<Link href={it?.href} className="flex gap-1 items-center px-2">
+										{it?.title}
+										{it?.childrens?.length > 0 && (
+											<IconArrow
+												className="rotate-180 fill-neutral-300"
+												height={24}
+												width={24}
+												strokeWidth={0}
+											/>
+										)}
+									</Link>
+									<span
+										className={`absolute top-full right-0 p-1 invisible group-hover:!visible opacity-0 group-hover:!opacity-100 duration-200`}
+									>
+										<span className="flex flex-col bg-white p-2 rounded-lg">
+											{it?.childrens?.map((child) => (
+												<div
+													key={child?.title}
+													className="relative sub-group1 py-2 gap-4 whitespace-nowrap text-primary/80 hover:!text-primary bg-neutral-50/0 hover:!bg-neutral-200/80 rounded-lg duration-200"
+												>
+													<Link
+														href={child?.href}
+														className="flex gap-8 items-center px-2 w-full justify-between"
+													>
+														{child?.title}
+														{child?.childrens?.length > 0 && (
+															<IconArrow
+																className="-rotate-90 fill-primary"
+																height={24}
+																width={24}
+																strokeWidth={0}
+															/>
+														)}
+													</Link>
+
+													{child?.childrens?.length > 0 && (
+														<Fragment key={child?.title}>
+															<HeaderMenu
+																number={1}
+																children={child?.childrens}
+															/>
+														</Fragment>
+													)}
+												</div>
+											))}
+										</span>
+									</span>
+								</div>
+							))}
+						</div>
 					</div>
 					<div className="flex items-center">
 						{!!profile ? (
@@ -138,64 +197,6 @@ export const Header = () => {
 								ورود/ثبت نام
 							</TabanButton>
 						)}
-					</div>
-				</div>
-				<div className="container mx-auto pt-3 pb-2">
-					<div className="flex justify-between">
-						<div className="flex gap-8">
-							<div className=" gap-6 hidden lg:!flex">
-								{menuItems?.map((it) => (
-									<Link
-										href={it?.href}
-										key={it?.title}
-										className="group cursor-pointer flex gap-1 items-center relative font-medium text-sm duration-200 border-b-2 border-b-primary/0 hover:!border-b-neutral-200 pb-2 mt-2 text-neutral-200 hover:!text-neutral-200"
-									>
-										{it?.title}
-										{it?.childrens?.length > 0 && (
-											<IconArrow
-												className="rotate-180 fill-neutral-300"
-												height={24}
-												width={24}
-												strokeWidth={0}
-											/>
-										)}
-										<span
-											className={`absolute top-full right-0 p-1 invisible group-hover:!visible opacity-0 group-hover:!opacity-100 duration-200`}
-										>
-											<span className="flex flex-col bg-white p-4 rounded-lg">
-												{it?.childrens?.map((child) => (
-													<Link
-														key={child?.title}
-														href={child?.href}
-														className="relative sub-group1 py-3 flex items-center justify-between gap-4 whitespace-nowrap text-primary/80 hover:!text-primary bg-neutral-50 hover:!bg-neutral-200/80 rounded-lg duration-200 px-4"
-													>
-														{child?.title}
-														{child?.childrens?.length > 0 && (
-															<IconArrow
-																className="-rotate-90 fill-primary"
-																height={24}
-																width={24}
-																strokeWidth={0}
-															/>
-														)}
-														{child?.childrens?.length > 0 && (
-															<Fragment key={child?.title}>
-																<HeaderMenu
-																number={1}
-																	children={
-																		child?.childrens
-																	}
-																/>
-															</Fragment>
-														)}
-													</Link>
-												))}
-											</span>
-										</span>
-									</Link>
-								))}
-							</div>
-						</div>
 					</div>
 				</div>
 			</header>
