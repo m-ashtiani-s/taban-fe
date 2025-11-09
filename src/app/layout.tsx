@@ -65,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				<meta name="theme-color" content="#f5a900" />
 				<title>معماریاب | پلتفرمم بزرگ معماری</title>
 			</head>
-			<body className="content-center bg-base-100 text-neutral-6">
+			<body className="content-center bg-white text-primary">
 				<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
 					<NextTopLoader
 						color="#f5a900"
