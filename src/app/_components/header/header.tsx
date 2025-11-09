@@ -88,9 +88,9 @@ export const Header = () => {
 			</TabanModal>
 			<header
 				style={{ background: "#1a3047" }}
-				className={`header flex flex-col max-lg:!hidden w-full top-0 right-0 rounded-none  border-b-neutral-200 fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm`}
+				className={`header bg-primary flex flex-col max-lg:!hidden w-full top-0 right-0 rounded-none  fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm`}
 			>
-				<div className="container mx-auto flex justify-between items-center border-b border-b-neutral-200/80 py-2">
+				<div className="container mx-auto flex justify-between items-center py-2">
 					<div className="flex gap-8 items-center">
 						<Link href="/" className="flex items-center">
 							<Image src="/images/logoWhite.svg" width={72} height={48} alt="logo" />
