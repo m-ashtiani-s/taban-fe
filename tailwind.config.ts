@@ -4,8 +4,8 @@ import type { Config } from "tailwindcss";
 export const tailwindColors: { [key: string]: string } = {
 	primary: "#1a3047",
 	secondary: "#b8a27c",
-	suppliment: "#b8a27c",
-	"suppliment-full": "#b8a27c",
+	suppliment: "#f5f2ed",
+	"suppliment-full": "#efe7da",
 	current: "#0e0e0e",
 	transparent: "transparent",
 	white: "#ffffff",
