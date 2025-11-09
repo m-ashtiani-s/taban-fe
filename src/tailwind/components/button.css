@@ -1,5 +1,5 @@
 .btn {
-    @apply no-underline gap-2 h-10 px-6 rounded-md border inline-flex  cursor-pointer select-none whitespace-nowrap font-[peyda];
+    @apply no-underline gap-2 h-10 px-6 rounded-md border inline-flex  cursor-pointer select-none whitespace-nowrap !font-[peyda];
     @apply items-center justify-center border-transparent text-center transition duration-200 ease-in-out text-sm;
     &:active:hover,
     &:active:focus {

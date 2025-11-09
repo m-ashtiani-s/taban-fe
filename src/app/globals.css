@@ -65,7 +65,8 @@
 	font-style: normal;
 	font-weight: 100;
 	src: url("../../public/fonts/Yekan Bakh EN 01 Hairline.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 01 Hairline.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 01 Hairline.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 01 Hairline.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 01 Hairline.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -74,7 +75,8 @@
 	font-style: normal;
 	font-weight: 200;
 	src: url("../../public/fonts/Yekan Bakh EN 02 Thin.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 02 Thin.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 02 Thin.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 02 Thin.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 02 Thin.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -83,7 +85,8 @@
 	font-style: normal;
 	font-weight: 300;
 	src: url("../../public/fonts/Yekan Bakh EN 03 Light.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 03 Light.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 03 Light.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 03 Light.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 03 Light.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -92,7 +95,8 @@
 	font-style: normal;
 	font-weight: 400;
 	src: url("../../public/fonts/Yekan Bakh EN 04 Regular.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 04 Regular.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 04 Regular.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 04 Regular.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 04 Regular.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -101,7 +105,8 @@
 	font-style: normal;
 	font-weight: 500;
 	src: url("../../public/fonts/Yekan Bakh EN 05 Medium.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 05 Medium.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 05 Medium.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 05 Medium.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 05 Medium.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -110,7 +115,8 @@
 	font-style: normal;
 	font-weight: 600;
 	src: url("../../public/fonts/Yekan Bakh EN 06 Bold.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 06 Bold.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 06 Bold.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 06 Bold.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 06 Bold.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -119,7 +125,8 @@
 	font-style: normal;
 	font-weight: 700;
 	src: url("../../public/fonts/Yekan Bakh EN 07 Heavy.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 07 Heavy.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 07 Heavy.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 07 Heavy.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 07 Heavy.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -128,7 +135,8 @@
 	font-style: normal;
 	font-weight: 800;
 	src: url("../../public/fonts/Yekan Bakh EN 08 Fat.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 08 Fat.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 08 Fat.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 08 Fat.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 08 Fat.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
@@ -138,86 +146,97 @@
 	font-style: normal;
 	font-weight: normal;
 	src: url("../../public/fonts/Yekan Bakh EN 04 Regular.eot");
-	src: url("../../public/fonts/Yekan Bakh EN 04 Regular.eot?#iefix") format("embedded-opentype"),
+	src:
+		url("../../public/fonts/Yekan Bakh EN 04 Regular.eot?#iefix") format("embedded-opentype"),
 		/* IE6-8 */ url("../../public/fonts/Yekan Bakh EN 04 Regular.woff2") format("woff2"),
 		/* FF39+,Chrome36+, Opera24+*/ url("../../public/fonts/Yekan Bakh EN 04 Regular.woff") format("woff"); /* FF3.6+, IE9, Chrome6+, Saf5.1+*/
 }
-
-
 
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 100;
-	src: url('../../public/fonts/Morabba-UltraLight.woff') format('woff'),
-	url('../../public/fonts/Morabba-UltraLight.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-UltraLight.woff") format("woff"),
+		url("../../public/fonts/Morabba-UltraLight.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 200;
-	src: url('../../public/fonts/Morabba-Light.woff') format('woff'),
-	url('../../public/fonts/Morabba-Light.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-Light.woff") format("woff"),
+		url("../../public/fonts/Morabba-Light.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 300;
-	src: url('../../public/fonts/Morabba-Regular.woff') format('woff'),
-	url('../../public/fonts/Morabba-Regular.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-Regular.woff") format("woff"),
+		url("../../public/fonts/Morabba-Regular.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 400;
-	src: url('../../public/fonts/Morabba-Medium.woff') format('woff'),
-	url('../../public/fonts/Morabba-Medium.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-Medium.woff") format("woff"),
+		url("../../public/fonts/Morabba-Medium.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 500;
-	src: url('../../public/fonts/Morabba-SemiBold.woff') format('woff'),
-	url('../../public/fonts/Morabba-SemiBold.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-SemiBold.woff") format("woff"),
+		url("../../public/fonts/Morabba-SemiBold.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 600;
-	src: url('../../public/fonts/Morabba-Bold.woff') format('woff'),
-	url('../../public/fonts/Morabba-Bold.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-Bold.woff") format("woff"),
+		url("../../public/fonts/Morabba-Bold.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 700;
-	src: url('../../public/fonts/Morabba-ExtraBold.woff') format('woff'),
-	url('../../public/fonts/Morabba-ExtraBold.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-ExtraBold.woff") format("woff"),
+		url("../../public/fonts/Morabba-ExtraBold.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 800;
-	src: url('../../public/fonts/Morabba-Black.woff') format('woff'),
-	url('../../public/fonts/Morabba-Black.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-Black.woff") format("woff"),
+		url("../../public/fonts/Morabba-Black.woff2") format("woff2");
 }
 @font-face {
 	font-family: Morabba;
 	font-style: normal;
 	font-weight: 900;
-	src: url('../../public/fonts/Morabba-Heavy.woff') format('woff'),
-	url('../../public/fonts/Morabba-Heavy.woff2') format('woff2');
+	src:
+		url("../../public/fonts/Morabba-Heavy.woff") format("woff"),
+		url("../../public/fonts/Morabba-Heavy.woff2") format("woff2");
 }
 
-.morabba{
-	font-family:Morabba !important;
+.peyda {
+	font-family: peyda !important;
 }
 
+.peyda * {
+	font-family: peyda !important;
+}
 
-*{
+* {
 	margin: 0px;
 	padding: 0px;
-	font-family: peyda !important;
+	font-family: yakanBakh !important;
 	box-sizing: border-box;
 	direction: rtl;
 	letter-spacing: 0.4px !important;
@@ -338,7 +357,6 @@ body {
 	overflow-x: hidden;
 }
 
-
 @keyframes heroScroll {
 	0% {
 		opacity: 0;
@@ -355,6 +373,6 @@ body {
 	}
 }
 
-.hero-scroll{
+.hero-scroll {
 	animation: heroScroll 2.5s ease-in-out infinite;
 }
