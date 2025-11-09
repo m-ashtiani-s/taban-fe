@@ -1,278 +1,97 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { IconArrow, IconInstagram } from "../icon/icons";
+import { IconArrow, IconInstagram, IconTelegram, IconWhatsapp } from "../icon/icons";
 
 export const Footer = () => {
 	return (
 		<>
-			<footer className="pt-20">
-				<div className="bg-secondary  rounded-t-[32px]">
-					<div className="container py-16">
-						<div className="flex justify-between">
-							<div className="flex w-8/12 items-center">
-								<div className="pl-8 border-l border-l-neutral-100 py-2">
-									<Image
-										src={`/images/logoArchpinWhite.svg`}
-										width={200}
-										height={100}
-										alt=""
-										className="min-w-[200px]"
-									/>
+			<footer className="pt-20 ">
+				<div className="bg-primary relative">
+					<img src="/images/footer/pattern1.svg" alt="" className="w-[420px] absolute right-0 top-0" />
+					<img src="/images/footer/pattern2.svg" alt="" className="w-[420px] absolute left-0 top-0" />
+					<div className="container py-12">
+						<div className="flex flex-col gap-6 w-full items-center">
+							<img src="/images/logoWhite.svg" alt="" className="w-36" />
+							<div className="flex flex-col w-full items-center gap-3">
+								<div className="peyda text-neutral-200 font-medium text-2xl">
+									درباره دارالترجمه تابان بخوانید
 								</div>
-								<div className="px-4 text-neutral-100 font-light">
-									طراحان سایت هنگام طراحی قالب سایت معمولا با این موضوع رو برو هستند که محتوای اصلی صفحات
-									آماده نیست. در نتیجه طرح کلی دید درستی به کار فرما نمیدهد. اگر طراح
-								</div>
-							</div>
-							<div className="w-4/12">
-								<div className="flex justify-end gap-2">
-									<Link
-										href="/"
-										className="bg-primary/10 p-1 rounded-md border border-primary hover:shadow hover:rounded-xl shadow-primary duration-200"
-									>
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</Link>
-									<Link
-										href="/"
-										className="bg-primary/10 p-1 rounded-md border border-primary hover:shadow hover:rounded-xl shadow-primary duration-200"
-									>
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</Link>
-									<Link
-										href="/"
-										className="bg-primary/10 p-1 rounded-md border border-primary hover:shadow hover:rounded-xl shadow-primary duration-200"
-									>
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</Link>
-									<Link
-										href="/"
-										className="bg-primary/10 p-1 rounded-md border border-primary hover:shadow hover:rounded-xl shadow-primary duration-200"
-									>
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</Link>
+								<div className="w-full px-16 text-neutral-200 text-center leading-8">
+									لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک
+									است. چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف بهبود ابزارهای
+									کاربردی می‌باشد.لورم ایپسوم متن ساختگی با تولید سادگی نامفه وم از صنعت چاپ و با استفاده
+									از طراحان گرافیک است. چاپگرهایی و متونوم از صنعت چاپ و با استفاده از طراحان گرافیک است.
+									چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف بهبود ابزارهای
+									کاربردی می‌باشد.
 								</div>
 							</div>
 						</div>
-						<div className="flex gap-2 mt-12">
-							<div className="flex flex-col gap-4 w-[30%]">
-								<div className="flex gap-2 items-start">
-									<div className=" w-10 h-10 flex justify-center items-center rounded-md bg-primary/20">
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</div>
-									<div className="flex flex-col gap-1">
-										<div className="text-neutral-400 text-sm morabba font-extralight">
-											تلفن پشتیبانی
-										</div>
-										<div className="text-neutral-300">۰۲۱۹۸۹۸۶۵۰۹</div>
-									</div>
-								</div>
-								<div className="flex gap-2 items-start">
-									<div className=" w-10 h-10 flex justify-center items-center rounded-md bg-primary/20">
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</div>
-									<div className="flex flex-col gap-1">
-										<div className="text-neutral-400 text-sm morabba font-extralight">
-											ارسال ایمیل
-										</div>
-										<div className="text-neutral-300">info@admin.com</div>
-									</div>
-								</div>
-								<div className="flex gap-2 items-start">
-									<div className=" w-10 h-10 flex justify-center items-center rounded-md bg-primary/20">
-										<IconInstagram
-											className=" duration-200 fill-primary"
-											strokeWidth={0}
-											width={36}
-											height={36}
-											viewBox="0 0 32 32"
-										/>
-									</div>
-									<div className="flex flex-col gap-1">
-										<div className="text-neutral-400 text-sm morabba font-extralight">آدرس</div>
-										<div className="text-neutral-300">تهران شهرک بهار خیابان لاجوردی کوچه خیام</div>
-									</div>
-								</div>
+						<div className="flex items-center justify-between mt-6">
+							<div className="flex gap-2 text-secondary font-medium">
+								<Link href="/" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
+									خانه
+								</Link>
+								<Link
+									href="/rules"
+									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
+								>
+									قوانین و مقررات تابان
+								</Link>
+								<Link
+									href="/translate-order"
+									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
+								>
+									ثبت سفارش ترجمه
+								</Link>
+								<Link
+									href="/contact-us"
+									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
+								>
+									تماس با ما
+								</Link>
+								<Link
+									href="/profile"
+									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
+								>
+									حساب کاربری
+								</Link>
 							</div>
-							<div className="w-[20%]">
-								<div className="morabba text-primary text-lg">دسترسی سریع</div>
-								<div className="flex flex-col mt-3 gap-2">
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											خانه
-										</Link>
-									</div>
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											طراح هوشمند
-										</Link>
-									</div>
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											فروشگاه
-										</Link>
-									</div>
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											مجله معمار
-										</Link>
-									</div>
+							<div className="flex items-center gap-4">
+								<div className="h-24 w-24 bg-white rounded-2xl p-2 flex items-center justify-center">
+									<img src="/images/footer/etemad.png" alt="" className="h-full" />
 								</div>
-							</div>
-							<div className="w-[20%]">
-								<div className="morabba text-primary text-lg">دسترسی سریع</div>
-								<div className="flex flex-col mt-3 gap-2">
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											خانه
-										</Link>
-									</div>
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											طراح هوشمند
-										</Link>
-									</div>
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											فروشگاه
-										</Link>
-									</div>
-									<div className="flex group items-center gap-1">
-										<IconArrow
-											strokeWidth={0}
-											className="-rotate-90 relative fill-neutral-400"
-											width={16}
-											height={16}
-										/>
-										<Link
-											href="/"
-											className="group-hover:text-primary relative group-hover:right-1 right-0 duration-200 text-neutral-400"
-										>
-											مجله معمار
-										</Link>
-									</div>
-								</div>
-							</div>
-							<div className="w-[30%]">
-								<div className="morabba text-primary text-lg">مجوزها</div>
-								<div className="flex mt-3 gap-2">
-									<Link href="/">
-										<Image src="/images/enamad.png" alt="" width={100} height={100} />
-									</Link>
-									<Link href="/">
-										<Image src="/images/enamad.png" alt="" width={100} height={100} />
-									</Link>
-									<Link href="/">
-										<Image src="/images/enamad.png" alt="" width={100} height={100} />
-									</Link>
+								<div className="h-24 w-24 bg-white rounded-2xl p-2 flex items-center justify-center">
+									<img src="/images/footer/zarin.png" alt="" className="h-full" />
 								</div>
 							</div>
 						</div>
 					</div>
-					<div className="container">
-						<div className="w-8/12 mx-auto bg-primary rounded-t-3xl py-2 flex items-center justify-between px-10 text-white">
-							<div className="w-full text-right">کلیه حقوق متعلق به جیاواز میباشد.</div>
-							<div className="w-[2px] h-7 bg-white"></div>
-							<div className="w-full text-left">طراحی و اجرا توسط : آیلی وب</div>
+					<div className="container border-t border-t-suppliment-full">
+						<div className=" bg-primary rounded-t-3xl py-4 flex items-center justify-between text-neutral-200">
+							<div className="w-full text-right text-sm">
+								تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی تابان میباشد.
+							</div>
+							<div className="w-full flex items-center gap-2 justify-end">
+								<Link
+									href="/"
+									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"
+								>
+									<IconInstagram viewBox="0 0 32 32" className="stroke-neutral-200 fill-neutral-200" strokeWidth={1} width={28} height={28}/>
+								</Link>
+								<Link
+									href="/"
+									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"
+								>
+									<IconTelegram viewBox="0 0 192 192" className="stroke-neutral-200" strokeWidth={18} width={28} height={28}/>
+								</Link>
+								<Link
+									href="/"
+									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"
+								>
+									<IconWhatsapp className="fill-neutral-200" strokeWidth={0.8} width={24} height={24}/>
+								</Link>
+							</div>
 						</div>
 					</div>
 				</div>
