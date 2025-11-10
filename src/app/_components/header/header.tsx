@@ -21,9 +21,8 @@ function HeaderMenu({ children, number }: { children: MenuItem[]; number: number
 		<span className={`sub-wrap${number} absolute top-0 right-full duration-200 p-3`}>
 			<span className="flex flex-col bg-white p-2 rounded-lg">
 				{children?.map((child) => (
-					<Link
+					<div
 						key={child?.title}
-						href={child?.href}
 						className={`relative !text-sm sub-group${number + 1} py-2 flex items-center justify-between gap-4 whitespace-nowrap text-primary/80 hover:!text-primary bg-neutral-50/0 hover:!bg-neutral-200/80 rounded-lg duration-200`}
 					>
 						<Link href={child?.href} className="flex gap-8 items-center px-2 w-full justify-between">
@@ -38,7 +37,7 @@ function HeaderMenu({ children, number }: { children: MenuItem[]; number: number
 								<HeaderMenu children={child?.childrens} number={number + 1} />
 							</Fragment>
 						)}
-					</Link>
+					</div>
 				))}
 			</span>
 		</span>
@@ -204,7 +203,7 @@ export const Header = () => {
 								variant="icon"
 								isLink
 								href="/auth"
-								className="!text-neutral-800 font-semibold group !border-none rounded h-10 w-10 flex items-center gap-2 !bg-secondary shadow hover:!bg-suppliment hover:!text-white"
+								className="!text-neutral-800 font-semibold group !border-none rounded h-10 min-w-10 flex items-center gap-2 !bg-secondary shadow hover:!bg-suppliment hover:!text-white"
 							>
 								<IconCircleUser
 									stroke="black"
