@@ -26,7 +26,6 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
 		setWidth(window.innerWidth);
 	}
 	const isMobile = width <= 768;
-	console.log(posts);
 
 	return (
 		<div className="blogPreview">
