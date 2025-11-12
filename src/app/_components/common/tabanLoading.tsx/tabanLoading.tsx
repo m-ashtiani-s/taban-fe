@@ -1,3 +1,5 @@
+"use client"
+
 import styled from "styled-components";
 import { TabanLoadingProps } from "./tabanLoading.type";
 import { Spinner } from "@nextui-org/spinner";
