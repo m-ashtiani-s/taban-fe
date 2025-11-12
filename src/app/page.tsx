@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import TabanButton from "./_components/common/tabanButton/tabanButton";
 import { Footer } from "./_components/footer/footer";
@@ -9,8 +7,30 @@ import Map from "./_homeAssets/_components/map/map";
 import CommentsSlider from "./_homeAssets/_components/commentsSlider/commentsSlider";
 import { comments } from "@/constants/comments";
 import BlogPreview from "./_homeAssets/_components/BlogPreview/BlogPreview";
+import { BlogPost } from "@/styles/blogPost.type";
+import { SITE_URL } from "@/config/global";
+import { Paginate } from "@/types/paginate";
 
-export default function Home() {
+async function getPosts(): Promise<Paginate<BlogPost> | null> {
+	try {
+		const res = await fetch(`${SITE_URL}/api/wordpress/posts?page=1&pageSize=10`, {
+			next: { revalidate: 1 },
+		});
+
+		if (!res.ok) {
+			console.error(`Failed to fetch posts: ${res.status} ${res.statusText}`);
+			return null;
+		}
+		const data = await res.json();
+		return data;
+	} catch (error) {
+		console.error("Error fetching posts:", error);
+		return null;
+	}
+}
+
+export default async function Home() {
+	const blogPageData: Paginate<BlogPost> | null = await getPosts();
 	return (
 		<>
 			<Header />
@@ -289,9 +309,7 @@ export default function Home() {
 								وبلاگ تابان
 							</TabanButton>
 						</div>
-						<div className="w-full">
-							<BlogPreview />
-						</div>
+						<div className="w-full mt-8">{!blogPageData ? null : <BlogPreview posts={blogPageData?.elements} />}</div>
 					</div>
 				</section>
 			</main>

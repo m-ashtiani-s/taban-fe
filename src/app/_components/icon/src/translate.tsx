@@ -1,3 +1,5 @@
+"use client"
+
 import { BaseIcon } from "@/app/_components/icon/base-icon"
 import { svgIcon } from "@/app/_components/icon/icon.types"
 
