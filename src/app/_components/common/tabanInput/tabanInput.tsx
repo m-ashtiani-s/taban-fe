@@ -13,7 +13,7 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(({
 	endAdornment = "",
 	groupMode = false,
 	setValue,
-	hasLeading = false,
+	leadingIcon,
 	isHandleError = false,
 	removeHandler,
 	isLtr = false,
@@ -70,7 +70,7 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(({
 						}
 					}}
 					className={`label absolute ${rest?.disabled ? "bg-[#fdfdfd]" : "bg-white"}  duration-200 py-1 px-1.5 pl-1.5 z-[9] ${
-						addressFocused || !!rest?.value ? `right-2 -top-[11px] text-xs  ${hasError ? "text-error" : "text-secondary"} ` : `${hasLeading && !isLtr ? "right-10" : "right-3"} top-[11px] text-sm ${hasError ? "text-error" : "text-[#1C1B1F]"}`
+						addressFocused || !!rest?.value ? `right-4 -top-[11px] text-xs  ${hasError ? "text-error" : "text-primary"} ` : `${!!leadingIcon && !isLtr ? "right-10" : "right-3"} top-[11px] text-sm ${hasError ? "text-error" : "text-[#1C1B1F]"}`
 					}`}
 				>
 					{label}
@@ -92,7 +92,7 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(({
 					{passwordType === "password" ? <img src="/images/eye.svg" alt="" /> : <img src="/images/hide.svg" alt="" />}
 				</span>
 			}
-			{hasLeading && (
+			{!!leadingIcon && (
 				<span
 					onClick={() => {
 						if (!rest?.disabled) {
@@ -102,19 +102,7 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(({
 					}}
 					className={`absolute ${isLtr ? "left-1" : "right-1"} duration-200 z-10  px-2 top-3`}
 				>
-					<svg width="24" height="24" className="w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<g clipPath="url(#clip0_1719_1315)">
-							<path
-								d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z"
-								fill="#49454F"
-							/>
-						</g>
-						<defs>
-							<clipPath id="clip0_1719_1315">
-								<rect width="24" height="24" fill="white" />
-							</clipPath>
-						</defs>
-					</svg>
+					{leadingIcon}
 				</span>
 			)}
 
@@ -131,9 +119,9 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(({
 					ref={inputRef}
 					type={passwordType}
 					style={{ width: width ? width : "100%" }}
-					className={`disabled:bg-white h-12  duration-150 px-4 rounded-lg ${isLtr ? "pr-[48px]" : "pl-[48px]"}  border-1 text-base !outline-0 text-[#08090C] ${
+					className={`disabled:bg-white h-12  duration-150 px-4 rounded-xl ${isLtr ? "pr-[48px]" : "pl-[48px]"}  border-1 text-base !outline-0 text-[#08090C] ${
 						hasError ? "border-error text-error focus:outline-error focus:border-error" : "border-[#34426680] hover:border-[#34426680]  focus:border-[#08090C]"
-					} ${hasLeading && "!pr-11"} ${isLtr ? "dir-ltr text-left" : "dir-rtl text-right"}  ${inputClassName}`}
+					} ${!!leadingIcon && (isLtr ? "!pl-11" : "!pr-11")} ${isLtr ? "dir-ltr text-left" : "dir-rtl text-right"}  ${inputClassName}`}
 					value={val}
 					{...rest}
 					onChange={changeHandler}

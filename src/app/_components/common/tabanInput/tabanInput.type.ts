@@ -1,4 +1,4 @@
-import { Dispatch, InputHTMLAttributes, SetStateAction } from "react";
+import { Dispatch, InputHTMLAttributes, ReactNode, SetStateAction } from "react";
 
 export type TabanInputProps= InputHTMLAttributes<HTMLInputElement> & {
     inputClassName?:string;
@@ -7,7 +7,7 @@ export type TabanInputProps= InputHTMLAttributes<HTMLInputElement> & {
     endAdornment?:string;
     setValue?:Dispatch<SetStateAction<any>>;
     groupMode?:boolean;
-    hasLeading?:boolean;
+    leadingIcon?:ReactNode;
     isHandleError?: boolean;
     hasError?:boolean;
     errorText?:string;

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
-import CheckProfileError from "./_components/checkProfileError/checkProfileError";
 import TabanLoading from "../common/tabanLoading.tsx/tabanLoading";
 
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
@@ -15,7 +14,6 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 	useEffect(() => {
 		const init = async () => {
 			const token = storage?.get(StorageKey.TOKEN);
-			console.log(token)
 			if (!token) {
 				if (!pathname.includes("/auth")) {
 					window.location.href = "/auth";
@@ -26,7 +24,6 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 				}, 800);
 				return;
 			}
-			console.log(pathname.includes("/auth"))
 			pathname.includes("/auth") && router.push("/")
 			setTimeout(() => {
 				setCheckProfileLoading(false);
@@ -34,7 +31,6 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 			}, 300);
 			// executeGetProfile();
 		};
-
 		init();
 	}, []);
 
