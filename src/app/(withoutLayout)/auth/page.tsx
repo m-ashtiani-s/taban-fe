@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useApi } from "@/hooks/useApi";
 import { AuthEndpoints } from "./_api/endpoints";
 import { CheckUsernameFormValues } from "./_types/checkUsernameFormValues.type";
+import { mobileRegex } from "@/utils/mobileRegex";
 
 export default function Page() {
 	const router = useRouter();
@@ -48,7 +49,7 @@ export default function Page() {
 		}
 	}, [formValues]);
 
-	const loginHandler = (e: FormEvent<HTMLFormElement>) => {
+	const checkUsernameHandler = (e: FormEvent<HTMLFormElement>) => {
 		e?.preventDefault();
 		setFormSubmited(true);
 		const errors = formValidator();
@@ -89,24 +90,25 @@ export default function Page() {
 
 	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
-		!formValues?.username && newErrors.push({ item: "username", message: "وارد کردن نام کاربری الزامی است" });
+		!formValues?.username && newErrors.push({ item: "username", message: "وارد کردن شماره موبایل الزامی است" });
+		formValues?.username && !mobileRegex.test(formValues?.username) && newErrors.push({ item: "username", message: "شماره موبایل وارد شده صحیح نیست" });
 		setFormErrors(newErrors);
 
 		newErrors?.length > 0 ? setFormDisabled(true) : setFormDisabled(false);
 		return newErrors;
 	};
-	
+
 	return (
 		<div className="w-full lg:!p-6 lg:!border border-secondary rounded-2xl h-full max-lg:!h-screen flex items-center justify-center flex-col bg-white">
 			<MobileTopHeader pageName="" hasBAck backUrl="/" backAction={router.back} />
-			<form className="max-lg:!p-4 h-full flex justify-center flex-col max-lg:!-mt-16 !w-full" onSubmit={loginHandler}>
+			<form className="max-lg:!p-4 h-full flex justify-center flex-col max-lg:!-mt-16 !w-full" onSubmit={checkUsernameHandler}>
 				<div className="w-full flex justify-center relative">
 					<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" onClick={() => router.back()}>
 						<IconArrowLine className="rotate-180" height={28} width={28} />
 					</TabanButton>
 					<Image src="/images/logo.svg" width={72} height={72} alt="logo" />
 				</div>
-				<div className="font-medium text-xl mt-4 text-center">ورود | ثبت نام</div>
+				<div className="font-semibold text-xl mt-4 text-center peyda">ورود | ثبت نام</div>
 				<div className="mt-6">
 					<TabanInput
 						isLtr

@@ -10,14 +10,14 @@ import { FormEvent, useEffect, useState } from "react";
 import { LoginFormValues } from "../_types/LoginFormValues.type";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import { findError } from "@/utils/formErrorsFinder";
-import { createData, readData } from "@/core/http-service/http-service";
-import { API_URL } from "@/config/global";
-import { Res } from "@/types/responseType";
-import { Login } from "../_types/login.type";
 import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
 import MobileTopHeader from "@/app/_components/mobileTopHeader/mobileTopHeader";
 import { useRouter } from "next/navigation";
+import { mobileRegex } from "@/utils/mobileRegex";
+import { useApi } from "@/hooks/useApi";
+import { AuthEndpoints } from "../_api/endpoints";
+import Link from "next/link";
 
 export default function Page() {
 	const router = useRouter();
@@ -26,8 +26,14 @@ export default function Page() {
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
-	const [loginLoading, setLoginLoading] = useState<boolean>(false);
 	const searchParams = useReadSearchParams(["username", "backUrl"]);
+
+	const {
+		result: loginResult,
+		resultData: loginResultData,
+		fetchData: executeLogin,
+		loading: loginLoading,
+	} = useApi(async (username: string, password: string) => await AuthEndpoints.login(username, password));
 
 	useEffect(() => {
 		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
@@ -35,98 +41,101 @@ export default function Page() {
 
 	useEffect(() => {
 		if (formSubmited) {
-			const newErrors: FormErrors[] = [];
-			!formValues?.password && newErrors.push({ item: `password`, message: "وارد کردن رمز عبورالزامی است" });
-			!formValues?.username && newErrors.push({ item: `username`, message: "وارد کردن شماره تماس الزامی است" });
-			setFormErrors(newErrors);
-			if (newErrors?.length === 0) {
-				setFormDisabled(false);
-			} else {
-				setFormDisabled(true);
-			}
+			formValidator();
 		}
 	}, [formValues]);
 
 	const loginHandler = (e: FormEvent<HTMLFormElement>) => {
 		e?.preventDefault();
 		setFormSubmited(true);
-		const newErrors: FormErrors[] = [];
-		!formValues?.password && newErrors.push({ item: `password`, message: "وارد کردن رمز عبور الزامی است" });
-		!formValues?.username && newErrors.push({ item: `username`, message: "وارد کردن شماره تماس الزامی است" });
-		setFormErrors(newErrors);
-		if (newErrors?.length === 0) {
-			setFormDisabled(false);
-			executeLogin();
-		} else {
-			setFormDisabled(true);
+		const errors = formValidator();
+		if (errors?.length === 0) {
+			executeLogin(formValues?.username!, formValues?.password!);
 		}
 	};
 
-	const executeLogin = async () => {
-		try {
-			setLoginLoading(true);
-			const res = await createData<LoginFormValues, Res<Login>>(`${API_URL}v1/login`, formValues);
-			storage.set(StorageKey?.TOKEN, `${res?.data?.acceeToken}`);
-			storage.set(StorageKey?.USERNAME, JSON.stringify(res?.data?.username));
-			if (searchParams?.backUrl) {
-				window.location.href =searchParams?.backUrl;
+	useEffect(() => {
+		if (loginResult) {
+			if (loginResult?.success) {
+				const now = new Date();
+				storage.set(StorageKey?.TOKEN, `${loginResultData?.data?.acceeToken}`);
+				storage.set(StorageKey?.USERNAME, JSON.stringify(loginResultData?.data?.username));
+				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(now));
+				if (searchParams?.backUrl) {
+					window.location.href = searchParams?.backUrl;
+				} else {
+					window.location.href = "/";
+				}
 			} else {
-				window.location.href = "/";
+				showNotification({
+					type: "error",
+					message: loginResult?.description ?? "ورود با خطا مواجه شد",
+				});
 			}
-			// showNotification({
-			// 	type: "success",
-			// 	message: "ورود با موفقیت انجام شده، به صفحه خانه منتقل میشوید",
-			// });
-			// setTimeout(() => {
-			// 	router.push("/");
-			// }, 1000);
-		} catch (error: any) {
-			console.warn(error);
-			showNotification({
-				type: "error",
-				message: error?.message ?? "ورود با خطا مواجه شد",
-			});
-		} finally {
-			setLoginLoading(false);
 		}
+	}, [loginResult]);
+
+	const formValidator = () => {
+		const newErrors: FormErrors[] = [];
+		!formValues?.password && newErrors.push({ item: `password`, message: "وارد کردن رمز عبور الزامی است" });
+		!formValues?.username && newErrors.push({ item: "username", message: "وارد کردن شماره موبایل الزامی است" });
+		formValues?.username &&
+			!mobileRegex.test(formValues?.username) &&
+			newErrors.push({ item: "username", message: "شماره موبایل وارد شده صحیح نیست" });
+		setFormErrors(newErrors);
+
+		newErrors?.length > 0 ? setFormDisabled(true) : setFormDisabled(false);
+		return newErrors;
 	};
+
 	return (
-		<div className="w-full lg:!p-4 lg:!border border-neutral-300 rounded-lg h-full max-lg:!h-screen flex items-center justify-center flex-col">
+		<div className="w-full lg:!p-6 lg:!border border-secondary rounded-2xl h-full bg-white">
 			<MobileTopHeader pageName="" hasBAck backUrl="/auth" />
-			<form className="max-lg:!p-4 h-full flex justify-center flex-col max-lg:!-mt-16" onSubmit={loginHandler}>
-				<div className="w-full flex justify-center relative">
-					<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" isLink href="/auth">
-						<IconArrowLine className="rotate-180" height={28} width={28} />
-					</TabanButton>
-					<Image src="/images/logo.svg" width={48} height={48} alt="logo" />
+			<form className="max-lg:!p-4 h-full flex flex-col max-lg:!-mt-16 w-full max-lg:!pb-4" onSubmit={loginHandler}>
+				<div className="max-lg:!min-h-[calc(100dvh-76px)]">
+					<div className="w-full flex justify-center relative">
+						<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" onClick={() => router.back()}>
+							<IconArrowLine className="rotate-180" height={28} width={28} />
+						</TabanButton>
+						<Image src="/images/logo.svg" width={72} height={72} alt="logo" />
+					</div>
+					<div className="font-semibold text-xl mt-8 text-center peyda">ورود</div>
+					<div className="mt-2 text-center">به تابان خوش آمدید، برای ورود رمز عبور خود را وارد کنید</div>
+					<div className="mt-4">
+						<TabanInput
+							isLtr
+							disabled={loginLoading}
+							value={formValues?.password}
+							groupMode
+							setValue={setFormValues}
+							name="password"
+							label="رمز عبور"
+							isHandleError
+							hasError={!!findError(formErrors, "password")}
+							errorText={findError(formErrors, "password")?.message}
+						/>
+					</div>
+					{formValues?.username && (
+						<Link
+							href={`/auth/change-password/otp?username=${formValues?.username}`}
+							className="lg:!hidden text-sm font-medium cursor-pointer leading-4 py-2.5 px-3 text-center w-fit text-[#4C8EB0] flex gap-1 items-center hover:gap-1.5 duration-200"
+						>
+							فراموشی رمز عبور
+							<IconArrowLine />
+						</Link>
+					)}
 				</div>
-				<div className="font-semibold text-xl mt-8">ورود به معماریاب</div>
-				<div className="mt-1">به معماریاب خوش آمدید، برای ورود رمز عبور خود را وارد کنید</div>
-				<div className="mt-6">
-					<TabanInput
-						isLtr
-						disabled={loginLoading}
-						value={formValues?.password}
-						groupMode
-						setValue={setFormValues}
-						name="password"
-						label="رمز عبور"
-						isHandleError
-						hasError={!!findError(formErrors, "password")}
-						errorText={findError(formErrors, "password")?.message}
-					/>
-				</div>
-				<div className="mt-4 flex flex-col gap-2">
+				<div className="mt-1 flex flex-col items-center gap-2 w-full">
 					<TabanButton
 						isLoading={loginLoading}
 						loadingText="در حال ورود"
 						type="submit"
-						className="w-full"
+						className="!w-full"
 						disabled={formDisabled || loginLoading}
 					>
 						ورود به حساب
 					</TabanButton>
-					<TabanButton variant="text" isLink href="/register" className="w-full">
+					<TabanButton variant="text" isLink href="/register" className="!w-full max-lg:!hidden">
 						فراموشی رمز عبور
 					</TabanButton>
 				</div>
