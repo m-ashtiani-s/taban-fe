@@ -17,8 +17,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 	}, []);
 	return (
 		<div className="flex h-screen lg:!bg-[url('/images/auth/logobg.svg')] bg-conatin !bg-center bg-no-repeat">
-			<div className="w-full flex items-center justify-center mx-auto">
-				<div className="lg:!w-[400px] ">
+			<div className="w-full lg:!flex items-center lg:!justify-center mx-auto">
+				<div className="lg:!w-[400px] w-full">
 					<AuthGuard>{children}</AuthGuard>
 				</div>
 			</div>
