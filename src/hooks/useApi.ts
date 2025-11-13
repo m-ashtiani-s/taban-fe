@@ -8,6 +8,7 @@ import { useState, useCallback, Dispatch, SetStateAction } from "react";
 type UseApiReturn<T, A extends any[]> = {
 	loading: boolean;
 	result: Result<T> | null;
+	resultData: T | null;
 	/** رفتار قدیمی: استیت result را ست می‌کند، throw نمی‌کند و چیزی برنمی‌گرداند */
 	fetchData: (...args: A) => Promise<void>;
 	/** رفتار جدید: نتیجه‌ی خام T را برمی‌گرداند و در صورت خطا throw می‌کند */
@@ -25,6 +26,7 @@ export function useApi<T, A extends any[]>(
 ): UseApiReturn<T, A> {
 	const [loading, setLoading] = useState(initialLoading);
 	const [result, setResult] = useState<Result<T> | null>(null);
+	const [resultData, setResultData] = useState<T | null>(null);
 
 
 	const fetchData = useCallback(
@@ -33,9 +35,11 @@ export function useApi<T, A extends any[]>(
 			try {
 				const data = await apiCall(...args);
 				setResult({ success: true, data });
+				setResultData(data)
 			} catch (err) {
 				const errorResult = mapError<T>(err);
 				setResult(errorResult);
+				setResultData(null)
 			} finally {
 				setTimeout(() => setLoading(false), 100);
 			}
@@ -50,10 +54,12 @@ export function useApi<T, A extends any[]>(
 			try {
 				const data = await apiCall(...args);
 				setResult({ success: true, data });
+				setResultData(data)
 				return data;
 			} catch (err: any) {
 				const errorResult = mapError<T>(err);
 				setResult(errorResult);
+				setResultData(null)
 
 				const enriched = err instanceof Error ? err : new Error(errorResult?.description || "Request failed");
 				try {
@@ -77,10 +83,12 @@ export function useApi<T, A extends any[]>(
 				const data = await apiCall(...args);
 				const ok: Result<T> = { success: true, data };
 				setResult(ok);
+				setResultData(data)
 				return ok;
 			} catch (err) {
 				const errorResult = mapError<T>(err);
 				setResult(errorResult);
+				setResultData(null)
 				return errorResult;
 			} finally {
 				setTimeout(() => setLoading(false), 100);
@@ -89,5 +97,5 @@ export function useApi<T, A extends any[]>(
 		[apiCall]
 	);
 
-	return { loading, result, fetchData, fetchDataStrict, fetchDataResult, setLoading, setResult };
+	return { loading, result, fetchData, fetchDataStrict, fetchDataResult, setLoading, setResult,resultData };
 }
