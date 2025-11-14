@@ -6,9 +6,8 @@ import "./style.scss";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MenuPopup } from "./_components/menu/menu";
 import TabanButton from "../common/tabanButton/tabanButton";
-import ProfleMenu from "../headerMainPage/_components/ProfleMenu/ProfleMenu";
+import ProfleMenu from "./_components/ProfleMenu/ProfleMenu";
 import { IconArrow, IconCart, IconCircleUser, IconTranslate, IconUser } from "../icon/icons";
-import CartMenu from "../headerMainPage/_components/CartMenu/CartMenu";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { useProfiletore } from "@/stores/profile";
 import { useCartStore } from "@/stores/cart";
@@ -46,8 +45,6 @@ function HeaderMenu({ children, number }: { children: MenuItem[]; number: number
 
 export const Header = () => {
 	const { profile, setProfile } = useProfiletore();
-	const { cart, setCart, cartLoading } = useCartStore();
-	const [scrollPosition, setScrollPosition] = useState<number>(0);
 	const [open, setOpen] = useState<boolean>(false);
 	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
 
@@ -55,21 +52,10 @@ export const Header = () => {
 		setOpen(true);
 	};
 
-	useEffect(() => {
-		const handleScroll = () => {
-			setScrollPosition(window.scrollY);
-		};
-		window.addEventListener("scroll", handleScroll);
-		return () => {
-			window.removeEventListener("scroll", handleScroll);
-		};
-	}, []);
-
 	const logoutHandler = async () => {
 		await localStorage.removeItem("token");
 		setProfile(null);
 		setLogoutOpen(false);
-		setCart(null);
 	};
 
 	return (
@@ -167,31 +153,19 @@ export const Header = () => {
 						</TabanButton>
 						{!!profile ? (
 							<div className="flex items-center gap-4">
-								<div className="group relative w-10 h-10 rounded-lg hover:!bg-primary/15 flex items-center justify-center duration-200 cursor-pointer">
-									<IconCart strokeWidth={0.2} fill="#404040" stroke="#404040" />
-									{!!cart && (
-										<span className="absolute left-0 top-0 text-sm font-semibold bg-primary rounded-full w-5 h-5 flex items-center justify-center text-white">
-											{convertToPersianNumber(cart?.products?.length)}
-										</span>
-									)}
-									<div className="hidden group-hover:!flex pt-2 absolute top-10  left-0 ">
-										<div className="w-96 bg-white border-neutral-300 shadow-sm border p-4 rounded">
-											<CartMenu />
-										</div>
-									</div>
-								</div>
-								<div className="h-6 w-[1px] bg-neutral-400 "></div>
 								<div className="relative group py-2 flex items-center gap-1 cursor-pointer">
-									<IconUser stroke="black" className="-top-0.5" />
-									{profile?.name ? profile?.name : convertToPersianNumber(profile?.username)}
-									<IconArrow
-										strokeWidth={0.5}
-										fill="#404040"
-										className="rotate-180 relative -top-0.5"
-										width={20}
-										height={20}
-									/>
-									<div className="hidden group-hover:!flex pt-2 absolute top-10 left-0">
+									<TabanButton
+										variant="icon"
+										isLink
+										href="/auth"
+										className="!text-neutral-800 font-semibold group !border-none rounded h-10 min-w-10 flex items-center gap-2 !bg-secondary shadow group-hover:!bg-suppliment group-hover:!text-white"
+									>
+										<IconCircleUser
+											stroke="black"
+											className="group-hover:!stroke-secondary stroke-white duration-200"
+										/>
+									</TabanButton>
+									<div className="hidden group-hover:!flex pt-2 absolute top-full left-0">
 										<div className="w-64 bg-white border-neutral-300 shadow-sm border p-2 rounded">
 											<ProfleMenu setLogoutOpen={setLogoutOpen} />
 										</div>

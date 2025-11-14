@@ -24,7 +24,7 @@ export default function Page() {
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
-	const searchParams = useReadSearchParams(["username"]);
+	const searchParams = useReadSearchParams(["username","backUrl"]);
 
 	const {
 		result: checkUsernameResult,
@@ -35,9 +35,9 @@ export default function Page() {
 
 	const {
 		result: sendOTPResult,
-		fetchData: executeSendOTP,
+		fetchData: sendOTP,
 		loading: sendOTPLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.checkUsername(username));
+	} = useApi(async (username: string) => await AuthEndpoints.sendOTP(username));
 
 	useEffect(() => {
 		setFormValues({ username: searchParams?.username ?? "" });
@@ -62,9 +62,9 @@ export default function Page() {
 		if (checkUsernameResult) {
 			if (checkUsernameResult?.success) {
 				if (checkUsernameResultData?.data) {
-					router.push(`/auth/login?username=${formValues?.username}`);
+					router.push(`/auth/login?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
 				} else {
-					executeSendOTP(formValues?.username!);
+					sendOTP(formValues?.username!);
 				}
 			} else {
 				showNotification({
@@ -78,7 +78,7 @@ export default function Page() {
 	useEffect(() => {
 		if (sendOTPResult) {
 			if (sendOTPResult?.success) {
-				router.push(`/auth/sign-up/otp?username=${formValues?.username}`);
+				router.push(`/auth/sign-up/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
 			} else {
 				showNotification({
 					type: "error",
@@ -106,7 +106,7 @@ export default function Page() {
 					<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" onClick={() => router.back()}>
 						<IconArrowLine className="rotate-180" height={28} width={28} />
 					</TabanButton>
-					<Image src="/images/logo.svg" width={72} height={72} alt="logo" />
+					<Link href="/"><Image src="/images/logo.svg" width={72} height={72} alt="logo" /></Link>
 				</div>
 				<div className="font-semibold text-xl mt-4 text-center peyda">ورود | ثبت نام</div>
 				<div className="mt-6">
@@ -132,7 +132,7 @@ export default function Page() {
 						className="!w-full"
 						disabled={formDisabled || sendOTPLoading || checkUsernameLoading}
 					>
-						ورود
+						ورود / ثبت نام
 					</TabanButton>
 					<div className="text-neutral-500 text-xs font-medium mt-8 text-center">
 						با ورود و یا ثبت نام در تابان شما{" "}

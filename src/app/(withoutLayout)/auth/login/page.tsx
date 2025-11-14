@@ -58,9 +58,10 @@ export default function Page() {
 		if (loginResult) {
 			if (loginResult?.success) {
 				const now = new Date();
+				const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 				storage.set(StorageKey?.TOKEN, `${loginResultData?.data?.acceeToken}`);
 				storage.set(StorageKey?.USERNAME, JSON.stringify(loginResultData?.data?.username));
-				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(now));
+				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
 				if (searchParams?.backUrl) {
 					window.location.href = searchParams?.backUrl;
 				} else {
@@ -97,10 +98,10 @@ export default function Page() {
 						<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" onClick={() => router.back()}>
 							<IconArrowLine className="rotate-180" height={28} width={28} />
 						</TabanButton>
-						<Image src="/images/logo.svg" width={72} height={72} alt="logo" />
+						<Link href="/"><Image src="/images/logo.svg" width={72} height={72} alt="logo" /></Link>
 					</div>
-					<div className="font-semibold text-xl mt-8 text-center peyda">ورود</div>
-					<div className="mt-2 text-center">به تابان خوش آمدید، برای ورود رمز عبور خود را وارد کنید</div>
+					<div className="font-semibold text-xl mt-5 text-center peyda">ورود</div>
+					<div className="mt-1 text-center">به تابان خوش آمدید، برای ورود رمز عبور خود را وارد کنید</div>
 					<div className="mt-4">
 						<TabanInput
 							isLtr

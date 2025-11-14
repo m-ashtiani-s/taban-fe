@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	}, []);
 	const executeProfile = async () => {
 		try {
-			const res = await readData<Res<Profile>>(`${API_URL}v1/user/profile`);
+			const res = await readData<Res<Profile>>(`${API_URL}v1/user`);
 			setProfile(res?.data);
 		} catch (error: any) {
 			console.warn(error);

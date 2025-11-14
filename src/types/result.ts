@@ -1,6 +1,7 @@
 export type ResultError = {
   success: false;
   description: string;
+  errorFields:{field:string,message:string}[],
   code: "NOT_FOUND" | "SERVICE_UNAVAILABLE" | "UNKNOWN_ERROR" | "TIMEOUT" | "NETWORK_ERROR" | string;
   statusCode: number
 };
