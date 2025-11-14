@@ -1,5 +1,5 @@
 export type City = {
-	code: string;
-	nameEn:string;
-	nameFa:string;
+	id: number;
+	name: string;
+	stateId: number;
 };

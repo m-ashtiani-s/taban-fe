@@ -173,7 +173,7 @@ export default function TabanAutoComplete<Option>({
 					}}
 					className={`label absolute ${disabled ? "bg-[#fdfdfd]" : "bg-white"}  duration-200 py-1 px-1.5 pl-1.5 z-[9]  ${
 						inputFocused || !!selectedOption
-							? `right-2 -top-[12px] text-xs  ${hasError ? "text-error" : ""} `
+							? `right-4 -top-[12px] text-xs  ${hasError ? "text-error" : ""} `
 							: `${hasLeading ? "right-10" : "right-3"} top-2.5 text-sm ${hasError ? "text-error" : "text-[#1C1B1F]"}`
 					}`}
 				>
@@ -185,6 +185,7 @@ export default function TabanAutoComplete<Option>({
 			)}
 			<input
 				name={name || ""}
+				autoComplete="off"
 				ref={inputRef}
 				onChange={handleChange}
 				onKeyDown={handleKeyDown}
@@ -194,7 +195,7 @@ export default function TabanAutoComplete<Option>({
 					setIsOpen(true);
 					selectInputText();
 				}}
-				className={`${className} ${hasLeading && "!pr-11"}  text-sm  w-full border rounded-md py-[13px] px-4 pr-3 duration-200 focus:border-1 z-20 ${
+				className={`${className} ${hasLeading && "!pr-11"}  text-sm  w-full border rounded-xl py-[13px] px-4 pr-3 duration-200 focus:border-1 z-20 ${
 					hasError ? "text-error" : "text-black/80"
 				}  focus:shadow-sm  pl-[68px] outline-1 ${
 					hasError

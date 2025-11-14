@@ -24,6 +24,7 @@ export { default as IconMaximize } from './src/maximize';
 export { default as IconMoney } from './src/money';
 export { default as IconOrder } from './src/order';
 export { default as IconRecycle } from './src/recycle';
+export { default as IconRetry } from './src/retry';
 export { default as IconRoom } from './src/room';
 export { default as IconStar } from './src/star';
 export { default as IconSupport24 } from './src/support24';

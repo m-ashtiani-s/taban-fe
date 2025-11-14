@@ -18,6 +18,10 @@ import { CheckUsernameFormValues } from "../../_types/checkUsernameFormValues.ty
 import { CheckOTPFormValues } from "../../_types/checkOTPFormValues.type";
 import { TimerRef } from "../../_components/timer/timer.types";
 import { Timer } from "../../_components/timer/timer";
+import Link from "next/link";
+import { mobileRegex } from "@/utils/mobileRegex";
+import { useApi } from "@/hooks/useApi";
+import { AuthEndpoints } from "../../_api/endpoints";
 
 export default function Page() {
 	const router = useRouter();
@@ -28,13 +32,23 @@ export default function Page() {
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
 	const [showResendCode, setShowResendCode] = useState<boolean>(false);
-	const [resendOTPLoading, setResendOTPLoading] = useState<boolean>(false);
-	const [loginLoading, setLoginLoading] = useState<boolean>(false);
-	const searchParams = useReadSearchParams(["username","backUrl"]);
+	const searchParams = useReadSearchParams(["username", "backUrl"]);
+
+	const {
+		result: checkOTPResult,
+		fetchData: checkOTP,
+		loading: checkOTPLoading,
+	} = useApi(async (username: string, otp: string) => await AuthEndpoints.checkOTP(username, otp));
+
+	const {
+		result: sendOTPResult,
+		fetchData: sendOTP,
+		loading: sendOTPLoading,
+	} = useApi(async (username: string) => await AuthEndpoints.sendOTP(username));
 
 	const getTwoMinutesFromNow = () => {
 		const time = new Date();
-		time.setSeconds(time.getSeconds() + 120);
+		time.setSeconds(time.getSeconds() + 2);
 		return time;
 	};
 
@@ -44,145 +58,141 @@ export default function Page() {
 
 	useEffect(() => {
 		if (formSubmited) {
-			const newErrors: FormErrors[] = [];
-			!formValues?.username && newErrors.push({ item: `username`, message: "وارد کردن شماره تماس الزامی است" });
-			formValues?.otp?.length !== 5 && newErrors.push({ item: `otp`, message: "کد تایید باید 5 رقمی باشد" });
-			!formValues?.otp && newErrors.push({ item: `otp`, message: "وارد کردن کد تایید الزامی است" });
-			setFormErrors(newErrors);
-			if (newErrors?.length === 0) {
-				setFormDisabled(false);
-			} else {
-				setFormDisabled(true);
-			}
+			formValidator();
 		}
 	}, [formValues]);
 
-	const loginHandler = (e: FormEvent<HTMLFormElement>) => {
+	const checkOTPHandler = (e: FormEvent<HTMLFormElement>) => {
 		e?.preventDefault();
 		setFormSubmited(true);
+		const errors = formValidator();
+		if (errors?.length === 0) {
+			checkOTP(formValues?.username!, formValues?.otp!);
+		}
+	};
+
+	useEffect(() => {
+		if (checkOTPResult) {
+			if (checkOTPResult?.success) {
+				router.push(`/auth/sign-up/set-password?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+			} else {
+				showNotification({
+					type: "error",
+					message: checkOTPResult?.description ?? "تایید کد با خطا مواجه شد",
+				});
+			}
+		}
+	}, [checkOTPResult]);
+
+	useEffect(() => {
+		if (sendOTPResult) {
+			if (sendOTPResult?.success) {
+				showNotification({
+					type: "success",
+					message: sendOTPResult?.data?.message,
+				});
+				setShowResendCode(false);
+			} else {
+				showNotification({
+					type: "error",
+					message: sendOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
+				});
+			}
+		}
+	}, [sendOTPResult]);
+
+	const resendOTPHandler = () => {
+		setFormValues((prev) => ({ ...prev, otp: "" }));
+		sendOTP(formValues?.username!);
+	};
+
+	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
 		!formValues?.username && newErrors.push({ item: `username`, message: "وارد کردن شماره تماس الزامی است" });
 		formValues?.otp?.length !== 5 && newErrors.push({ item: `otp`, message: "کد تایید باید 5 رقمی باشد" });
 		!formValues?.otp && newErrors.push({ item: `otp`, message: "وارد کردن کد تایید الزامی است" });
+		formValues?.username &&
+			!mobileRegex.test(formValues?.username) &&
+			newErrors.push({ item: "username", message: "شماره موبایل وارد شده صحیح نیست" });
 		setFormErrors(newErrors);
-		if (newErrors?.length === 0) {
-			setFormDisabled(false);
-			executeCheckOTPLogin();
-		} else {
-			setFormDisabled(true);
-		}
-	};
 
-	const executeSendOTP = async () => {
-		try {
-			setFormValues((prev) => ({ ...prev, otp: "" }));
-			setResendOTPLoading(true);
-			const res = await createData<CheckUsernameFormValues, Res<null>>(`${API_URL}v1/sign-up/otp/send`, {username:formValues?.username});
-			if (res?.success) {
-				showNotification({
-					type: "success",
-					message: res?.message,
-				});
-				setShowResendCode(false)
-			} else {
-				showNotification({
-					type: "error",
-					message: res?.message ?? "ارسال کد تایید با خطا مواجه شد",
-				});
-			}
-		} catch (error: any) {
-			console.warn(error);
-			showNotification({
-				type: "error",
-				message: error?.message ?? "ارسال کد تایید با خطا مواجه شد",
-			});
-		} finally {
-			setResendOTPLoading(false);
-		}
-	};
-
-	const executeCheckOTPLogin = async () => {
-		try {
-			setLoginLoading(true);
-			const res = await createData<CheckUsernameFormValues,Res<boolean>>(`${API_URL}v1/sign-up/otp/check`, formValues);
-			if (res?.data) {
-				router.push(`/auth/sign-up/set-password?username=${formValues?.username}&backUrl=${searchParams?.backUrl??""}`);
-			}
-		} catch (error: any) {
-			console.warn(error);
-			showNotification({
-				type: "error",
-				message: error?.message ?? "ورود با خطا مواجه شد",
-			});
-		} finally {
-			setLoginLoading(false);
-		}
+		newErrors?.length > 0 ? setFormDisabled(true) : setFormDisabled(false);
+		return newErrors;
 	};
 	return (
-		<div className="w-full lg:!p-4 lg:!border border-neutral-300 rounded-lg h-full max-lg:!h-screen flex items-center justify-center flex-col">
+		<div className="w-full lg:!p-6 lg:!border border-secondary rounded-2xl h-full bg-white">
 			<MobileTopHeader pageName="" hasBAck backUrl="/auth" />
-			<form className="max-lg:!p-4 h-full flex justify-center flex-col max-lg:!-mt-16" onSubmit={loginHandler}>
-				<div className="w-full flex justify-center relative">
-					<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon"  isLink href="/auth">
-						<IconArrowLine className="rotate-180" height={28} width={28} />
-					</TabanButton>
-					<Image src="/images/logo.svg" width={48} height={48} alt="logo" />
-				</div>
-				<div className="font-semibold text-xl mt-8">کد تایید را وارد کنید</div>
-				<div className="mt-2">
-					حساب کاربری ای با شماره {searchParams?.username} یافت نشد، کد تایید به جهت ساخت حساب، برای شماره شما ارسال شد
-				</div>
-				<div className="mt-6">
-					<TabanInput
-						isLtr
-						disabled={loginLoading}
-						value={formValues?.otp}
-						groupMode
-						setValue={setFormValues}
-						name="otp"
-						label="کد تایید"
-						inputClassName="text-center px-12"
-						isHandleError
-						hasError={!!findError(formErrors, "otp")}
-						errorText={findError(formErrors, "otp")?.message}
-					/>
-				</div>
-				<div className="mt-10">
-					{showResendCode ? (
-						<button
-							disabled={resendOTPLoading}
-							className="text-sm mx-auto font-medium flex justify-center  leading-4 py-2.5 px-3 cursor-pointer bg-white/0"
-							onClick={(e) => {
-								e?.preventDefault();
-								executeSendOTP();
-							}}
+			<form className="max-lg:!p-4 h-full flex justify-center flex-col max-lg:!-mt-16" onSubmit={checkOTPHandler}>
+				<div className="max-lg:!min-h-[calc(100dvh-76px)]">
+					<div className="w-full flex justify-center relative">
+						<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" onClick={() => router.back()}>
+							<IconArrowLine className="rotate-180" height={28} width={28} />
+						</TabanButton>
+						<Link href="/"><Image src="/images/logo.svg" width={72} height={72} alt="logo" /></Link>
+					</div>
+					<div className="font-semibold text-xl mt-5 text-center peyda">کد تایید</div>
+					<div className="mt-1 text-center text-sm">
+						حساب کاربری ای با شماره {searchParams?.username} یافت نشد، کد تایید به جهت ساخت حساب، برای شماره شما ارسال شد
+					</div>
+					<div className="mt-4">
+						<TabanInput
+							isLtr
+							disabled={checkOTPLoading}
+							value={formValues?.otp}
+							groupMode
+							setValue={setFormValues}
+							name="otp"
+							label="کد تایید"
+							inputClassName="text-center !px-12"
+							isHandleError
+							hasError={!!findError(formErrors, "otp")}
+							errorText={findError(formErrors, "otp")?.message}
+						/>
+					</div>
+					<div className="mt-1 lg:!mt-10 flex lg:items-center max-lg:!flex-col w-full lg:justify-between ">
+						<Link
+							href={`/auth?username=${formValues?.username}`}
+							className="text-sm font-medium flex justify-center  leading-4 py-2.5 px-3 cursor-pointer bg-white/0 max-lg:!justify-start  text-secondary"
 						>
-							دریافت مجدد کد
-						</button>
-					) : (
-						<div className="text-sm font-medium flex justify-center whitespace-nowrap leading-4 py-2.5 px-3 gap-1 text-primary">
-							<Timer
-								ref={timerRef}
-								className=""
-								size="tiny"
-								onExpire={() => {
-									setShowResendCode(true);
+							اصلاح شماره همراه
+						</Link>
+						{showResendCode ? (
+							<button
+								disabled={sendOTPLoading}
+								type="button"
+								className="text-sm font-medium flex justify-center  leading-4 py-2.5 px-3 cursor-pointer bg-white/0 max-lg:!justify-start text-primary"
+								onClick={(e) => {
+									e?.preventDefault();
+									resendOTPHandler();
 								}}
-								expiryTimestamp={getTwoMinutesFromNow()}
-								showDays={false}
-								showHours={false}
-							/>
-							تا ارسال مجدد
-						</div>
-					)}
+							>
+								دریافت مجدد کد
+							</button>
+						) : (
+							<div className="text-sm font-medium flex justify-center whitespace-nowrap leading-4 py-2.5 px-3 gap-1  max-lg:!justify-start text-primary/80">
+								<Timer
+									ref={timerRef}
+									className=""
+									size="tiny"
+									onExpire={() => {
+										setShowResendCode(true);
+									}}
+									expiryTimestamp={getTwoMinutesFromNow()}
+									showDays={false}
+									showHours={false}
+								/>
+								تا ارسال مجدد
+							</div>
+						)}
+					</div>
 				</div>
-				<div className="mt-2">
+				<div className="mt-1 flex flex-col items-center gap-2 w-full">
 					<TabanButton
-						isLoading={loginLoading}
+						isLoading={checkOTPLoading}
 						loadingText="در حال ورود"
 						type="submit"
-						className="w-full"
-						disabled={formDisabled || loginLoading}
+						className="!w-full"
+						disabled={formDisabled || checkOTPLoading}
 					>
 						ادامه
 					</TabanButton>
