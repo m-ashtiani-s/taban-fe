@@ -10,6 +10,7 @@ import BlogPreview from "./_homeAssets/_components/BlogPreview/BlogPreview";
 import { BlogPost } from "@/styles/blogPost.type";
 import { SITE_URL } from "@/config/global";
 import { Paginate } from "@/types/paginate";
+import HeroTranslate from "./_homeAssets/_components/heroTranslate/heroTranslate";
 
 async function getPosts(): Promise<Paginate<BlogPost> | null> {
 	try {
@@ -53,6 +54,11 @@ export default async function Home() {
 								شروع ترجمه آنلاین
 							</TabanButton>
 						</div>
+					</div>
+				</section>
+				<section>
+					<div className="container px-[15%]">
+						<HeroTranslate />
 					</div>
 				</section>
 				<div className="h-24"></div>

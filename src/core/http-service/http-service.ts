@@ -22,15 +22,6 @@ httpService.interceptors.response.use(
 				// errorHandler[statusCode](errorData);
 				error.errorResponse = error.response.data;
 			}
-			if (
-				statusCode === 401 &&
-				error?.response?.data?.fields !== "login" &&
-				!error?.request?.responseURL?.includes("/profile") &&
-				!error?.request?.responseURL?.includes("/cart")
-			) {
-				localStorage.removeItem("token");
-				window.location.replace("/auth");
-			}
 		} else {
 			networkErrorStrategy();
 		}

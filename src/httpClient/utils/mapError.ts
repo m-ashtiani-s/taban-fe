@@ -13,8 +13,7 @@ export function mapError<T = any>(err: any): ResultError {
 	if (err?.response?.status === 401) {
 		if (
 			err?.response?.data?.fields !== "login" &&
-			!err?.request?.responseURL?.includes("/profile") &&
-			!err?.request?.responseURL?.includes("/cart")
+			!err?.request?.responseURL?.includes("/user")
 		) {
 			localStorage.removeItem("token");
 			window.location.replace("/auth");

@@ -9,6 +9,7 @@ export { default as IconClose } from './src/close';
 export { default as IconCoupon } from './src/coupon';
 export { default as IconCross } from './src/cross';
 export { default as IconDashboard } from './src/dashboard';
+export { default as IconDocument } from './src/document';
 export { default as IconEdit } from './src/edit';
 export { default as IconError } from './src/error';
 export { default as IconEye } from './src/eye';
