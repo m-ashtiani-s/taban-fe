@@ -19,6 +19,9 @@ import { useCartStore } from "@/stores/cart";
 import { Cart } from "@/types/cart.type";
 import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
+import { TabanEndpoints } from "./_api/endpoints";
+import { useApi } from "@/hooks/useApi";
+import { useNotificationStore } from "@/stores/notification.store";
 
 export const viewport: Viewport = {
 	themeColor: [
@@ -29,35 +32,28 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	const { profile, setProfile } = useProfiletore();
-	const { cart, setCart, cartLoading, setCartLoading } = useCartStore();
+	const showNotification = useNotificationStore((state) => state.showNotification);
+	const { result: profileResult, fetchData: executeProfile } = useApi(async () => await TabanEndpoints.getProfile());
 
 	useEffect(() => {
 		executeProfile();
-		executeCart();
 	}, []);
-	const executeProfile = async () => {
-		try {
-			const res = await readData<Res<Profile>>(`${API_URL}v1/user`);
-			setProfile(res?.data);
-		} catch (error: any) {
-			console.warn(error);
-			setProfile(null);
-			error?.code === 401 && storage.remove(StorageKey?.TOKEN);
-		} finally {
+
+	useEffect(() => {
+		if (profileResult) {
+			if (profileResult?.success) {
+				setProfile(profileResult?.data?.data);
+			} else {
+				setProfile(null);
+				profileResult?.statusCode !== 401 &&
+					showNotification({
+						type: "error",
+						message: profileResult?.description ?? "دریافت پروفایل با خطا مواجه شد",
+					});
+			}
 		}
-	};
-	const executeCart = async () => {
-		try {
-			setCartLoading(true);
-			const res = await readData<Res<Cart>>(`${API_URL}v1/user/cart`);
-			setCart(res?.data);
-		} catch (error: any) {
-			console.warn(error);
-			setCart(null);
-		} finally {
-			setCartLoading(false);
-		}
-	};
+	}, [profileResult]);
+
 	return (
 		<html dir="rtl">
 			<head>

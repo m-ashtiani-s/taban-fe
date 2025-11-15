@@ -23,6 +23,7 @@ export default function TabanAutoComplete<Option>({
 	loading = false,
 	disabled = false,
 	isHandleError = false,
+	isShowValue = true,
 	ItemKey,
 	scrolled = false,
 	height = 380,
@@ -57,7 +58,12 @@ export default function TabanAutoComplete<Option>({
 
 	const handleSelect = (option: Option) => {
 		onChange && onChange(option);
-		setInputValue && setInputValue(String(option[displayField]));
+		if (isShowValue) {
+			setInputValue && setInputValue(String(option[displayField]));
+		} else {
+			setInputValue("");
+		}
+
 		setSelectedOption(option);
 		setIsOpen(false);
 	};
