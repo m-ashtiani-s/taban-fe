@@ -23,7 +23,7 @@ export const TabanEndpoints = {
 	getTranslationItems: async (term:string) => {
 		const res = await httpClient.call<Res<TranslationItem[]>>({
 			method: "GET",
-			url: `v1/translation/translation-items`,
+			url: `v1/translation/translation-items/`,
 			params:{term}
 		});
 		return res?.data;
