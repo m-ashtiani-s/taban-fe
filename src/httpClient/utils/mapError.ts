@@ -1,4 +1,5 @@
 import { ResultError } from "@/types/result";
+import { StorageKey } from "@/types/StorageKey";
 
 export enum InternalErrorCode {
 	NETWORK_ERROR = "NETWORK_ERROR",
@@ -11,10 +12,10 @@ export enum InternalErrorCode {
 
 export function mapError<T = any>(err: any): ResultError {
 	if (err?.response?.status === 401) {
-		if (
-			err?.response?.data?.fields !== "login" &&
-			!err?.request?.responseURL?.includes("/user")
-		) {
+		localStorage.removeItem(StorageKey.TOKEN);
+		localStorage.removeItem(StorageKey.EXPIRES_AT);
+		localStorage.removeItem(StorageKey.USERNAME);
+		if (err?.response?.data?.fields !== "login" && !err?.request?.responseURL?.includes("/user")) {
 			localStorage.removeItem("token");
 			window.location.replace("/auth");
 		}
