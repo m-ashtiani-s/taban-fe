@@ -1,12 +1,12 @@
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { SelectCategoryProps } from "./selectCategory.type";
 import { useApi } from "@/hooks/useApi";
-import { TranslationItemsEndpoints } from "../../_api/endpoints";
 import { useEffect } from "react";
+import { TranslationEndpoints } from "../../../_api/endpoints";
 
 export default function SelectCategory({ selectedCategory, setSelectedCategory }: SelectCategoryProps) {
 	const { result: translationItemsCategories, fetchData: executeTranslationItemsCategories } = useApi(
-		async () => await TranslationItemsEndpoints.getCategories()
+		async () => await TranslationEndpoints.getCategories()
 	);
 
 	useEffect(() => {

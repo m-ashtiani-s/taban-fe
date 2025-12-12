@@ -14,5 +14,6 @@ export type TabanInputProps= InputHTMLAttributes<HTMLInputElement> & {
     removeHandler?:()=>void;
     isLtr?:boolean;
     isPasswordInput?:boolean;
+    isNumber?:boolean;
     ref?:any
 }

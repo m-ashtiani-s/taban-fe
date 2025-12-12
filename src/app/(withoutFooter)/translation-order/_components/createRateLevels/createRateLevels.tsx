@@ -24,8 +24,13 @@ const levels = [
 	},
 	{
 		level: 6,
+		title: "آپلود مدارک",
+	},
+	{
+		level: 7,
 		title: "فاکتور نهایی و پرداخت",
 	},
+	
 ];
 export default function CreateRateLevels({ activeLevel }: CreateRateLevelsProps) {
 	return (
