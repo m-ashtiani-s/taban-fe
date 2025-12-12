@@ -8,6 +8,8 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(
 		{
 			width,
 			hasError,
+			isNumber = false,
+			variant,
 			label = "",
 			errorText = "",
 			inputClassName = "",
@@ -107,7 +109,7 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(
 				)}
 				{!!endAdornment && (
 					<span
-						className={`absolute ${isLtr ? "right-4" : "left-4"} top-[38px] cursor-pointer text-sm font-light text-[#08090C]/50`}
+						className={`absolute ${isLtr ? "right-4" : "left-4"} top-[calc(50%-10px)] cursor-pointer text-sm font-light text-[#08090C]/50`}
 					>
 						{endAdornment}
 					</span>
@@ -144,15 +146,23 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(
 					className=""
 				>
 					<input
+						onInput={(e) => {
+							if (isNumber) {
+								const inputElement = e.target as HTMLInputElement;
+								if (inputElement.value.startsWith("0")) {
+									inputElement.value = inputElement.value.replace(/^0+/, "");
+								}
+							}
+						}}
 						autoComplete="off"
 						ref={inputRef}
 						type={passwordType}
 						style={{ width: width ? width : "100%" }}
-						className={`disabled:bg-white h-12  duration-150 px-4 rounded-xl ${isLtr ? "pr-[48px]" : "pl-[48px]"}  border-1 text-base !outline-0 text-[#08090C] ${
+						className={`disabled:bg-white h-12  duration-150 px-4 rounded-xl ${isLtr ? "pr-[48px]" : "pl-[48px]"}   text-base !outline-0 text-[#08090C] ${
 							hasError
 								? "border-error text-error focus:outline-error focus:border-error"
 								: "border-[#34426680] hover:border-[#34426680]  focus:border-[#08090C]"
-						} ${!!leadingIcon && (isLtr ? "!pl-11" : "!pr-11")} ${isLtr ? "dir-ltr text-left" : "dir-rtl text-right"}  ${inputClassName}`}
+						} ${!!leadingIcon && (isLtr ? "!pl-11" : "!pr-11")} ${variant === "filled" ? "!border-b-1 !rounded-none bg-neutral-50" : "border-1"} ${isLtr ? "dir-ltr text-left" : "dir-rtl text-right"}  ${inputClassName}`}
 						value={val}
 						{...rest}
 						onChange={changeHandler}

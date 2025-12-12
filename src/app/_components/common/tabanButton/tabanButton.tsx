@@ -32,21 +32,21 @@ export default function TabanButton({
 	);
 	return (
 		<>
-			{isLink && !!href ? (
+			{isLink && !!href && !rest.disabled ? (
 				<Link target={target} href={href} className={classes}>
-					{!!icon && !isEn && icon}
+					{!!icon && isEn && icon}
 					{!!isLoading && <TabanLoading color="#a1a1a1" size={24} />}
 
 					{!!isLoading ? loadingText : children}
-					{!!icon && isEn && icon}
+					{!!icon && !isEn && icon}
 				</Link>
 			) : (
 				<button {...rest} type={type} disabled={rest.disabled || !!isLoading} className={classes}>
-					{!!icon && !isEn && icon}
+					{!!icon && isEn && icon}
 					{!!isLoading && <TabanLoading  color="#a1a1a1" className="[&_svg]:!fill-on-surface/40 [&_svg>path:nth-child(1)]:!fill-on-surface/10 relative top-[3px]" size={24} />}
 
 					{!!isLoading ? loadingText : children}
-					{!!icon && isEn && icon}
+					{!!icon && !isEn && icon}
 				</button>
 			)}
 		</>
