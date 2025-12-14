@@ -34,7 +34,7 @@ const levels = [
 ];
 export default function CreateRateLevels({ activeLevel }: CreateRateLevelsProps) {
 	return (
-		<div className="flex items-center gap-1 w-full flex-row px-6">
+		<div className="flex items-center gap-1 w-full flex-row px-8">
 			{levels?.map((it, index) => (
 				<Fragment key={it?.title}>
 					{index !== 0 && <div className="h-[1px] w-full bg-neutral-300"></div>}

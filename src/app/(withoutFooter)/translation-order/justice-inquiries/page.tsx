@@ -112,8 +112,7 @@ export default function Page() {
 													/>
 													<div className="flex flex-col">
 														<div className="text-lg peyda">
-															{" "}
-															مهر دادگستری
+															{it?.justiceInquiryName}
 														</div>
 														<div
 															className={`text-sm  ${justiceInquiryIsSelected(it?.justiceInquiryRateId) ? "text-white/80" : "text-primary/50"}`}
