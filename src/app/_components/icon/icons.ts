@@ -36,6 +36,7 @@ export { default as IconTelegram } from './src/telegram';
 export { default as IconToman } from './src/toman';
 export { default as IconTranslate } from './src/translate';
 export { default as IconTruck } from './src/truck';
+export { default as IconUpload } from './src/upload';
 export { default as IconUser } from './src/user';
 export { default as IconWc } from './src/wc';
 export { default as IconWhatsapp } from './src/whatsapp';
