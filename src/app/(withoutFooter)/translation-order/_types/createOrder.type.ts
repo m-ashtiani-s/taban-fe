@@ -6,6 +6,7 @@ import { JusticeInquiryRate } from "./justiceInquiry.type";
 export type CreateOrder = {
 	translationItem?: TranslationItem | null;
 	language?: Language | null;
+	baseRate?:string | number | null;
 	specialItems?: SpecialItemsValue[];
 	justiceInquiriesItems?: JusticeInquiryRate[];
 	mfaCertification?: CertificationItem | null;

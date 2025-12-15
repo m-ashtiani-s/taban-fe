@@ -15,7 +15,6 @@ import Upload from "./_components/upload/upload";
 
 export default function Page() {
 	const { order, setOrder }: OrderState = useOrderStore();
-	const [specialItems, setSpecialItems] = useState<Record<string, string>>({});
 	const {
 		result: dynamicRatesResult,
 		fetchData: executeDynamicRates,
