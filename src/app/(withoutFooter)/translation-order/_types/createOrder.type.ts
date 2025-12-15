@@ -10,6 +10,7 @@ export type CreateOrder = {
 	justiceInquiriesItems?: JusticeInquiryRate[];
 	mfaCertification?: CertificationItem | null;
 	justiceCertification?: CertificationItem | null;
+	assets?:string[]
 };
 
 export type SpecialItemsValue = {

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import CreateRateLevels from "../_components/createRateLevels/createRateLevels";
 import { useApi } from "@/hooks/useApi";
-import { IconArrowLine, IconDocument, IconJustice, IconMfa } from "@/app/_components/icon/icons";
+import { IconArrowLine, IconDocument, IconJustice, IconMfa, IconRequired, IconUpload } from "@/app/_components/icon/icons";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { motion } from "framer-motion";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
@@ -11,7 +11,7 @@ import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { RateFilters } from "../_types/rateFilters.type";
 import SpecialsLoading from "./_components/specialsLoading/specialsLoading";
 import { TranslationEndpoints } from "../_api/endpoints";
-import Upload from "./_components/upload";
+import Upload from "./_components/upload/upload";
 
 export default function Page() {
 	const { order, setOrder }: OrderState = useOrderStore();
@@ -46,35 +46,13 @@ export default function Page() {
 		}
 	}, []);
 
-	const selectCertificationHandler = (certificationType: "justice" | "mfa") => {
-		if (certificationType === "justice" && certificationRatesResult?.success) {
-			const rate = certificationRatesResult?.data?.data![0] ?? null;
-			if (rate) {
-				if (!order?.justiceCertification) {
-					setOrder((prev) => ({ ...prev, justiceCertification: { price: rate?.justicePrice } }));
-				} else {
-					setOrder((prev) => ({ ...prev, justiceCertification: null }));
-				}
-			}
-		} else if (certificationType === "mfa" && certificationRatesResult?.success) {
-			const rate = certificationRatesResult?.data?.data![0] ?? null;
-			if (rate) {
-				if (!order?.mfaCertification) {
-					setOrder((prev) => ({ ...prev, mfaCertification: { price: rate?.mfaPrice } }));
-				} else {
-					setOrder((prev) => ({ ...prev, mfaCertification: null }));
-				}
-			}
-		}
-	};
-
 	return (
 		<div className="h-full">
 			<div className="container h-full">
-				<div className="flex border w-full border-neutral-300 rounded-lg p-4 h-[calc(100%-16px)] flex-col">
+				<div className="flex border w-full border-neutral-300 rounded-lg p-4 h-[calc(100%-16px)] flex-col relative">
 					<div className="flex flex-col h-[calc(100%-40px)] taban-scroll">
 						<div className=" flex items-center gap-2 w-full px-8 pb-16 border-b border-dashed border-neutral-300">
-							<CreateRateLevels activeLevel={7} />
+							<CreateRateLevels activeLevel={6} />
 						</div>
 
 						<div className="pt-8">
@@ -83,9 +61,41 @@ export default function Page() {
 							</div>
 						</div>
 
+						<div className="pt-12">
+							<div className="text-xl peyda font-medium flex items-center">
+								<IconRequired
+									viewBox="0 0 100 100"
+									width={40}
+									height={40}
+									className="fill-secondary stroke-0"
+								/>
+								مواردی که آپلود آنها الزامی است
+							</div>
+							<div className="pr-16">
+								<div className="flex flex-col gap-4 mt-4">
+									<div className="flex items-center gap-2">
+										<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-primary" />
+										لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از
+									</div>
+									<div className="flex items-center gap-2">
+										<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-primary" />
+										لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از
+									</div>
+									<div className="flex items-center gap-2">
+										<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-primary" />
+										لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از
+									</div>
+									<div className="flex items-center gap-2">
+										<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-primary" />
+										لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از
+									</div>
+								</div>
+							</div>
+						</div>
+
 						<div className="mt-4">
-							<div className="flex flex-wrap">
-								<Upload />
+							<div className="flex flex-wrap mt-4">
+								<Upload dynamicRatesResult={dynamicRatesResult} certificationRatesResult={certificationRatesResult} justiceInquiryRatesResult={justiceInquiryRatesResult} />
 							</div>
 						</div>
 					</div>
