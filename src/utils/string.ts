@@ -34,8 +34,8 @@ export function generateUUID() {
     });
 }
 
-export function toCurrency(amount: string) {
-	const number= parseFloat(amount)
+export function toCurrency(amount: string | number) {
+	const number= parseFloat(amount?.toString())
 		.toFixed(2)
 		.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 		.replace('.00', '');

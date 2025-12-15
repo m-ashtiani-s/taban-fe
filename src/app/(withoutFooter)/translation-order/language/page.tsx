@@ -29,6 +29,11 @@ export default function Page() {
 		fetchData: executeLanguages,
 		loading: languagesLoading,
 	} = useApi(async () => await TranslationEndpoints.getLanguages(), true);
+	const {
+		result: baseRateResult,
+		fetchData: executeBaseRate,
+		loading: baseRateLoading,
+	} = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getBaseRate(filters), true);
 
 	useEffect(() => {
 		executeLanguages();
@@ -41,10 +46,19 @@ export default function Page() {
 	useEffect(() => {
 		if (order?.language && order?.translationItem) {
 			executeDynamicRates({ translationItemId: order?.translationItem?.translationItemId, languageId: order?.language?.languageId });
+			executeBaseRate({ translationItemId: order?.translationItem?.translationItemId, languageId: order?.language?.languageId });
 		}
-		console.log(order,"fd")
 	}, [order]);
-	
+
+	useEffect(() => {
+		if (baseRateResult) {
+			if (baseRateResult?.success) {
+				setOrder((prev) => ({ ...prev, baseRate: baseRateResult?.data?.data![0]?.basePrice ?? null }));
+			} else {
+			}
+		}
+	}, [baseRateResult]);
+
 	return (
 		<div className="h-full">
 			<div className="container h-full">
@@ -124,7 +138,7 @@ export default function Page() {
 							مرحله قبلی
 						</TabanButton>
 						<TabanButton
-							disabled={!order?.language}
+							disabled={!order?.language || !baseRateResult?.success}
 							isLink
 							href={
 								dynamicRatesResult?.success && dynamicRatesResult?.data?.data!?.length > 0

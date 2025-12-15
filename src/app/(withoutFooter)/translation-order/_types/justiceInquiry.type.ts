@@ -9,5 +9,6 @@ export type JusticeInquiryRate = {
 	justiceInquiryName: string;
 	languageIsActive:boolean;
 	isRequired:boolean;
+	justiceInquiryIsActive:boolean;
 	price:number | string;
 };

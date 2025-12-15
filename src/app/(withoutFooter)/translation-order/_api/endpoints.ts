@@ -7,6 +7,7 @@ import { DynamicRate } from "../_types/dynamicRate.type";
 import { Language } from "@/types/language.type";
 import { CertificationRate } from "../_types/certificationRate.type";
 import { JusticeInquiryRate } from "../_types/justiceInquiry.type";
+import { BaseRate } from "../_types/baseRate.type";
 
 export const TranslationEndpoints = {
 	getCategories: async () => {
@@ -28,6 +29,14 @@ export const TranslationEndpoints = {
 		const res = await httpClient.call<Res<Language[]>>({
 			method: "GET",
 			url: `v1/translation/languages`,
+		});
+		return res?.data;
+	},
+	getBaseRate: async (filters: RateFilters | null) => {
+		const res = await httpClient.call<Res<BaseRate[]>>({
+			method: "GET",
+			url: `v1/translation/base-rate`,
+			params: { ...filters },
 		});
 		return res?.data;
 	},
