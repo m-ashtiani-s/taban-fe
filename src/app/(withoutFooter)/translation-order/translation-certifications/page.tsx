@@ -213,7 +213,7 @@ export default function Page() {
 							href={
 								dynamicRatesResult?.success && dynamicRatesResult?.data?.data!?.length > 0
 									? "/translation-order/translation-specials"
-									: "/translation-order/translation-certifications"
+									: "/translation-order/language"
 							}
 							variant="text"
 						>
