@@ -101,7 +101,7 @@ export default function Page() {
 						<Link href="/"><Image src="/images/logo.svg" width={72} height={72} alt="logo" /></Link>
 					</div>
 					<div className="font-semibold text-xl mt-5 text-center peyda">ورود</div>
-					<div className="mt-1 text-center">به تابان خوش آمدید، برای ورود رمز عبور خود را وارد کنید</div>
+					<div className="mt-1 text-center">به رسمی‌یاب خوش آمدید، برای ورود رمز عبور خود را وارد کنید</div>
 					<div className="mt-4">
 						<TabanInput
 							isLtr
