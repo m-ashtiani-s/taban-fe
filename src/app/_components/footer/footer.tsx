@@ -15,7 +15,7 @@ export const Footer = () => {
 							<img src="/images/logoWhite.svg" alt="" className="w-36" />
 							<div className="flex flex-col w-full items-center gap-3">
 								<div className="peyda text-neutral-200 font-medium text-2xl">
-									درباره دارالترجمه تابان بخوانید
+									درباره دارالترجمه رسمی‌یاب بخوانید
 								</div>
 								<div className="w-full px-16 text-neutral-200 text-center leading-8">
 									لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک
@@ -36,7 +36,7 @@ export const Footer = () => {
 									href="/rules"
 									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
 								>
-									قوانین و مقررات تابان
+									قوانین و مقررات رسمی‌یاب
 								</Link>
 								<Link
 									href="/translate-order"
@@ -70,7 +70,7 @@ export const Footer = () => {
 					<div className="container border-t border-t-suppliment-full">
 						<div className=" bg-primary rounded-t-3xl py-4 flex items-center justify-between text-neutral-200">
 							<div className="w-full text-right text-sm">
-								تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی تابان میباشد.
+								تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی رسمی‌یاب میباشد.
 							</div>
 							<div className="w-full flex items-center gap-2 justify-end">
 								<Link

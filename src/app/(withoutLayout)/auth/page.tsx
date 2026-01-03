@@ -135,11 +135,11 @@ export default function Page() {
 						ورود / ثبت نام
 					</TabanButton>
 					<div className="text-neutral-500 text-xs font-medium mt-8 text-center">
-						با ورود و یا ثبت نام در تابان شما{" "}
+						با ورود و یا ثبت نام در رسمی‌یاب شما{" "}
 						<Link href="/rules" className="text-primary font-semibold">
 							شرایط و قوانین
 						</Link>{" "}
-						استفاده از سرویس‌های سایت تابان و قوانین حریم خصوصی آن را می‌پذیرید
+						استفاده از سرویس‌های سایت رسمی‌یاب و قوانین حریم خصوصی آن را می‌پذیرید
 					</div>
 				</div>
 			</form>

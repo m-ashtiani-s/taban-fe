@@ -29,7 +29,7 @@ export default function ProfleMenu({ setLogoutOpen }: { setLogoutOpen: Dispatch<
 	return (
 		<div className="flex flex-col gap-2">
 			<div className="px-2 peydda font-medium py-3 border-b border-b-neutral-200/80 text-lg text-secondary">
-				{!!profile?.fullName?.trim() ? profile?.fullName?.trim() : "کاربر تابان"}
+				{!!profile?.fullName?.trim() ? profile?.fullName?.trim() : "کاربر رسمی‌یاب"}
 			</div>
 			<Link href="/profile" className=" flex items-center gap-2 hover:bg-primary/10 duration-200 rounded-lg">
 				<span className="px-2">

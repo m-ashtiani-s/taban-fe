@@ -44,7 +44,7 @@ export default async function Home() {
 								سریع ترین راه ترجمه مدارک رسمی شما به شکل{" "}
 								<span className="text-secondary font-semibold">آنلاین و حضوری</span>
 							</div>
-							<div className="text-neutral-200 text-5xl font-semibold">دارالترجمــــه رسمی تـــــابان</div>
+							<div className="text-neutral-200 text-5xl font-semibold">دارالترجمــــه آنلاین رســــــمی یــــاب</div>
 							<TabanButton
 								variant="contained"
 								isLink
@@ -147,7 +147,7 @@ export default async function Home() {
 									</div>
 
 									<div className="text-3xl font-medium peyda">
-										تابان چه <span className="text-secondary font-semibold">خدماتی</span> ارائه
+										رسمی‌یاب چه <span className="text-secondary font-semibold">خدماتی</span> ارائه
 										میدهد؟
 									</div>
 									<div className="pl-32">
@@ -268,7 +268,7 @@ export default async function Home() {
 							<Image src="/images/home/b2bPannel.png" width={360} height={290} alt="b2b" />
 							<div className="flex flex-col items-center gap-4">
 								<div className="text-3xl font-medium peyda">
-									پنل مشتریان سازمانی <span className="text-secondary font-semibold">تابان</span>
+									پنل مشتریان سازمانی <span className="text-secondary font-semibold">رسمی‌یاب</span>
 								</div>
 								<div className="w-8/12 leading-7 text-center">
 									لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گراف
@@ -292,9 +292,9 @@ export default async function Home() {
 						</div>
 						<div className="container z-[2] py-10">
 							<div className="flex flex-col items-center gap-3">
-								<div className="peyda font-semibold text-2xl text-neutral-200">نظر همراهان تابان</div>
+								<div className="peyda font-semibold text-2xl text-neutral-200">نظر همراهان رسمی‌یاب</div>
 								<div className="text text-neutral-200">
-									کاربران تابان در مورد تجربه خود از ترجمه های ما گفته اند
+									کاربران رسمی‌یاب در مورد تجربه خود از ترجمه های ما گفته اند
 								</div>
 								<div className="w-[1018px]">
 									<CommentsSlider comments={comments} />
@@ -308,12 +308,12 @@ export default async function Home() {
 					<div className="container">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 peyda font-semibold">
-								<div className="text-primary  text-lg">مجله تابان</div>
+								<div className="text-primary  text-lg">مجله رسمی‌یاب</div>
 								<div className="h-10 w-0.5 bg-secondary"></div>
 								<div className="text-secondary  text-lg">جدیدترین نکات و مقالات</div>
 							</div>
 							<TabanButton isLink href="/blog" className="">
-								وبلاگ تابان
+								وبلاگ رسمی‌یاب
 							</TabanButton>
 						</div>
 						<div className="w-full mt-8">{!blogPageData ? null : <BlogPreview posts={blogPageData?.elements} />}</div>
