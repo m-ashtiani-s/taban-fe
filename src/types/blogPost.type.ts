@@ -1,5 +1,5 @@
-export type BlogPost = {
-    id: string;
+export type BlogPostDto = {
+    id: number;
     slug: string;
     title: string;
     excerpt: string;

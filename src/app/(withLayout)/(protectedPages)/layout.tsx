@@ -3,9 +3,8 @@ import { AuthGuard } from "@/app/_components/authGuard/authGuard";
 export default function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<>
-			<AuthGuard>
-				{children}
-			</AuthGuard>
+			<title>معماریاب | پلتفرمم بزرگ معماری</title>
+			<AuthGuard>{children}</AuthGuard>
 		</>
 	);
 }

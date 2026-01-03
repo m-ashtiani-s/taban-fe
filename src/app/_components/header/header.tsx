@@ -145,7 +145,7 @@ export const Header = () => {
 						<TabanButton
 							variant="contained"
 							isLink
-							href="/translation"
+							href="/translation-order/translation-item"
 							className="!text-neutral-800 font-semibold group !border-none rounded flex items-center gap-2 !bg-white shadow"
 						>
 							<IconTranslate stroke="black" strokeWidth={0} className=" fill-primary duration-200" />

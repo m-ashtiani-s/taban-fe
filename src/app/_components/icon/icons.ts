@@ -32,6 +32,7 @@ export { default as IconRequired } from './src/required';
 export { default as IconRetry } from './src/retry';
 export { default as IconRoom } from './src/room';
 export { default as IconStar } from './src/star';
+export { default as IconSuccess } from './src/success';
 export { default as IconSupport24 } from './src/support24';
 export { default as IconTelegram } from './src/telegram';
 export { default as IconToman } from './src/toman';
