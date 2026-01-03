@@ -1,4 +1,4 @@
-import { BlogPost } from "@/styles/blogPost.type"
+import { BlogPost } from "@/types/blogPost.type"
 
 export type BlogPostProps={
     post:BlogPost

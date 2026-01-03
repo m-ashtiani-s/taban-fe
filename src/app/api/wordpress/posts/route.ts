@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { WP_URL } from "@/config/global";
-import { BlogPostDto } from "../../_dtos/blogPostDto.type";
+import { BlogPostDtoApi } from "../../_dtos/blogPostDto.type";
 import { Paginate } from "@/types/paginate";
-import { BlogPost } from "@/styles/blogPost.type";
+import { BlogPostDto } from "@/types/blogPost.type";
 
 export async function GET(req: Request) {
 	const { searchParams } = new URL(req.url);
 	const page = parseInt(searchParams.get("page") || "1");
 	const pageSize = parseInt(searchParams.get("pageSize") || "10");
 	const term = searchParams.get("term") || "";
-	
+
 	try {
 		const endpoint = `${WP_URL}/wp-json/wp/v2/posts?_embed&per_page=${pageSize}&page=${page}${term ? `&search=${encodeURIComponent(term)}` : ""}`;
-		const response = await axios.get<BlogPostDto[]>(endpoint);
-		
+		const response = await axios.get<BlogPostDtoApi[]>(endpoint);
 
-		const posts: BlogPost[] = response.data.map((post) => ({
+		const posts: BlogPostDto[] = response.data.map((post) => ({
 			id: post.id,
 			slug: post.slug,
 			title: post.title.rendered,
@@ -25,7 +24,7 @@ export async function GET(req: Request) {
 			image: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
 		}));
 
-		const paginatedResult: Paginate<BlogPost> = {
+		const paginatedResult: Paginate<BlogPostDto> = {
 			page,
 			pageSize,
 			totalPages: parseInt(response.headers["x-wp-totalpages"] ?? "1"),

@@ -7,12 +7,12 @@ import Map from "./_homeAssets/_components/map/map";
 import CommentsSlider from "./_homeAssets/_components/commentsSlider/commentsSlider";
 import { comments } from "@/constants/comments";
 import BlogPreview from "./_homeAssets/_components/BlogPreview/BlogPreview";
-import { BlogPost } from "@/styles/blogPost.type";
+import { BlogPostDto } from "@/types/blogPost.type";
 import { SITE_URL } from "@/config/global";
 import { Paginate } from "@/types/paginate";
 import HeroTranslate from "./_homeAssets/_components/heroTranslate/heroTranslate";
 
-async function getPosts(): Promise<Paginate<BlogPost> | null> {
+async function getPosts(): Promise<Paginate<BlogPostDto> | null> {
 	try {
 		const res = await fetch(`${SITE_URL}/api/wordpress/posts?page=1&pageSize=10`, {
 			next: { revalidate: 1 },
@@ -31,9 +31,10 @@ async function getPosts(): Promise<Paginate<BlogPost> | null> {
 }
 
 export default async function Home() {
-	const blogPageData: Paginate<BlogPost> | null = await getPosts();
+	const blogPageData: Paginate<BlogPostDto> | null = await getPosts();
 	return (
 		<>
+			<title>معماریاب | پلتفرمم بزرگ معماری</title>
 			<Header />
 			<main className="">
 				<section className="">

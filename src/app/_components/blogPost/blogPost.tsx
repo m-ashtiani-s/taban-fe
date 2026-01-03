@@ -5,7 +5,7 @@ import { IconArrow } from "../icon/icons";
 
 export default function BlogPost({ post }: BlogPostProps) {
 	return (
-		<Link href={`/posts/${post?.title}`} className="group">
+		<Link href={`/posts/${post?.slug}`} className="group">
 			<div className="border rounded-xl p-6">
 				<div style={{ background: `url('${post?.image}')` }} className="h-44 rounded-lg relative !bg-center !bg-cover">
 					<div className="absolute left-6 bottom-0">

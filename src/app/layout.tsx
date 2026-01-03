@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			<head>
 				<link rel="icon" href="/images/logo.svg" />
 				<meta name="theme-color" content="#f5a900" />
-				<title>معماریاب | پلتفرمم بزرگ معماری</title>
+				{/* <title>معماریاب | پلتفرمم بزرگ معماری</title> */}
 			</head>
 			<body className="content-center bg-white text-primary">
 				<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
