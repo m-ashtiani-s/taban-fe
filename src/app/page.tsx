@@ -34,7 +34,7 @@ export default async function Home() {
 	const blogPageData: Paginate<BlogPostDto> | null = await getPosts();
 	return (
 		<>
-			<title>معماریاب | پلتفرمم بزرگ معماری</title>
+			<title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</title>
 			<Header />
 			<main className="">
 				<section className="">
