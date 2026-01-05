@@ -1,5 +1,5 @@
-import { BlogPost } from "@/types/blogPost.type"
+import { BlogPostDto } from "@/types/blogPost.type"
 
 export type BlogPostProps={
-    post:BlogPost
+    post:BlogPostDto
 }
