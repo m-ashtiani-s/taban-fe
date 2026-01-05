@@ -43,7 +43,7 @@ export default async function Page({ searchParams }: { searchParams: { page?: st
 
 	return (
 		<>
-			<title>معماریاب | پلتفرمم بزرگ معماری</title>
+			<title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</title>
 			<section className="bg-primary">
 				<div className="container">
 					<div className="py-16 flex items-center justify-center flex-col gap-2">
