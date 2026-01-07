@@ -25,7 +25,7 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
 			date: convertToJalali(post.date ?? ""),
 			image: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
 			author: post._embedded?.["author"]?.[0]?.name ?? null,
-      rank_math_seo:post?.rank_math_seo
+			rank_math: post?.rank_math,
 		};
 
 		return NextResponse.json(result);

@@ -47,6 +47,11 @@ export type BlogPostDtoApi = {
 	tags: number[];
 
 	class_list: string[];
+	rank_math:{
+		title:string;
+		description:string;
+		focus_keyword:string
+	},
 
 	_links: {
 		self: { href: string }[];
