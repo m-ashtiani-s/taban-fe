@@ -44,8 +44,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 	const post = await getPost(params.slug);
 	if (post) {
 		return {
-			title: `${post?.rank_math_seo?.rank_math_title[0] || `${post.title.rendered} - ماهکس`}`,
-			description: post?.rank_math_seo?.rank_math_description[0] || post.excerpt?.rendered || "توضیحات پست",
+			title: `${post?.rank_math?.title || `${post.title.rendered} - ماهکس`}`,
+			description: post?.rank_math?.description || post.excerpt?.rendered || "توضیحات پست",
 		};
 	}
 
