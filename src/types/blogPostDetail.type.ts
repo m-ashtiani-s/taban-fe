@@ -7,5 +7,9 @@ export type BlogPostDetailDto = {
     date: string;
     image: string | null;
     author: string | null;
-    rank_math_seo:any
+    rank_math:{
+		title:string;
+		description:string;
+		focus_keyword:string
+	}
 };
