@@ -128,7 +128,7 @@ export default function Page() {
 						<TabanButton className="absolute right-0 top-[8px] max-lg:!hidden" variant="icon" onClick={() => router.back()}>
 							<IconArrowLine className="rotate-180" height={28} width={28} />
 						</TabanButton>
-						<Link href="/"><Image src="/images/logo.svg" width={72} height={72} alt="logo" /></Link>
+						<Link href="/"><Image src="/images/logo2.svg" width={72} height={72} alt="logo" /></Link>
 					</div>
 					<div className="font-semibold text-xl mt-5 text-center peyda">کد تایید</div>
 					<div className="mt-1 text-center text-sm">

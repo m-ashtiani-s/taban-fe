@@ -12,7 +12,7 @@ export const Footer = () => {
 					<img src="/images/footer/pattern2.svg" alt="" className="w-[420px] absolute left-0 top-0" />
 					<div className="container py-12">
 						<div className="flex flex-col gap-6 w-full items-center">
-							<img src="/images/logoWhite.svg" alt="" className="w-36" />
+							<img src="/images/logo2White.svg" alt="" className="w-24" />
 							<div className="flex flex-col w-full items-center gap-3">
 								<div className="peyda text-neutral-200 font-medium text-2xl">
 									درباره دارالترجمه رسمی‌یاب بخوانید

@@ -90,7 +90,7 @@ export const MenuPopup: React.FC<{ open: boolean; setOpen: React.Dispatch<React.
 							<div className="flex flex-col md:!flex-row max-md:gap-12">
 								<div className="w-full">
 									<Link href="/" className="">
-										<Image width={50} height={56} src="/images/logo.svg" alt="logo" className="" />
+										<Image width={50} height={56} src="/images/logo2.svg" alt="logo" className="" />
 									</Link>
 									<ul className="flex pr-4 flex-col text-[15px] gap-4 mt-4">
 										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
