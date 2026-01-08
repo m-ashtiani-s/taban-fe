@@ -78,7 +78,7 @@ export const Header = () => {
 				<div className="container mx-auto flex justify-between items-center py-2">
 					<div className="flex gap-8 items-center">
 						<Link href="/" className="flex items-center">
-							<Image src="/images/logoWhite.svg" width={72} height={48} alt="logo" />
+							<Image src="/images/logo2White.svg" width={48} height={32} alt="logo" />
 						</Link>
 						<div className=" gap-3 hidden lg:!flex text-sm peyda">
 							{menuItems?.map((it) => (
@@ -199,7 +199,7 @@ export const Header = () => {
 								<Image src="/images/menu.svg" alt="menu" width={24} height={24} />
 							</span>
 							<Link href="/" className=" relative">
-								<Image width={90} height={56} src="/images/logo.svg" alt="logo" className="max-lg:!w-14 py-2" />
+								<Image width={90} height={56} src="/images/logo2.svg" alt="logo" className="max-lg:!w-14 py-2" />
 							</Link>
 						</div>
 					</div>

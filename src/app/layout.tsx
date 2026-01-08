@@ -57,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<html dir="rtl">
 			<head>
-				<link rel="icon" href="/images/logo.svg" />
+				<link rel="icon" href="/images/logo2.svg" />
 				<meta name="theme-color" content="#f5a900" />
 				{/* <title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</ title> */}
 			</head>
