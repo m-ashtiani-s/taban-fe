@@ -28,7 +28,7 @@ export type CreateOrder = {
 	justiceCertification?: {
 		translationItemTitle: string;
 		translationItemId: string;
-		mfaCertification: CertificationItem | null;
+		justiceCertification: CertificationItem | null;
 	}[];
 	passports?: string[];
 	assets?: string[];
