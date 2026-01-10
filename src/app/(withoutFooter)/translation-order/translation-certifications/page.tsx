@@ -45,23 +45,47 @@ export default function Page() {
 		}
 	}, []);
 
-	const selectCertificationHandler = (certificationType: "justice" | "mfa") => {
+	console.log(order);
+
+	const selectCertificationHandler = (certificationType: "justice" | "mfa", translationItemId: string, translationItemTitle: string) => {
 		if (certificationType === "justice" && certificationRatesResult?.success) {
 			const rate = certificationRatesResult?.data?.data![0] ?? null;
+			const justice = order?.justiceCertification?.filter((it) => it?.translationItemId === translationItemId)[0];
 			if (rate) {
-				if (!order?.justiceCertification) {
-					setOrder((prev) => ({ ...prev, justiceCertification: { price: rate?.justicePrice } }));
+				if (!justice) {
+					setOrder((prev) => ({
+						...prev,
+						justiceCertification: [
+							...(prev?.justiceCertification ?? []),
+							{ translationItemId, translationItemTitle, justiceCertification: { price: rate?.justicePrice } },
+						],
+					}));
 				} else {
-					setOrder((prev) => ({ ...prev, justiceCertification: null }));
+					const filtered = order?.justiceCertification?.filter((f) => f?.translationItemId !== translationItemId);
+					setOrder((prev) => ({
+						...prev,
+						justiceCertification: filtered,
+					}));
 				}
 			}
 		} else if (certificationType === "mfa" && certificationRatesResult?.success) {
 			const rate = certificationRatesResult?.data?.data![0] ?? null;
+			const mfa = order?.mfaCertification?.filter((it) => it?.translationItemId === translationItemId)[0];
 			if (rate) {
-				if (!order?.mfaCertification) {
-					setOrder((prev) => ({ ...prev, mfaCertification: { price: rate?.mfaPrice } }));
+				if (!mfa) {
+					setOrder((prev) => ({
+						...prev,
+						mfaCertification: [
+							...(prev?.mfaCertification ?? []),
+							{ translationItemId, translationItemTitle, mfaCertification: { price: rate?.mfaPrice } },
+						],
+					}));
 				} else {
-					setOrder((prev) => ({ ...prev, mfaCertification: null }));
+					const filtered = order?.mfaCertification?.filter((f) => f?.translationItemId !== translationItemId);
+					setOrder((prev) => ({
+						...prev,
+						mfaCertification: filtered,
+					}));
 				}
 			}
 		}
@@ -86,104 +110,151 @@ export default function Page() {
 							{certificationRatesLoading ? (
 								<SpecialsLoading />
 							) : !!certificationRatesResult?.success && certificationRatesResult?.data?.data!?.length > 0 ? (
-								<div className="flex flex-wrap">
-									<motion.div
-										className="p-4 w-6/12"
-										initial={{ opacity: 0, y: 12 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{
-											duration: 0.5,
-											ease: "easeOut",
-										}}
-									>
-										<div
-											onClick={() => selectCertificationHandler("justice")}
-											className={`border border-neutral-300 rounded-lg cursor-pointer flex items-center justify-between p-4  duration-300 ${!!order?.justiceCertification ? "bg-secondary" : "hover:bg-secondary/10"}`}
-										>
-											<div
-												className={`flex items-center gap-2 peyda font-semibold  ${!!order?.justiceCertification ? "text-white" : ""}`}
-											>
-												<IconJustice
-													width={48}
-													height={48}
-													viewBox="0 0 48 48"
-													className={`fill-primary  ${!!order?.justiceCertification ? "fill-white stroke-0 stroke-white" : "stroke-0"}`}
-												/>
-												<div className="flex flex-col">
-													<div className="text-lg peyda"> مهر دادگستری</div>
-													<div className={`text-sm  ${!!order?.justiceCertification ? "text-white/80" : "text-primary/50"}`} >لورم اپسیوم متن ساختگی برای تست است</div>
-												</div>
+								<div className="flex flex-col gap-4">
+									{Object.keys(order?.translationItemNames!)?.map((item) => (
+										<div className="pb-4 border-b border-neutral-300 border-dashed">
+											<div className="text-lg font-bold text-secondary flex items-center gap-1 px-1">
+												<div className="w-3 h-3 rounded bg-primary/70 relative -top-0.5 rotate-45"></div>
+												مهر و تاییدات ترجمه برای{" "}
+												{order?.translationItemNames![item] ?? "مدرک"}
 											</div>
-											<div
-												className={`flex items-center justify-center cursor-pointer relative text-sm gap-1 w-6 h-6 rounded-md border  ${!!order?.justiceCertification ? "bg-primary border-primary" : "border-primary/50"}`}
-											>
-												{!!order?.justiceCertification && (
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														className="h-3.5 w-3.5"
-														viewBox="0 0 20 20"
-														fill="white"
-														stroke="white"
-														stroke-width="1"
+											<div className="flex flex-wrap">
+												<motion.div
+													className="p-4 w-6/12"
+													initial={{ opacity: 0, y: 12 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{
+														duration: 0.5,
+														ease: "easeOut",
+													}}
+												>
+													<div
+														onClick={() =>
+															selectCertificationHandler(
+																"justice",
+																item,
+																order?.translationItemNames![
+																	item
+																] ?? ""
+															)
+														}
+														className={`border border-neutral-300 rounded-lg cursor-pointer flex items-center justify-between p-4  duration-300 ${!!order?.justiceCertification?.filter((f) => f?.translationItemId === item)[0]?.justiceCertification ? "bg-secondary" : "hover:bg-secondary/10"}`}
 													>
-														<path
-															fill-rule="evenodd"
-															d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-															clip-rule="evenodd"
-														></path>
-													</svg>
-												)}
+														<div
+															className={`flex items-center gap-2 peyda font-semibold  ${!!order?.justiceCertification?.filter((f) => f?.translationItemId === item)[0]?.justiceCertification ? "text-white" : ""}`}
+														>
+															<IconJustice
+																width={48}
+																height={48}
+																viewBox="0 0 48 48"
+																className={`fill-primary  ${!!order?.justiceCertification?.filter((f) => f?.translationItemId === item)[0]?.justiceCertification ? "fill-white stroke-0 stroke-white" : "stroke-0"}`}
+															/>
+															<div className="flex flex-col">
+																<div className="text-lg peyda">
+																	{" "}
+																	مهر دادگستری
+																</div>
+																<div
+																	className={`text-sm  ${!!order?.justiceCertification?.filter((f) => f?.translationItemId === item)[0]?.justiceCertification ? "text-white/80" : "text-primary/50"}`}
+																>
+																	لورم اپسیوم متن ساختگی
+																	برای تست است
+																</div>
+															</div>
+														</div>
+														<div
+															className={`flex items-center justify-center cursor-pointer relative text-sm gap-1 w-6 h-6 rounded-md border  ${!!order?.justiceCertification?.filter((f) => f?.translationItemId === item)[0]?.justiceCertification ? "bg-primary border-primary" : "border-primary/50"}`}
+														>
+															{!!order?.justiceCertification?.filter(
+																(f) =>
+																	f?.translationItemId ===
+																	item
+															)[0] && (
+																<svg
+																	xmlns="http://www.w3.org/2000/svg"
+																	className="h-3.5 w-3.5"
+																	viewBox="0 0 20 20"
+																	fill="white"
+																	stroke="white"
+																	stroke-width="1"
+																>
+																	<path
+																		fill-rule="evenodd"
+																		d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+																		clip-rule="evenodd"
+																	></path>
+																</svg>
+															)}
+														</div>
+													</div>
+												</motion.div>
+												<motion.div
+													className="p-4 w-6/12"
+													initial={{ opacity: 0, y: 12 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{
+														duration: 0.5,
+														ease: "easeOut",
+													}}
+												>
+													<div
+														onClick={() =>
+															selectCertificationHandler(
+																"mfa",
+																item,
+																order?.translationItemNames![
+																	item
+																] ?? ""
+															)
+														}
+														className={`border border-neutral-300 rounded-lg cursor-pointer flex items-center justify-between p-4  duration-300 ${!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification ? "bg-secondary" : "hover:bg-secondary/10"}`}
+													>
+														<div
+															className={`flex items-center gap-2 peyda font-semibold  ${!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification ? "text-white" : ""}`}
+														>
+															<IconMfa
+																width={40}
+																height={40}
+																className={`stroke-primary  ${!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification ? "!stroke-white " : ""}`}
+															/>
+															<div className="flex flex-col">
+																<div className="text-lg peyda">
+																	{" "}
+																	مهر وزارت امور خارجه
+																</div>
+																<div
+																	className={`text-sm  ${!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification ? "text-white/80" : "text-primary/50"}`}
+																>
+																	لورم اپسیوم متن ساختگی
+																	برای تست است
+																</div>
+															</div>
+														</div>
+														<div
+															className={`flex items-center justify-center cursor-pointer relative text-sm gap-1 w-6 h-6 rounded-md border  ${!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification ? "bg-primary border-primary" : "border-primary/50"}`}
+														>
+															{!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification && (
+																<svg
+																	xmlns="http://www.w3.org/2000/svg"
+																	className="h-3.5 w-3.5"
+																	viewBox="0 0 20 20"
+																	fill="white"
+																	stroke="white"
+																	stroke-width="1"
+																>
+																	<path
+																		fill-rule="evenodd"
+																		d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+																		clip-rule="evenodd"
+																	></path>
+																</svg>
+															)}
+														</div>
+													</div>
+												</motion.div>
 											</div>
 										</div>
-									</motion.div>
-									<motion.div
-										className="p-4 w-6/12"
-										initial={{ opacity: 0, y: 12 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{
-											duration: 0.5,
-											ease: "easeOut",
-										}}
-									>
-										<div
-											onClick={() => selectCertificationHandler("mfa")}
-											className={`border border-neutral-300 rounded-lg cursor-pointer flex items-center justify-between p-4  duration-300 ${!!order?.mfaCertification ? "bg-secondary" : "hover:bg-secondary/10"}`}
-										>
-											<div
-												className={`flex items-center gap-2 peyda font-semibold  ${!!order?.mfaCertification ? "text-white" : ""}`}
-											>
-												<IconMfa
-													width={40}
-													height={40}
-													className={`stroke-primary  ${!!order?.mfaCertification ? "!stroke-white " : ""}`}
-												/>
-												<div className="flex flex-col">
-													<div className="text-lg peyda"> مهر وزارت امور خارجه</div>
-													<div className={`text-sm  ${!!order?.mfaCertification ? "text-white/80" : "text-primary/50"}`} >لورم اپسیوم متن ساختگی برای تست است</div>
-												</div>
-											</div>
-											<div
-												className={`flex items-center justify-center cursor-pointer relative text-sm gap-1 w-6 h-6 rounded-md border  ${!!order?.mfaCertification ? "bg-primary border-primary" : "border-primary/50"}`}
-											>
-												{!!order?.mfaCertification && (
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														className="h-3.5 w-3.5"
-														viewBox="0 0 20 20"
-														fill="white"
-														stroke="white"
-														stroke-width="1"
-													>
-														<path
-															fill-rule="evenodd"
-															d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-															clip-rule="evenodd"
-														></path>
-													</svg>
-												)}
-											</div>
-										</div>
-									</motion.div>
+									))}
 								</div>
 							) : !!certificationRatesResult &&
 							  !certificationRatesResult?.success &&
