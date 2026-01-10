@@ -4,7 +4,7 @@ import CreateRateLevels from "../_components/createRateLevels/createRateLevels";
 import { TranslationItemCategory } from "../_types/translationItemCategory.type";
 import SelectCategory from "./_components/selectCategory/selectCategory";
 import { useApi } from "@/hooks/useApi";
-import { IconArrowLine, IconDocument } from "@/app/_components/icon/icons";
+import { IconArrow, IconArrowLine, IconDocument } from "@/app/_components/icon/icons";
 import TabanLoading from "@/app/_components/common/tabanLoading.tsx/tabanLoading";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { motion } from "framer-motion";
@@ -13,6 +13,7 @@ import { OrderState, useOrderStore } from "../_store/rate.store";
 import TranslationItemsLoading from "./_components/translationItemsLoading/translationItemsLoading";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { TranslationEndpoints } from "../_api/endpoints";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 
 export default function Page() {
 	const [selectedCategory, setSelectedCategory] = useState<TranslationItemCategory | null>(null);
@@ -26,11 +27,15 @@ export default function Page() {
 
 	useEffect(() => {
 		executeTranslationItems(selectedCategory?.translationItemCategoryId ?? undefined);
-		mount.current && setOrder((prev) => ({ ...prev, translationItem: null }));
+		mount.current && setOrder((prev) => ({ ...prev, translationItem: null, translationItemCount: 1 }));
 		setTimeout(() => {
 			mount.current = true;
 		}, 100);
 	}, [selectedCategory]);
+
+	useEffect(() => {
+		setOrder((prev) => ({ ...prev, translationItemCount: 1 }));
+	}, [order?.translationItem]);
 	return (
 		<div className="h-full">
 			<div className="container h-full">
@@ -77,9 +82,57 @@ export default function Page() {
 													/>
 													{it?.title}
 												</div>
-												<div
-													className={`w-2 h-2 rounded-full border border-primary  ${order?.translationItem?.translationItemId === it?.translationItemId ? "!bg-white !border-white" : ""}`}
-												></div>
+												{order?.translationItem?.translationItemId ===
+													it?.translationItemId && (
+													<div className="flex items-center gap-1">
+														<TabanButton
+															variant="icon"
+															className="!h-6 !min-w-6"
+															onClick={() =>
+																setOrder((prev) => ({
+																	...prev,
+																	translationItemCount:
+																		prev?.translationItemCount! +
+																		1,
+																}))
+															}
+														>
+															<IconArrow
+																className="stroke-white fill-white"
+																width={20}
+																height={20}
+															/>
+														</TabanButton>
+
+														<div className="w-6 h-6 border border-white rounded-md text-white font-bold flex items-center justify-center">
+															{convertToPersianNumber(
+																order?.translationItemCount!
+															)}
+														</div>
+														<TabanButton
+															variant="icon"
+															className="!h-6 !min-w-6"
+															disabled={
+																order?.translationItemCount ===
+																1
+															}
+															onClick={() =>
+																setOrder((prev) => ({
+																	...prev,
+																	translationItemCount:
+																		prev?.translationItemCount! -
+																		1,
+																}))
+															}
+														>
+															<IconArrow
+																className="stroke-white fill-white rotate-180"
+																width={20}
+																height={20}
+															/>
+														</TabanButton>
+													</div>
+												)}
 											</div>
 										</motion.div>
 									))}
@@ -109,7 +162,7 @@ export default function Page() {
 						<TabanButton
 							disabled={!order?.translationItem}
 							isLink
-							href="/translation-order/language"
+							href="/translation-order/translation-item-count"
 							icon={<IconArrowLine />}
 						>
 							مرحله بعدی

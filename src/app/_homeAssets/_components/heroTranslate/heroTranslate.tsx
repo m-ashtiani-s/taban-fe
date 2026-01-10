@@ -74,14 +74,14 @@ export default function HeroTranslate() {
 
 	return (
 		<div className="bg-white shadow border border-suppliment rounded-2xl p-4 px-6 -mt-24">
-			<div className="py-2 flex items-center peyda gap-2 border-b-2 border-dashed border-b-neutral-200 pb-4">
-				<div className="font-semibold text-lg">همین الان ترجمه خود را شروع کنید</div>
-				<div className="h-10 w-0.5 rounded-xl bg-secondary"></div>
-				<div className="font-semibold text-lg text text-secondary">اسناد و مدارک مد نظر خود را انتخاب کنید</div>
+			<div className="py-2 flex items-center peyda gap-2 border-b-2 border-dashed border-b-neutral-200 pb-4 max-lg:!flex-col">
+				<div className="font-semibold lg:!text-lg">همین الان ترجمه خود را شروع کنید</div>
+				<div className="h-10 w-0.5 rounded-xl bg-secondary max-lg:!hidden"></div>
+				<div className="font-semibold lg:text-lg text text-secondary">اسناد و مدارک مد نظر خود را انتخاب کنید</div>
 			</div>
-			<div className="py-8">
-				<div className="flex gap-8 justify-between">
-					<div className="w-8/12 flex flex-col gap-2 -mt-2">
+			<div className="py-8 max-lg:!pb-2">
+				<div className="flex gap-8 max-lg:!gap-4 justify-between max-lg:!flex-col">
+					<div className="w-8/12 flex flex-col gap-2 -mt-2 max-lg:!w-full">
 						<TabanAutoComplete
 							scrolled
 							height={200}
@@ -92,7 +92,7 @@ export default function HeroTranslate() {
 									{opt?.title}
 								</div>
 							)}
-                            isShowValue={false}
+							isShowValue={false}
 							placeholder="مدرک مورد نظر را جستجو کنید یا انتخاب کنید"
 							name="document"
 							options={translationItemsResultData?.data ?? []}
@@ -124,9 +124,48 @@ export default function HeroTranslate() {
 							</TabanButton>
 						</div>
 					</div>
-					<TabanButton>ادامه سفارش ترجمه</TabanButton>
+					<div className="flex flex-col gap-5 w-full mt-6 lg:!hidden">
+						{selectedTranslationItemsWithCount?.map((it) => (
+							<div
+								key={it?.translationItemId}
+								className="flex items-center justify-between pb-1 px-1 border-b-neutral-300 border-b"
+							>
+								<div className="text-[13px] font-medium">{it?.title}</div>
+								<div className="flex items-center gap-2">
+									<div
+										onClick={() => increaseItemHandler(it)}
+										className=" h-[16px] w-[16px] cursor-pointer flex items-center justify-center bg-primary rounded text-xl leading-4 text-white"
+									>
+										+
+									</div>
+									<div className="text-[12px] font-medium relative top-[2px]">
+										{convertToPersianNumber(it?.count)} عدد
+									</div>
+									{it?.count === 1 ? (
+										<IconRecycle
+											width={16}
+											height={16}
+											viewBox="0 0 589.004 589.004"
+											className="fill-error cursor-pointer"
+											onClick={() => decreaseItemHandler(it)}
+										/>
+									) : (
+										<div
+											onClick={() => decreaseItemHandler(it)}
+											className=" h-[16px] w-[16px] cursor-pointer flex items-center justify-center bg-primary rounded text-xl leading-4 text-white"
+										>
+											-
+										</div>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+					<div className="flex max-lg:!justify-end">
+						<TabanButton isLink href="/translation-order/translation-item">ادامه سفارش ترجمه</TabanButton>
+					</div>
 				</div>
-				<div className="flex flex-col gap-5 w-72 mt-6">
+				<div className="flex flex-col gap-5 w-72 mt-6 max-lg:!hidden">
 					{selectedTranslationItemsWithCount?.map((it) => (
 						<div
 							key={it?.translationItemId}

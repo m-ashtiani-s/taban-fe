@@ -50,12 +50,12 @@ export default async function Page({ searchParams }: { searchParams: { page?: st
 						<div className="peyda text-3xl font-semibold text-white">مجله خبری ما</div>
 						<div className="text-neutral-200">جدیدترین اخبار و مقالات در حوزه ترجمه مدارک رسمی</div>
 						<div className="flex w-full justify-center">
-							<div className="w-8/12 relative mt-2">
+							<div className="lg:!w-8/12 max-lg:!w-full relative mt-2 max-lg:!px-4">
 								<TabanInput
 									placeholder="جستجو در مطالب بلاگ"
 									inputClassName="!bg-primary !border-white !text-white placeholder:text-white !h-10 !pt-1"
 								/>
-								<button className="absolute left-2 bg-white top-2 px-4 rounded">جستجو</button>
+								<button className="absolute left-2 bg-white top-2 px-4 rounded max-lg:!left-6">جستجو</button>
 							</div>
 						</div>
 					</div>
@@ -65,7 +65,7 @@ export default async function Page({ searchParams }: { searchParams: { page?: st
 				<div className="container">
 					<div className="flex flex-wrap">
 						{blogPageData?.elements?.map((post) => (
-							<div className="p-3 w-1/3">
+							<div className="p-3 w-1/3 max-lg:!w-full">
 								<BlogPost key={post?.id} post={post} />
 							</div>
 						))}
