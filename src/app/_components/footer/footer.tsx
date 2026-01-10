@@ -12,12 +12,12 @@ export const Footer = () => {
 					<img src="/images/footer/pattern2.svg" alt="" className="w-[420px] absolute left-0 top-0" />
 					<div className="container py-12">
 						<div className="flex flex-col gap-6 w-full items-center">
-							<img src="/images/logo2White.svg" alt="" className="w-24" />
+							<img src="/images/logo2White.svg" alt="" className="w-24 max-lg:!w-16" />
 							<div className="flex flex-col w-full items-center gap-3">
 								<div className="peyda text-neutral-200 font-medium text-2xl">
 									درباره دارالترجمه رسمی‌یاب بخوانید
 								</div>
-								<div className="w-full px-16 text-neutral-200 text-center leading-8">
+								<div className="w-full lg:!px-16 max-lg:!px-4 text-neutral-200 text-center leading-8">
 									لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک
 									است. چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف بهبود ابزارهای
 									کاربردی می‌باشد.لورم ایپسوم متن ساختگی با تولید سادگی نامفه وم از صنعت چاپ و با استفاده
@@ -27,8 +27,8 @@ export const Footer = () => {
 								</div>
 							</div>
 						</div>
-						<div className="flex items-center justify-between mt-6">
-							<div className="flex gap-2 text-secondary font-medium">
+						<div className="flex items-center justify-between mt-6 max-lg:!flex-col max-lg:!gap-4">
+							<div className="flex gap-2 text-secondary font-medium max-lg:!flex-wrap max-lg:!justify-center">
 								<Link href="/" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
 									خانه
 								</Link>
@@ -39,7 +39,7 @@ export const Footer = () => {
 									قوانین و مقررات رسمی‌یاب
 								</Link>
 								<Link
-									href="/translate-order"
+									href="/translation-order/translation-item"
 									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
 								>
 									ثبت سفارش ترجمه
@@ -68,11 +68,11 @@ export const Footer = () => {
 						</div>
 					</div>
 					<div className="container border-t border-t-suppliment-full">
-						<div className=" bg-primary rounded-t-3xl py-4 flex items-center justify-between text-neutral-200">
-							<div className="w-full text-right text-sm">
+						<div className=" bg-primary rounded-t-3xl py-4 flex items-center justify-between text-neutral-200 max-lg:!px-4 max-lg:!flex-col max-lg:!items-center max-lg:!gap-2">
+							<div className="w-full text-right text-sm max-lg:!text-center">
 								تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی رسمی‌یاب میباشد.
 							</div>
-							<div className="w-full flex items-center gap-2 justify-end">
+							<div className="w-full flex items-center gap-2 justify-end max-lg:!justify-center">
 								<Link
 									href="/"
 									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"

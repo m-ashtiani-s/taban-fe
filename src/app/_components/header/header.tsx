@@ -73,7 +73,7 @@ export const Header = () => {
 			</TabanModal>
 			<header
 				style={{ background: "#1a3047" }}
-				className={`header bg-primary flex flex-col max-lg:!hidden w-full top-0 right-0 rounded-none  fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm`}
+				className={`header bg-primary flex flex-col max-lg:!hidden w-full top-0 right-0 rounded-none  fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm h-[72px]`}
 			>
 				<div className="container mx-auto flex justify-between items-center py-2">
 					<div className="flex gap-8 items-center">
@@ -196,10 +196,10 @@ export const Header = () => {
 					<div className="flex w-full">
 						<div className="flex lg:!hidden justify-between px-6 items-center w-full">
 							<span onClick={menuHandler} className="cursor-pointer lg:!hidden">
-								<Image src="/images/menu.svg" alt="menu" width={24} height={24} />
+								<Image src="/images/menu.svg" alt="menu" width={24} height={24} className="max-lg:!w-5 max-lg:!h-5"/>
 							</span>
 							<Link href="/" className=" relative">
-								<Image width={90} height={56} src="/images/logo2.svg" alt="logo" className="max-lg:!w-14 py-2" />
+								<Image width={90} height={56} src="/images/logo2.svg" alt="logo" className="max-lg:!w-10 py-2" />
 							</Link>
 						</div>
 					</div>

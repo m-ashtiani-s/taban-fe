@@ -112,7 +112,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 		// 		},
 		// 	],
 		// });
-		setOrder({});
+		setOrder({translationItemCount:1});
 		if (pathname !== "/translation-order/translation-item" && !order) {
 			router.push("/translation-order/translation-item");
 		}

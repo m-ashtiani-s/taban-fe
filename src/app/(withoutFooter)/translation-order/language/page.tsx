@@ -1,9 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import CreateRateLevels from "../_components/createRateLevels/createRateLevels";
 import { useApi } from "@/hooks/useApi";
-import { IconArrowLine, IconDocument, IconTranslate } from "@/app/_components/icon/icons";
-import TabanLoading from "@/app/_components/common/tabanLoading.tsx/tabanLoading";
+import { IconArrowLine, IconTranslate } from "@/app/_components/icon/icons";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { motion } from "framer-motion";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
@@ -48,7 +47,7 @@ export default function Page() {
 			executeDynamicRates({ translationItemId: order?.translationItem?.translationItemId, languageId: order?.language?.languageId });
 			executeBaseRate({ translationItemId: order?.translationItem?.translationItemId, languageId: order?.language?.languageId });
 		}
-	}, [order]);
+	}, [order?.language]);
 
 	useEffect(() => {
 		if (baseRateResult) {

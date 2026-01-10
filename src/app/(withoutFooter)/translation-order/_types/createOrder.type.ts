@@ -5,13 +5,33 @@ import { JusticeInquiryRate } from "./justiceInquiry.type";
 
 export type CreateOrder = {
 	translationItem?: TranslationItem | null;
+	translationItemCount?: number;
 	language?: Language | null;
-	baseRate?:string | number | null;
-	specialItems?: SpecialItemsValue[];
-	justiceInquiriesItems?: JusticeInquiryRate[];
-	mfaCertification?: CertificationItem | null;
-	justiceCertification?: CertificationItem | null;
-	assets?:string[]
+	baseRate?: string | number | null;
+	translationItemNames?:Record<string,string>;
+	specialItems?: {
+		translationItemTitle: string;
+		translationItemId: string;
+		specials: SpecialItemsValue[];
+	}[];
+	justiceInquiriesItems?: {
+		translationItemTitle: string;
+		translationItemId: string;
+		justiceInquiries: JusticeInquiryRate[];
+	}[];
+
+	mfaCertification?: {
+		translationItemTitle: string;
+		translationItemId: string;
+		mfaCertification: CertificationItem | null;
+	}[];
+	justiceCertification?: {
+		translationItemTitle: string;
+		translationItemId: string;
+		mfaCertification: CertificationItem | null;
+	}[];
+	passports?: string[];
+	assets?: string[];
 };
 
 export type SpecialItemsValue = {

@@ -94,7 +94,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
 			<section className="bg-primary">
 				<div className="container">
 					<div className="py-16 flex items-center justify-center flex-col gap-2">
-						<div className="peyda text-3xl font-semibold text-white">{blogPageData?.title}</div>
+						<div className="peyda text-3xl font-semibold text-white max-lg:!text-2xl">{blogPageData?.title}</div>
 						<div className="text-neutral-200 flex gap-4 items-center mt-1">
 							<div className="">{blogPageData?.date?.split(" ")[0]}</div>
 							<div className="h-4 w-[1px] bg-neutral-200 relative -top-0.5"></div>
@@ -107,23 +107,29 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
 			<div className="h-10 lg:!h-20"></div>
 			<section>
-				<div className="container border-b border-b-secondary pb-10">
+				<div className="container border-b border-b-secondary pb-10 max-lg:!px-4">
 					<div className="flex gap-4">
 						<div
 							style={{ backgroundImage: `url('${blogPageData?.image}')` }}
 							className="min-w-36 h-24 !bg-cover rounded-md shadow-md"
 						></div>
 						<div className="flex flex-col gap-4">
-							<div className="peyda text-xl font-semibold flex items-center gap-4">
+							<div className="peyda text-xl font-semibold flex items-center gap-4 max-lg:!text-lg max-lg:!flex-col max-lg:!gap-1 max-lg:!items-start">
 								{blogPageData?.title}
-								<div className="h-4 w-[1px] bg-neutral-200 relative -top-0.5"></div>
-								<div className="text-sm font-normal">{blogPageData?.date?.split(" ")[0]}</div>
-								<div className="h-4 w-[1px] bg-neutral-200 relative -top-0.5"></div>
-								<div className="text-sm font-normal">{blogPageData?.author}</div>
+								<div className="flex gap-4">
+									<div className="h-4 w-[1px] bg-neutral-200 relative -top-0.5 max-lg:!hidden"></div>
+									<div className="text-sm font-normal">{blogPageData?.date?.split(" ")[0]}</div>
+									<div className="h-4 w-[1px] bg-neutral-200 relative -top-0.5"></div>
+									<div className="text-sm font-normal">{blogPageData?.author}</div>
+								</div>
 							</div>
-							<div className="text-sm" dangerouslySetInnerHTML={{ __html: blogPageData?.excerpt || "" }}></div>
+							<div
+								className="text-sm max-lg:!hidden"
+								dangerouslySetInnerHTML={{ __html: blogPageData?.excerpt || "" }}
+							></div>
 						</div>
 					</div>
+					<div className="text-sm lg:!hidden mt-4" dangerouslySetInnerHTML={{ __html: blogPageData?.excerpt || "" }}></div>
 				</div>
 			</section>
 			<div className="h-10 lg:!h-20"></div>
@@ -135,12 +141,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
 					></div>
 				</div>
 			</section>
-			<div className="h-10 lg:!h-20"></div>
-			<div className="flex container border-b border-b-secondary pb-4">
+			<div className="h-10 lg:!h-20 "></div>
+			<div className="flex container border-b border-b-secondary pb-4 max-lg:!px-4">
 				<div className="flex items-center gap-2 peyda font-semibold">
-					<div className="text-primary  text-lg">نظرات شما</div>
+					<div className="text-primary  lg:text-lg">نظرات شما</div>
 					<div className="h-10 w-0.5 bg-secondary"></div>
-					<div className="text-secondary  text-lg">کاربران رسمی یاب درباره این مقاله گفته اند:</div>
+					<div className="text-secondary  lg:text-lg">کاربران رسمی یاب درباره این مقاله گفته اند:</div>
 				</div>
 			</div>
 			<section className="">

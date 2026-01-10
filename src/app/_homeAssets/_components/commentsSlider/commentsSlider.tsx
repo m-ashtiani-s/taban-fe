@@ -42,12 +42,12 @@ export default function CommentsSlider({ comments }: { comments: Comment[] }) {
 			>
 				{comments?.map((slide) => (
 					<SwiperSlide key={slide?.name}>
-						<div className="relative pt-10">
+						<div className="relative pt-10 w-full">
 							<div
 								style={{ background: `url('${slide?.imageUrl}')` }}
 								className="h-[37px] w-[37px] border border-secondary rounded-full !bg-cover !bg-center absolute right-11 top-5"
 							></div>
-							<div className="bg-[url('/images/home/commentCartbg.svg')] h-[193px] bg-cover bg-no-repeat relative">
+							<div className="bg-[url('/images/home/commentCartbg.svg')] h-[193px] !bg-contain bg-no-repeat relative w-full">
 								<div className="p-8">
 									<div className="flex items-center justify-between">
 										<div className="peyda font-semibold text-lg">{slide?.name}</div>
@@ -63,7 +63,7 @@ export default function CommentsSlider({ comments }: { comments: Comment[] }) {
 											))}
 										</div>
 									</div>
-									<div className="text-neutral-500 mt-4">{slide?.comment}</div>
+									<div className="text-neutral-500 mt-4 overflow-y-clip max-lg:!h-12">{slide?.comment}</div>
 								</div>
 							</div>
 						</div>

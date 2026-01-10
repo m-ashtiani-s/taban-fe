@@ -17,7 +17,7 @@ import { SpecialItemsValue } from "../_types/createOrder.type";
 
 export default function Page() {
 	const { order, setOrder }: OrderState = useOrderStore();
-	const [specialItems, setSpecialItems] = useState<Record<string, string>>({});
+	const [specialItems, setSpecialItems] = useState<Record<string, Record<string, string>>>({});
 	const {
 		result: dynamicRatesResult,
 		fetchData: executeDynamicRates,
@@ -27,19 +27,31 @@ export default function Page() {
 	});
 
 	const createSpecialItem = () => {
-		const specials: SpecialItemsValue[] = [];
+		const specialsMain: {
+			translationItemTitle: string;
+			translationItemId: string;
+			specials: SpecialItemsValue[];
+		}[] = [];
 		Object.keys(specialItems)?.map((it) => {
 			if (dynamicRatesResult?.success) {
-				const rate = dynamicRatesResult?.data?.data?.filter((r) => r?.dynamicRateId === it)[0];
-				specials.push({
-					count: +specialItems[it],
-					dynamicRateId: it,
+				const specialsNew:SpecialItemsValue[]=[]
+				Object.keys(specialItems[it])?.map((sp)=>{
+					const rate = dynamicRatesResult?.data?.data?.filter((r) => r?.dynamicRateId === sp)[0];
+					specialsNew.push({
+					count: +specialItems?.[it]?.[sp],
+					dynamicRateId: sp,
 					price: rate!?.price,
 					label: rate!?.label,
+				})
+				})
+				specialsMain.push({
+					translationItemId:it,
+					translationItemTitle:order?.translationItemNames?.[it]??"-",
+					specials:specialsNew
 				});
 			}
 		});
-		setOrder((prev) => ({ ...prev, specialItems: specials }));
+		setOrder((prev) => ({ ...prev, specialItems: specialsMain }));
 	};
 
 	useEffect(() => {
@@ -65,45 +77,83 @@ export default function Page() {
 							{dynamicRatesLoading ? (
 								<SpecialsLoading />
 							) : !!dynamicRatesResult?.success && dynamicRatesResult?.data?.data!?.length > 0 ? (
-								<div className="flex flex-col gap-6">
-									{dynamicRatesResult?.data?.data?.map((it, index) => (
-										<motion.div
-											className="p-2 w-3/12"
-											key={it?.dynamicRateId}
-											initial={{ opacity: 0, y: 12 }}
-											animate={{ opacity: 1, y: 0 }}
-											transition={{
-												duration: 0.5,
-												ease: "easeOut",
-												delay: index * 0.05,
-											}}
-										>
-											<div className="flex flex-col gap-2">
-												<div className="peyda font-bold text-xl text-neutral-500">
-													{it?.label}
-												</div>
-												<div className="flex gap-2 items-center">
-													<div className="w-64">
-														<TabanInput
-															isNumber
-															type="number"
-															value={specialItems[it?.dynamicRateId]}
-															groupMode
-															setValue={setSpecialItems}
-															name={it?.dynamicRateId}
-														/>
-													</div>
-													<div className="group relative">
-														<span className="text-lg min-w-6 h-6 bg-secondary rounded-full flex items-center justify-center pt-2 text-white font-bold">
-															?
-														</span>
-														<div className="bg-white border border-neutral-200 rounded-lg p-4 z-10 top-8 w-64 absolute right-0 invisible group-hover:!visible opacity-0 group-hover:!opacity-100 duration-200">
-															{it?.label}
-														</div>
-													</div>
-												</div>
+								<div className="flex flex-col gap-4">
+									{Object.keys(order?.translationItemNames!)?.map((item) => (
+										<div className="pb-4 border-b border-neutral-300 border-dashed">
+											<div className="text-lg font-bold text-secondary flex items-center gap-1 px-1">
+												<div className="w-3 h-3 rounded bg-primary/70 relative -top-0.5 rotate-45"></div>
+												خاص های ترجمه برای{" "}
+												{order?.translationItemNames![item] ?? "مدرک"}
 											</div>
-										</motion.div>
+											<div className="flex flex-wrap gap-6">
+												{dynamicRatesResult?.data?.data?.map((it, index) => (
+													<motion.div
+														className="p-2 w-3/12"
+														key={it?.dynamicRateId}
+														initial={{ opacity: 0, y: 12 }}
+														animate={{ opacity: 1, y: 0 }}
+														transition={{
+															duration: 0.5,
+															ease: "easeOut",
+															delay: index * 0.05,
+														}}
+													>
+														<div className="flex flex-col gap-2">
+															<div className="peyda font-bold text-base text-neutral-500">
+																{it?.label}
+															</div>
+															<div className="flex gap-2 items-center">
+																<div className="w-64">
+																	<TabanInput
+																		isNumber
+																		type="number"
+																		value={
+																			specialItems?.[
+																				item
+																			]?.[
+																				it
+																					?.dynamicRateId
+																			]
+																		}
+																		onChange={(
+																			e
+																		) => {
+																			setSpecialItems(
+																				(
+																					prev
+																				) => ({
+																					...prev,
+																					[item]: {
+																						...prev[
+																							item
+																						],
+																						[it?.dynamicRateId]:
+																							e
+																								?.target
+																								?.value,
+																					},
+																				})
+																			);
+																		}}
+																		name={
+																			it?.dynamicRateId
+																		}
+																	/>
+																</div>
+																<div className="group relative">
+																	<span className="text-lg min-w-6 h-6 bg-secondary rounded-full flex items-center justify-center pt-2 text-white font-bold">
+																		?
+																	</span>
+																	<div className="bg-white border border-neutral-200 rounded-lg p-4 z-10 top-8 w-64 absolute right-0 invisible group-hover:!visible opacity-0 group-hover:!opacity-100 duration-200">
+																		{it?.label}
+																	</div>
+																</div>
+															</div>
+														</div>
+													</motion.div>
+												))}
+											</div>
+										</div>
 									))}
 								</div>
 							) : !!dynamicRatesResult && !dynamicRatesResult?.success && isRetryAble(dynamicRatesResult?.code) ? (

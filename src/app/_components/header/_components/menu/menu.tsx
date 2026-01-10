@@ -92,33 +92,33 @@ export const MenuPopup: React.FC<{ open: boolean; setOpen: React.Dispatch<React.
 									<Link href="/" className="">
 										<Image width={50} height={56} src="/images/logo2.svg" alt="logo" className="" />
 									</Link>
-									<ul className="flex pr-4 flex-col text-[15px] gap-4 mt-4">
-										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
+									<ul className="flex pr-0 flex-col text-[15px] gap-3 mt-6">
+										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
 											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="/">
 												خانه
 											</Link>
 										</li>
-										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
+										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
 											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="/intelligent-architect">
 												طراح هوشمند
 											</Link>
 										</li>
-										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
+										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
 											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
 												فروشگاه
 											</Link>
 										</li>
-										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
+										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
 											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
 												مجله معمار
 											</Link>
 										</li>
-										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
+										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
 											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
 												درباره ما
 											</Link>
 										</li>
-										<li className="border-b border-b-neutral-2 pb-4 text-neutral-5">
+										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
 											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
 												تماس با ما
 											</Link>
