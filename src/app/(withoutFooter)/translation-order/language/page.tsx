@@ -140,9 +140,11 @@ export default function Page() {
 							disabled={!order?.language || !baseRateResult?.success}
 							isLink
 							href={
-								dynamicRatesResult?.success && dynamicRatesResult?.data?.data!?.length > 0
-									? "/translation-order/translation-specials"
-									: "/translation-order/translation-certifications"
+								baseRateResult?.success && baseRateResult?.data?.data![0]?.title
+									? "/translation-order/translation-base"
+									: dynamicRatesResult?.success && dynamicRatesResult?.data?.data!?.length > 0
+										? "/translation-order/translation-specials"
+										: "/translation-order/translation-certifications"
 							}
 							icon={<IconArrowLine />}
 						>

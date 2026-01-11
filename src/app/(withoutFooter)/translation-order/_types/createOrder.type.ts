@@ -8,6 +8,7 @@ export type CreateOrder = {
 	translationItemCount?: number;
 	language?: Language | null;
 	baseRate?: string | number | null;
+	baseRateCount?:Record<string,string>;
 	translationItemNames?:Record<string,string>;
 	specialItems?: {
 		translationItemTitle: string;

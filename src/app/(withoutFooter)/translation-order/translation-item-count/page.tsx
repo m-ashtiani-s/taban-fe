@@ -36,6 +36,7 @@ export default function Page() {
 			});
 			setTranslationItemsNames(items);
 		} else if (order?.translationItemCount === 1) {
+			setTranslationItemsNames({[generateUUID()]:`${order?.translationItem?.title} شماره 1`})
 		}
 	}, []);
 

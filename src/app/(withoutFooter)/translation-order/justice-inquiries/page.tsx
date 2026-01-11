@@ -103,7 +103,7 @@ export default function Page() {
 				<div className="flex border w-full border-neutral-300 rounded-lg p-4 h-[calc(100%-16px)] flex-col">
 					<div className="flex flex-col h-[calc(100%-40px)] taban-scroll">
 						<div className=" flex items-center gap-2 w-full px-8 pb-16 border-b border-dashed border-neutral-300">
-							<CreateRateLevels activeLevel={5} />
+							<CreateRateLevels activeLevel={6} />
 						</div>
 
 						<div className="pt-8">

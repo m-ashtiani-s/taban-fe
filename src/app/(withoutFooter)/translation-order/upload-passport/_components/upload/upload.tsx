@@ -10,7 +10,7 @@ import { UploadProps } from "./upload.type";
 import { useNotificationStore } from "@/stores/notification.store";
 import { OrderState, useOrderStore } from "../../../_store/rate.store";
 
-export default function Upload({ justiceInquiryRatesResult, certificationRatesResult, dynamicRatesResult }: UploadProps) {
+export default function Upload({  }: UploadProps) {
 	const showNotification = useNotificationStore((state) => state.showNotification);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [files, setFiles] = useState<File[]>([]);
@@ -25,7 +25,7 @@ export default function Upload({ justiceInquiryRatesResult, certificationRatesRe
 		const formData = new FormData();
 		files.forEach((file) => formData.append("files", file));
 
-		const res = await fetch("/api/storage/upload", {
+		const res = await fetch("/api/storage/passport", {
 			method: "POST",
 			body: formData,
 		});
@@ -64,21 +64,9 @@ export default function Upload({ justiceInquiryRatesResult, certificationRatesRe
 
 	return (
 		<div className="w-full">
-			{!uploadFinished && (!order?.assets || order?.assets?.length === 0) && (
+			{!uploadFinished && (!order?.passports || order?.passports?.length === 0) && (
 				<div className="flex items-center justify-end gap-2 pt-2 px-4 pb-4 bg-white w-full absolute bottom-0 left-0 rounded-lg">
-					<TabanButton
-						isLink
-						href={
-							justiceInquiryRatesResult?.success && justiceInquiryRatesResult?.data?.data!?.length > 0
-								? "/translation-order/justice-inquiries"
-								: certificationRatesResult?.success && certificationRatesResult?.data?.data!?.length > 0
-									? "/translation-order/translation-certifications"
-									: dynamicRatesResult?.success && dynamicRatesResult?.data?.data!?.length > 0
-										? "/translation-order/translation-specials"
-										: "/translation-order/language"
-						}
-						variant="text"
-					>
+					<TabanButton isLink href={"/translation-order/upload"} variant="text">
 						مرحله قبلی
 					</TabanButton>
 					<TabanButton isLoading={loading} onClick={uploadFiles}>

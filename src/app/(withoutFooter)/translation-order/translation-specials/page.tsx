@@ -70,7 +70,7 @@ export default function Page() {
 				<div className="flex border w-full border-neutral-300 rounded-lg p-4 h-[calc(100%-16px)] flex-col">
 					<div className="flex flex-col h-[calc(100%-40px)] taban-scroll">
 						<div className=" flex items-center gap-2 w-full px-8 pb-16 border-b border-dashed border-neutral-300">
-							<CreateRateLevels activeLevel={3} />
+							<CreateRateLevels activeLevel={4} />
 						</div>
 
 						<div className="mt-4">
