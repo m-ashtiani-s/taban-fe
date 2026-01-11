@@ -16,22 +16,33 @@ export default function Page() {
 	const translationPrice = useMemo(() => {
 		const baseRate = +(order?.baseRate ?? 0);
 		let dynamicRate = 0;
-		order?.specialItems?.map((it) => {
-			dynamicRate = dynamicRate + +it?.price;
+		order?.specialItems?.map((item) => {
+			item?.specials?.map((it) => {
+				dynamicRate = dynamicRate + +it?.price;
+			});
 		});
 		return baseRate + dynamicRate;
 	}, [order]);
 
 	const certificationPrice = useMemo(() => {
-		let certificationRate = +(order?.justiceCertification?.price ?? 0) + +(order?.mfaCertification?.price ?? 0);
-
-		return certificationRate;
+		let jCertifications = 0;
+		let mCertifications = 0;
+		order?.justiceCertification?.map((item) => {
+			jCertifications = jCertifications + +(item?.justiceCertification?.price ?? 0);
+		});
+		order?.mfaCertification?.map((item) => {
+			mCertifications = mCertifications + +(item?.mfaCertification?.price ?? 0);
+		});
+		
+		return jCertifications + mCertifications;
 	}, [order]);
 
 	const inquiryPrice = useMemo(() => {
 		let inquiryRate = 0;
 		order?.justiceInquiriesItems?.map((it) => {
-			inquiryRate = inquiryRate + +it?.price;
+			it?.justiceInquiries?.map((it) => {
+				inquiryRate = inquiryRate + +it?.price;
+			});
 		});
 		return inquiryRate;
 	}, [order]);
@@ -54,119 +65,7 @@ export default function Page() {
 						</div>
 
 						<div className="flex gap-4 py-8">
-							<div className="w-7/12">
-								<div className="">
-									<div className="w-72 flex items-center gap-2 pr-4 font-medium">
-										<span className="bg-secondary w-3 h-3 rounded rotate-45 relative -top-[1px] "></span>
-										نرخ پایه ترجمه:
-										<div className="flex items-center gap-1 font-semibold w-32">
-											{toCurrency(order?.baseRate!)}
-											<span className="text-xs font-normal">تومان</span>
-										</div>
-									</div>
-								</div>
-
-								{!!order?.specialItems && order?.specialItems?.length > 0 && (
-									<div className="mt-8">
-										<div className="font-semibold peyda text-xl w-full mb-4">
-											خاص های ترجمه
-											<div className="h-2 mt-1 w-64 bg-gradient-to-l from-secondary/60 to-secondary/0 flex gap-4 morabba text-xl font-medium items-center rounded-lg"></div>
-										</div>
-										<div className="flex flex-col gap-3 pr-4 font-medium">
-											{order?.specialItems?.map((it, index) => (
-												<div
-													key={it?.dynamicRateId}
-													className={`flex items-center gap-6 w-fit pt-3 ${index !== 0 && "border-t border-t-secondary/70 border-dashed"}`}
-												>
-													<div className="w-72 flex items-center gap-2">
-														<span className="bg-secondary w-3 h-3 rounded rotate-45 relative -top-[1px]"></span>
-														{it?.label}:
-													</div>
-													<div className="w-32 text-neutral-400 flex items-center gap-1">
-														تعداد:
-														<div className="text-neutral-800 font-semibold">
-															{it?.count}
-														</div>
-													</div>
-													<div className="flex items-center gap-1 font-semibold w-32">
-														{toCurrency(it?.price)}
-														<span className="text-xs font-normal">
-															تومان
-														</span>
-													</div>
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-								{(order?.mfaCertification?.price || order?.justiceCertification?.price) && (
-									<div className="mt-12">
-										<div className="font-semibold peyda text-xl w-full mb-4">
-											تاییدات ترجمه
-											<div className="h-2 mt-1 w-64 bg-gradient-to-l from-secondary/60 to-secondary/0 flex gap-4 morabba text-xl font-medium items-center rounded-lg"></div>
-										</div>
-										<div className="flex flex-col gap-3 pr-4 font-medium">
-											{order?.mfaCertification?.price && (
-												<div className="w-80 text-neutral-700 flex items-center gap-1 pt-3">
-													<span className="bg-secondary w-3 h-3 rounded rotate-45 relative -top-[1px]"></span>
-													تاییدیه وزارت امور خارجه:
-													<div className="flex items-center gap-1 font-semibold w-32">
-														{toCurrency(order?.mfaCertification?.price)}
-														<span className="text-xs font-normal">
-															تومان
-														</span>
-													</div>
-												</div>
-											)}
-											{order?.justiceCertification?.price && (
-												<div
-													className={`w-80 text-neutral-700 flex items-center gap-1  ${!!order?.mfaCertification?.price && "pt-3 border-t border-t-secondary/70 border-dashed"}`}
-												>
-													<span className="bg-secondary w-3 h-3 rounded rotate-45 relative -top-[1px]"></span>
-													تاییدیه دادگستری:
-													<div className="flex items-center gap-1 font-semibold w-32">
-														{toCurrency(order?.justiceCertification?.price)}
-														<span className="text-xs font-normal">
-															تومان
-														</span>
-													</div>
-												</div>
-											)}
-										</div>
-									</div>
-								)}
-								{!!order?.justiceInquiriesItems && order?.justiceInquiriesItems?.length > 0 && (
-									<div className="mt-12">
-										<div className="font-semibold peyda text-xl w-full mb-4">
-											استعلام های ترجمه
-											<div className="h-2 mt-1 w-64 bg-gradient-to-l from-secondary/60 to-secondary/0 flex gap-4 morabba text-xl font-medium items-center rounded-lg"></div>
-										</div>
-										<div className="flex flex-col gap-3 pr-4 font-medium">
-											{order?.justiceInquiriesItems?.map((it, index) => (
-												<div
-													key={it?.justiceInquiryRateId}
-													className={`flex items-center gap-6 w-fit pt-3 ${index !== 0 && "border-t border-t-secondary/70 border-dashed"}`}
-												>
-													<div className="w-72 flex items-center gap-2">
-														<span className="bg-secondary w-3 h-3 rounded rotate-45 relative -top-[1px]"></span>
-														{it?.justiceInquiryName}:
-													</div>
-													{/* <div className="w-32 text-neutral-400 flex items-center gap-1">
-											تعداد:
-											<div className="text-neutral-800 font-semibold">{it?.count}</div>
-										</div> */}
-													<div className="flex items-center gap-1 font-semibold w-32">
-														{toCurrency(it?.price)}
-														<span className="text-xs font-normal">
-															تومان
-														</span>
-													</div>
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
+							
 							<div className="h-full w-[1px] bg-neutral-200"></div>
 							<div className="flex flex-col w-full px-4 !pr-2">
 								<div className="flex items-center justify-between">
@@ -226,10 +125,17 @@ export default function Page() {
 												value={discount}
 												setValue={setDiscount}
 											/>
-                                            
 										</div>
-                                        <TabanButton variant="text" className="!px-2">اعمال</TabanButton>
-                                        <TabanButton onClick={()=>setHasDiscount(false)} className="!w-7 !h-7" variant="icon" ><IconCross className="fill-primary stroke-0 w-5 h-5"/></TabanButton>
+										<TabanButton variant="text" className="!px-2">
+											اعمال
+										</TabanButton>
+										<TabanButton
+											onClick={() => setHasDiscount(false)}
+											className="!w-7 !h-7"
+											variant="icon"
+										>
+											<IconCross className="fill-primary stroke-0 w-5 h-5" />
+										</TabanButton>
 									</div>
 								)}
 								<div className="flex items-center justify-end gap-2 pt-2">

@@ -45,7 +45,6 @@ export default function Page() {
 		}
 	}, []);
 
-	console.log(order);
 
 	const selectCertificationHandler = (certificationType: "justice" | "mfa", translationItemId: string, translationItemTitle: string) => {
 		if (certificationType === "justice" && certificationRatesResult?.success) {
