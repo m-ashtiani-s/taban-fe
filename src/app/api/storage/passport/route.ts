@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 		const arrayBuffer = await file.arrayBuffer();
 		const buffer = Buffer.from(arrayBuffer);
 
-		const key = `uploads/${Date.now()}-${file.name}`;
+		const key = `uploads/passports/${Date.now()}-${file.name}`;
 
 		const command = new PutObjectCommand({
 			Bucket: process.env.NEXT_PUBLIC_LIARA_BUCKET_NAME,

@@ -7,4 +7,5 @@ export type BaseRate = {
 	languageName: string;
 	languageIsActive:boolean;
 	basePrice: number | string;
+	title:string
 };

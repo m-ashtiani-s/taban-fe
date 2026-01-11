@@ -61,7 +61,7 @@ export default function Page() {
 				<div className="flex border w-full border-neutral-300 rounded-lg p-4 h-[calc(100%-16px)] flex-col relative">
 					<div className="flex flex-col h-[calc(100%-40px)] taban-scroll">
 						<div className=" flex items-center gap-2 w-full px-8 pb-16 border-b border-dashed border-neutral-300">
-							<CreateRateLevels activeLevel={7} />
+							<CreateRateLevels activeLevel={9} />
 						</div>
 
 						<div className="flex gap-4 py-8">

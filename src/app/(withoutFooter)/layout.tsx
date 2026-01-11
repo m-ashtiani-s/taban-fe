@@ -112,7 +112,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 		// 		},
 		// 	],
 		// });
-		setOrder({translationItemCount:1});
+		setOrder({
+			translationItemCount: 1,
+			translationItem: null,
+			language: null,
+			baseRate: null,
+			baseRateCount: {},
+			translationItemNames: {},
+			specialItems: [],
+			justiceInquiriesItems: [],
+			mfaCertification: [],
+			justiceCertification: [],
+			passports: [],
+			assets: [],
+		});
 		if (pathname !== "/translation-order/translation-item" && !order) {
 			router.push("/translation-order/translation-item");
 		}
