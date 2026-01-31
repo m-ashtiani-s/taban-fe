@@ -1,6 +1,5 @@
 import { Language } from "@/types/language.type";
 import { TranslationItem } from "@/types/translationItem.type";
-import { CertificationRate } from "./certificationRate.type";
 import { JusticeInquiryRate } from "./justiceInquiry.type";
 
 export type CreateOrder = {
@@ -8,8 +7,8 @@ export type CreateOrder = {
 	translationItemCount?: number;
 	language?: Language | null;
 	baseRate?: string | number | null;
-	baseRateCount?:Record<string,string>;
-	translationItemNames?:Record<string,string>;
+	baseRateCount?: Record<string, string>;
+	translationItemNames?: Record<string, string>;
 	specialItems?: {
 		translationItemTitle: string;
 		translationItemId: string;
@@ -29,10 +28,12 @@ export type CreateOrder = {
 	justiceCertification?: {
 		translationItemTitle: string;
 		translationItemId: string;
+
 		justiceCertification: CertificationItem | null;
 	}[];
 	passports?: string[];
 	assets?: string[];
+	copyCount?: Record<string, number>;
 };
 
 export type SpecialItemsValue = {
@@ -44,4 +45,5 @@ export type SpecialItemsValue = {
 
 export type CertificationItem = {
 	price: number | string;
+	certificationRateId: string
 };

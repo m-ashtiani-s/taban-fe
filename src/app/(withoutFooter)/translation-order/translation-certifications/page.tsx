@@ -45,7 +45,6 @@ export default function Page() {
 		}
 	}, []);
 
-
 	const selectCertificationHandler = (certificationType: "justice" | "mfa", translationItemId: string, translationItemTitle: string) => {
 		if (certificationType === "justice" && certificationRatesResult?.success) {
 			const rate = certificationRatesResult?.data?.data![0] ?? null;
@@ -56,7 +55,14 @@ export default function Page() {
 						...prev,
 						justiceCertification: [
 							...(prev?.justiceCertification ?? []),
-							{ translationItemId, translationItemTitle, justiceCertification: { price: rate?.justicePrice } },
+							{
+								translationItemId,
+								translationItemTitle,
+								justiceCertification: {
+									price: rate?.justicePrice,
+									certificationRateId: rate?.certificationRateId,
+								},
+							},
 						],
 					}));
 				} else {
@@ -76,7 +82,11 @@ export default function Page() {
 						...prev,
 						mfaCertification: [
 							...(prev?.mfaCertification ?? []),
-							{ translationItemId, translationItemTitle, mfaCertification: { price: rate?.mfaPrice } },
+							{
+								translationItemId,
+								translationItemTitle,
+								mfaCertification: { price: rate?.mfaPrice, certificationRateId: rate?.certificationRateId },
+							},
 						],
 					}));
 				} else {
@@ -232,7 +242,11 @@ export default function Page() {
 														<div
 															className={`flex items-center justify-center cursor-pointer relative text-sm gap-1 w-6 h-6 rounded-md border  ${!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification ? "bg-primary border-primary" : "border-primary/50"}`}
 														>
-															{!!order?.mfaCertification?.filter((f) => f?.translationItemId === item)[0]?.mfaCertification && (
+															{!!order?.mfaCertification?.filter(
+																(f) =>
+																	f?.translationItemId ===
+																	item
+															)[0]?.mfaCertification && (
 																<svg
 																	xmlns="http://www.w3.org/2000/svg"
 																	className="h-3.5 w-3.5"
