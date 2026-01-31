@@ -8,4 +8,5 @@ export type DynamicRate = {
 	languageIsActive:boolean;
 	price: number | string;
 	label: string;
+	description: string;
 };

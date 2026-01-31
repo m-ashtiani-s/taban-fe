@@ -144,8 +144,8 @@ export default function Page() {
 																	<span className="text-lg min-w-6 h-6 bg-secondary rounded-full flex items-center justify-center pt-2 text-white font-bold">
 																		?
 																	</span>
-																	<div className="bg-white border border-neutral-200 rounded-lg p-4 z-10 top-8 w-64 absolute right-0 invisible group-hover:!visible opacity-0 group-hover:!opacity-100 duration-200">
-																		{it?.label}
+																	<div className="bg-white border text-sm border-neutral-200 rounded-lg p-4 z-10 top-8 w-64 absolute right-0 invisible group-hover:!visible opacity-0 group-hover:!opacity-100 duration-200">
+																		{it?.description}
 																	</div>
 																</div>
 															</div>
