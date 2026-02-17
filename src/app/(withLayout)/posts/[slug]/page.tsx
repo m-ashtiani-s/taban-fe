@@ -41,10 +41,10 @@ async function getPost(slug: string) {
 // }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-	const post = await getPost(params.slug);
+	const post = await getPost(params?.slug);
 	if (post) {
 		return {
-			title: `${post?.rank_math?.title || `${post.title.rendered} - ماهکس`}`,
+			title: `${post?.rank_math?.title || `${post?.title?.rendered} - ماهکس`}`,
 			description: post?.rank_math?.description || post.excerpt?.rendered || "توضیحات پست",
 		};
 	}
