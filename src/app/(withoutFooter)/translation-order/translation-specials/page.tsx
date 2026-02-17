@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import CreateRateLevels from "../_components/createRateLevels/createRateLevels";
 import { useApi } from "@/hooks/useApi";
 import { IconArrowLine, IconDocument } from "@/app/_components/icon/icons";
-import TabanLoading from "@/app/_components/common/tabanLoading.tsx/tabanLoading";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { motion } from "framer-motion";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
