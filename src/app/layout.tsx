@@ -58,13 +58,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 		<html dir="rtl">
 			<head>
 				<link rel="icon" href="/images/logo2.svg" />
-				<meta name="theme-color" content="#f5a900" />
+				<meta name="theme-color" content="#1a3047" />
 				{/* <title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</ title> */}
 			</head>
 			<body className="content-center bg-white text-primary">
 				<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
 					<NextTopLoader
-						color="#f5a900"
+						color="#1a3047"
 						initialPosition={0.08}
 						crawlSpeed={200}
 						height={4}

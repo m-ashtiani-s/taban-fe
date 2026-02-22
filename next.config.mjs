@@ -9,8 +9,15 @@ const nextConfig = {
 				port: "",
 				pathname: "/**",
 			},
-			
 		],
+	},
+	async rewrites() {
+		return [
+			{
+				source: "/wp-json/:path*",
+				destination: "https://rasmiyab.ayliweb.ir/wp-json/:path*",
+			},
+		];
 	},
 	// async redirects() {
 	// 	return [
