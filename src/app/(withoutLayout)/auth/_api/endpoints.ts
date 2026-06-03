@@ -1,7 +1,6 @@
 import { httpClient } from "@/httpClient/HttpClient";
 import { Res } from "@/types/responseType";
 import { Login } from "../_types/login.type";
-import { CompleteProfileFormValues } from "../_types/completeProfileFormValues.type";
 import { Paginate } from "@/types/paginate";
 import { Province } from "@/types/Province.type";
 import { City } from "@/types/city.type";
@@ -44,14 +43,6 @@ export const AuthEndpoints = {
 			method: "POST",
 			url: `v1/auth/sign-up/set-password`,
 			data: { username, password },
-		});
-		return res?.data;
-	},
-	completeProfile: async (completeProfileFormValues: CompleteProfileFormValues) => {
-		const res = await httpClient.call<Res<null>>({
-			method: "PUT",
-			url: `v1/user`,
-			data: completeProfileFormValues,
 		});
 		return res?.data;
 	},

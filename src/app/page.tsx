@@ -6,11 +6,20 @@ import { IconTranslate } from "./_components/icon/icons";
 import Map from "./_homeAssets/_components/map/map";
 import CommentsSlider from "./_homeAssets/_components/commentsSlider/commentsSlider";
 import { comments } from "@/constants/comments";
-import BlogPreview from "./_homeAssets/_components/BlogPreview/BlogPreview";
 import { BlogPostDto } from "@/types/blogPost.type";
 import { SITE_URL } from "@/config/global";
 import { Paginate } from "@/types/paginate";
-import HeroTranslate from "./_homeAssets/_components/heroTranslate/heroTranslate";
+import HeroOrderStart from "./_homeAssets/_components/heroOrderStart/heroOrderStart";
+import Reveal from "./_components/common/reveal/reveal";
+import { steps } from "./_homeAssets/_constants/steps";
+import { services } from "./_homeAssets/_constants/services";
+import BlogPreview from "./_homeAssets/_components/blogPreview/BlogPreview";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	// عنوان خالی می‌ماند تا از default لِی‌اوت استفاده شود (بدون تکرار برند با template)
+	alternates: { canonical: "/" },
+};
 
 async function getPosts(): Promise<Paginate<BlogPostDto> | null> {
 	try {
@@ -34,32 +43,39 @@ export default async function Home() {
 	const blogPageData: Paginate<BlogPostDto> | null = await getPosts();
 	return (
 		<>
-			<title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</title>
 			<Header />
 			<main className="">
 				<section className="">
 					<div className="bg-[url('/images/herobg.jpg')] h-[400px] lg:!h-[600px] 2xl:!h-[650px]  !bg-cover !bg-top peyda max-lg:!mt-[70px]">
 						<div className="container flex items-start justify-center flex-col h-full gap-8 max-lg:!gap-6 max-lg:!px-4 relative -top-10">
-							<div className="text-neutral-200">
-								سریع ترین راه ترجمه مدارک رسمی شما به شکل{" "}
-								<span className="text-secondary font-semibold">آنلاین و حضوری</span>
-							</div>
-							<div className="text-neutral-200 text-5xl font-semibold max-lg:!text-3xl">دارالترجمــــه آنلاین رســــــمی یــــاب</div>
-							<TabanButton
-								variant="contained"
-								isLink
-								href="/translation-order/translation-item"
-								className="font-semibold group !border-none rounded flex items-center gap-2 !bg-secondary"
-							>
-								<IconTranslate stroke="black" strokeWidth={0} className=" fill-white duration-200" />
-								شروع ترجمه آنلاین
-							</TabanButton>
+							<Reveal y={16}>
+								<div className="text-neutral-200">
+									سریع ترین راه ترجمه مدارک رسمی شما به شکل{" "}
+									<span className="text-secondary font-semibold">آنلاین و حضوری</span>
+								</div>
+							</Reveal>
+							<Reveal y={16} delay={0.12}>
+								<div className="text-neutral-200 text-5xl font-semibold max-lg:!text-3xl">دارالترجمــــه آنلاین رســــــمی یــــاب</div>
+							</Reveal>
+							<Reveal y={16} delay={0.24}>
+								<TabanButton
+									variant="contained"
+									isLink
+									href="/new-order"
+									className="font-semibold group !border-none rounded flex items-center gap-2 !bg-secondary"
+								>
+									<IconTranslate stroke="black" strokeWidth={0} className=" fill-white duration-200" />
+									شروع ترجمه آنلاین
+								</TabanButton>
+							</Reveal>
 						</div>
 					</div>
 				</section>
 				<section>
-					<div className="container lg:px-[15%] max-lg:!px-4">
-						<HeroTranslate />
+					<div className="container lg:px-[10%] max-lg:!px-4">
+						<Reveal y={28}>
+							<HeroOrderStart />
+						</Reveal>
 					</div>
 				</section>
 				<div className="h-24 max-lg:!h-16"></div>
@@ -135,7 +151,7 @@ export default async function Home() {
 								</div>
 							</div>
 							<div className="w-full flex">
-								<div className="flex flex-col gap-4 relative">
+								<Reveal className="flex flex-col gap-4 relative">
 									<div className="absolute -right-52 lg:!top-[calc(50%-30px)] max-lg:!top-0 flex">
 										<Image
 											src="/images/home/serviceShow.png"
@@ -160,7 +176,7 @@ export default async function Home() {
 											با ما بیشتر آشنا شوید
 										</TabanButton>
 									</div>
-								</div>
+								</Reveal>
 							</div>
 						</div>
 					</div>
@@ -172,7 +188,7 @@ export default async function Home() {
 							<Image src="/images/home/pannelbg.svg" alt="" className="" width={474} height={601} />
 						</div>
 						<div className="flex gap-16 items-center relative z-[2] max-lg:!flex-col max-lg:!px-4">
-							<div className="w-full flex flex-col gap-4">
+							<Reveal className="w-full flex flex-col gap-4">
 								<div className="text-4xl peyda font-semibold max-lg:!text-2.5xl">
 									<span className="text-secondary">ویژگی های</span> پنل مشتریان
 								</div>
@@ -184,7 +200,7 @@ export default async function Home() {
 								<TabanButton isLink href="/auth" className="">
 									همین حالا عضو شوید
 								</TabanButton>
-							</div>
+							</Reveal>
 							<div className="w-full flex flex-col gap-8">
 								<div className="flex items-start gap-4 ">
 									<div className="h-[50px] w-[50px] flex items-center justify-center rounded-full bg-primary relative">
@@ -231,11 +247,49 @@ export default async function Home() {
 					</div>
 				</section>
 				<div className="h-24"></div>
+				<section className="bg-white border-y border-neutral-100 py-16">
+									<div className="container max-lg:!px-4">
+										<Reveal className="flex flex-col items-center text-center gap-3 mb-12">
+											<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">
+												ثبت سفارش تنها در <span className="text-secondary">۴ گام</span>
+											</h2>
+											<p className="text-neutral-500 text-sm">از انتخاب مدرک تا تحویل، همه‌چیز ساده و آنلاین</p>
+										</Reveal>
+				
+										<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+											{steps.map((step, i) => (
+												<Reveal key={step.title} delay={i * 0.1} className="relative flex flex-col items-center text-center gap-3">
+													{i < steps.length - 1 && (
+														<div className="hidden lg:block absolute top-7 left-[-50%] w-full h-px border-t-2 border-dashed border-neutral-200" />
+													)}
+													<div className="relative z-[2] w-14 h-14 rounded-full bg-gradient-to-bl from-primary to-primary/80 text-white flex items-center justify-center text-xl font-bold peyda shadow-lg">
+														{i + 1}
+													</div>
+													<div className="font-semibold peyda text-neutral-800">{step.title}</div>
+													<div className="text-sm text-neutral-500 leading-7 max-w-[200px]">{step.desc}</div>
+												</Reveal>
+											))}
+										</div>
+				
+										<div className="flex justify-center mt-12">
+											<TabanButton
+												variant="contained"
+												isLink
+												href="/new-order"
+												className="font-semibold !border-none rounded-xl flex items-center gap-2 !bg-secondary"
+											>
+												<IconTranslate stroke="black" strokeWidth={0} className="fill-white" />
+												همین حالا سفارش بده
+											</TabanButton>
+										</div>
+									</div>
+								</section>
+				<div className="h-24"></div>
 				<section>
 					<div className="bg-[url('/images/home/countrybg.webp')] !bg-cover !bg-center py-10 w-full relative bg-fixed">
 						<div className="absolute z-[1] w-8/12 h-full right-0 top-0 bg-gradient-to-l from-primary to-primary/0"></div>
 						<div className="container flex items-center gap-4 relative z-[2] max-lg:!flex-col">
-							<div className="w-full flex flex-col gap-4 max-lg:!px-4">
+							<Reveal className="w-full flex flex-col gap-4 max-lg:!px-4">
 								<div className="peyda text-neutral-300 text-3xl font-medium max-lg:!text-2xl">
 									ثبت سفارش آنلاین ترجمه از سراسر کشور
 								</div>
@@ -250,13 +304,13 @@ export default async function Home() {
 								<TabanButton
 									variant="contained"
 									isLink
-									href="/translation-order/translation-item"
+									href="/new-order"
 									className="font-semibold group !border-none rounded flex items-center gap-2 !bg-secondary mt-6"
 								>
 									<IconTranslate stroke="black" strokeWidth={0} className=" fill-white duration-200" />
 									شروع ترجمه آنلاین
 								</TabanButton>
-							</div>
+							</Reveal>
 							<div className="w-full max-lg:!hidden">
 								<Map />
 							</div>
@@ -266,7 +320,7 @@ export default async function Home() {
 				<div className="h-32"></div>
 				<section>
 					<div className="container">
-						<div className="flex flex-col items-center gap-14">
+						<Reveal className="flex flex-col items-center gap-14">
 							<Image src="/images/home/b2bPannel.png" width={360} height={290} alt="b2b" />
 							<div className="flex flex-col items-center gap-4">
 								<div className="text-3xl font-medium peyda">
@@ -283,7 +337,7 @@ export default async function Home() {
 									همین حالا عضو شوید
 								</TabanButton>
 							</div>
-						</div>
+						</Reveal>
 					</div>
 				</section>
 				<div className="h-32"></div>
@@ -306,9 +360,36 @@ export default async function Home() {
 					</div>
 				</section>
 				<div className="h-32"></div>
+				<section className="container max-lg:!px-4 py-12">
+					<Reveal className="flex flex-col items-center text-center gap-3 mb-10">
+						<div className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
+							<span className="h-px w-8 bg-secondary" />
+							چرا رسمی‌یاب؟
+							<span className="h-px w-8 bg-secondary" />
+						</div>
+						<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">
+							یک تجربه‌ی متفاوت از ترجمه رسمی
+						</h2>
+					</Reveal>
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+						{services.map((s, i) => (
+							<Reveal key={s.title} delay={i * 0.08}>
+								<div className="group bg-white border border-neutral-200 rounded-2xl p-6 hover:border-primary/30 hover:shadow-lg hover:-translate-y-1 duration-200 flex flex-col gap-3">
+									<div className="w-14 h-14 rounded-2xl bg-primary/5 group-hover:bg-primary group-hover:[&_svg]:stroke-white flex items-center justify-center duration-200">
+										{s.icon}
+									</div>
+									<div className="font-semibold peyda text-lg text-neutral-800">{s.title}</div>
+									<div className="text-sm text-neutral-500 leading-7">{s.desc}</div>
+								</div>
+							</Reveal>
+						))}
+					</div>
+				</section>
+				<div className="h-32"></div>
 				<section>
 					<div className="container">
-						<div className="flex items-center justify-between max-lg:!flex-col gap-4">
+						<Reveal className="flex items-center justify-between max-lg:!flex-col gap-4">
 							<div className="flex items-center gap-2 peyda font-semibold">
 								<div className="text-primary  text-lg">مجله رسمی‌یاب</div>
 								<div className="h-10 w-0.5 bg-secondary"></div>
@@ -317,7 +398,7 @@ export default async function Home() {
 							<TabanButton isLink href="/blog" className="">
 								وبلاگ رسمی‌یاب
 							</TabanButton>
-						</div>
+						</Reveal>
 						<div className="w-full mt-8">{!blogPageData ? null : <BlogPreview posts={blogPageData?.elements} />}</div>
 					</div>
 				</section>

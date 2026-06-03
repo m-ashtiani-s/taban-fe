@@ -2,7 +2,7 @@
 import classNames from "classnames";
 import Link from "next/link";
 import { TabanButtonProps } from "./tabanButton.type";
-import TabanLoading from "../tabanLoading.tsx/tabanLoading";
+import TabanLoading from "../tabanLoading/tabanLoading";
 
 export default function TabanButton({
 	variant="contained",

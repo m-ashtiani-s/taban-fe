@@ -13,6 +13,7 @@ export async function GET(req: Request) {
 
 	try {
 		const endpoint = `${WP_URL}/wp-json/wp/v2/posts?_embed&per_page=${pageSize}&page=${page}${term ? `&search=${encodeURIComponent(term)}` : ""}`;
+		console.log("object");
 		const response = await axios.get<BlogPostDtoApi[]>(endpoint);
 
 		const posts: BlogPostDto[] = response.data.map((post) => ({
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
 
 		return NextResponse.json(paginatedResult);
 	} catch (error: any) {
+		console.log(error);
 		return NextResponse.json(
 			{ field: "posts", success: false, data: null, message: error.message || "مشکلی در تایید کد تایید رخ داد" },
 			{ status: 500 }

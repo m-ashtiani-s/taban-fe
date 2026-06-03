@@ -6,7 +6,7 @@ import { IconArrow, IconInstagram, IconTelegram, IconWhatsapp } from "../icon/ic
 export const Footer = () => {
 	return (
 		<>
-			<footer className="pt-20 ">
+			<footer className="pt-20 pb-[72px] lg:!pb-0">
 				<div className="bg-primary relative">
 					<img src="/images/footer/pattern1.svg" alt="" className="w-[420px] absolute right-0 top-0" />
 					<img src="/images/footer/pattern2.svg" alt="" className="w-[420px] absolute left-0 top-0" />
@@ -39,7 +39,7 @@ export const Footer = () => {
 									قوانین و مقررات رسمی‌یاب
 								</Link>
 								<Link
-									href="/translation-order/translation-item"
+									href="/new-order"
 									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
 								>
 									ثبت سفارش ترجمه

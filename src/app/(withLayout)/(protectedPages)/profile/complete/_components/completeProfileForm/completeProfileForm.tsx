@@ -1,0 +1,563 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useApi } from "@/hooks/useApi";
+import { useNotificationStore } from "@/stores/notification.store";
+import { useProfiletore } from "@/stores/profile";
+import { TabanEndpoints } from "@/app/_api/endpoints";
+import { FormErrors } from "@/types/formErrors.type";
+import { findError } from "@/utils/formErrorsFinder";
+import { Profile } from "@/types/profile.type";
+import { Language } from "@/types/language.type";
+import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
+import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
+import TabanAutocompleteWrapper from "@/app/_components/common/tabanAutocompleteWrapper/tabanAutocompleteWrapper";
+import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
+import FileUploader from "@/app/_components/common/fileUploader/fileUploader";
+import {
+	IconCircleUser,
+	IconCross,
+	IconRequired,
+	IconStar,
+	IconUser,
+} from "@/app/_components/icon/icons";
+import {
+	CompleteProfileFormValues,
+	ReferralSourceOption,
+	SelectedLanguage,
+	UserTypeOption,
+} from "../../../_types/completeProfileForm.type";
+import { referralSourceOptions } from "../../../_constants/referralSource";
+import { ProfileEndpoints } from "../../../_api/endpoint";
+import { UpdateUserPayload } from "../../../_types/updateUserPayload.type";
+
+const userTypeOptions: UserTypeOption[] = [
+	{ label: "حقیقی", value: "individual" },
+	{ label: "حقوقی", value: "legal" },
+];
+
+export default function CompleteProfileForm() {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const backUrl = searchParams.get("backUrl");
+	const showNotification = useNotificationStore((state) => state.showNotification);
+	const { profile, setProfile } = useProfiletore();
+
+	const [formValues, setFormValues] = useState<CompleteProfileFormValues>({});
+	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
+	const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
+
+	const [selectedUserType, setSelectedUserType] = useState<UserTypeOption | null>(null);
+	const [selectedReferralSource, setSelectedReferralSource] = useState<ReferralSourceOption | null>(
+		null,
+	);
+	console.log(selectedReferralSource)
+	const [selectedLanguages, setSelectedLanguages] = useState<SelectedLanguage[]>([]);
+	const [languageAutoOption, setLanguageAutoOption] = useState<Language | null>(null);
+
+	const [profilePicFiles, setProfilePicFiles] = useState<File[]>([]);
+	const [uploadedProfilePic, setUploadedProfilePic] = useState<string>("");
+	const [uploadingPic, setUploadingPic] = useState<boolean>(false);
+
+	const {
+		resultData: profileResultData,
+		fetchData: executeProfile,
+		loading: profileLoading,
+	} = useApi(async () => await TabanEndpoints.getProfile());
+
+	const { resultData: languagesResultData, fetchData: executeLanguages, loading: languagesLoading } =
+		useApi(async () => await ProfileEndpoints.getLanguages());
+
+	const {
+		result: updateResult,
+		fetchData: executeUpdate,
+		loading: updateLoading,
+	} = useApi(async (payload: UpdateUserPayload) => await ProfileEndpoints.updateUser(payload));
+
+	useEffect(() => {
+		executeProfile();
+		executeLanguages();
+	}, []);
+
+	// Hydrate the form once the profile is fetched
+	useEffect(() => {
+		const data = profileResultData?.data;
+		if (!data) return;
+
+		setFormValues({
+			firstName: data.firstName ?? "",
+			lastName: data.lastName ?? "",
+			nationalId: data.nationalId ?? "",
+			phoneNumber: data.phoneNumber ?? "",
+			specialtyField: data.specialtyField ?? "",
+			referralCode: data.referralCode ?? "",
+		});
+
+		if (data.userType) {
+			setSelectedUserType(userTypeOptions.find((o) => o.value === data.userType) ?? null);
+		}
+
+		if (data.referralSource) {
+			const found = referralSourceOptions.find((o) => o.value === data.referralSource);
+			setSelectedReferralSource(
+				found ?? { label: data.referralSource, value: data.referralSource },
+			);
+		}
+
+		if (data.profilePic) {
+			setUploadedProfilePic(data.profilePic);
+		}
+	}, [profileResultData]);
+
+	// Hydrate selected languages once the profile is fetched.
+	// requiredLanguages اکنون از بک‌اند به صورت آبجکت کامل زبان می‌آید (نه آیدی خام).
+	useEffect(() => {
+		const profileData = profileResultData?.data;
+		if (!profileData?.requiredLanguages?.length) return;
+		if (selectedLanguages.length > 0) return;
+
+		const hydrated: SelectedLanguage[] = profileData.requiredLanguages.map((lang) => ({
+			languageId: lang.languageId,
+			languageName: lang.languageName,
+		}));
+		setSelectedLanguages(hydrated);
+	}, [profileResultData]);
+
+	useEffect(() => {
+		if (formSubmitted) formValidator();
+	}, [formValues, selectedUserType, selectedReferralSource, selectedLanguages, uploadedProfilePic]);
+
+	useEffect(() => {
+		if (updateResult) {
+			if (updateResult.success) {
+				showNotification({
+					type: "success",
+					message: updateResult.data?.message ?? "پروفایل با موفقیت ذخیره شد",
+				});
+				if (profileResultData?.data) {
+					setProfile({
+						...(profileResultData.data as Profile),
+						...formValues,
+						userType: selectedUserType?.value ?? null,
+						referralSource: selectedReferralSource?.value ?? "",
+						requiredLanguages: selectedLanguages
+							.map((sel) => languages.find((l) => l.languageId === sel.languageId))
+							.filter((l): l is Language => !!l),
+						profilePic: uploadedProfilePic,
+					});
+				}
+				router.push(backUrl || "/profile/info");
+			} else {
+				showNotification({
+					type: "error",
+					message: updateResult.description ?? "به‌روزرسانی پروفایل با خطا مواجه شد",
+				});
+			}
+		}
+	}, [updateResult]);
+
+	const languages: Language[] = languagesResultData?.data ?? [];
+	const availableLanguages = useMemo(() => {
+		const selectedIds = new Set(selectedLanguages.map((l) => l.languageId));
+		return languages.filter((l) => !selectedIds.has(l.languageId));
+	}, [languages, selectedLanguages]);
+
+	const addLanguage = (option: Language | null) => {
+		if (!option) return;
+		if (!selectedLanguages.some((l) => l.languageId === option.languageId)) {
+			setSelectedLanguages((prev) => [
+				...prev,
+				{ languageId: option.languageId, languageName: option.languageName },
+			]);
+		}
+		setTimeout(() => setLanguageAutoOption(null), 0);
+	};
+
+	const removeLanguage = (languageId: string) => {
+		setSelectedLanguages((prev) => prev.filter((l) => l.languageId !== languageId));
+	};
+
+	const formValidator = (): FormErrors[] => {
+		const errors: FormErrors[] = [];
+		if (!formValues.firstName?.trim()) {
+			errors.push({ item: "firstName", message: "وارد کردن نام الزامی است" });
+		}
+		if (!formValues.lastName?.trim()) {
+			errors.push({ item: "lastName", message: "وارد کردن نام خانوادگی الزامی است" });
+		}
+		if (!uploadedProfilePic) {
+			errors.push({ item: "profilePic", message: "بارگذاری تصویر پروفایل الزامی است" });
+		}
+		if (!formValues.nationalId?.trim()) {
+			errors.push({ item: "nationalId", message: "وارد کردن کد ملی الزامی است" });
+		} else if (!/^\d{10}$/.test(formValues.nationalId.trim())) {
+			errors.push({ item: "nationalId", message: "کد ملی باید ۱۰ رقم عددی باشد" });
+		}
+		if (!formValues.phoneNumber?.trim()) {
+			errors.push({ item: "phoneNumber", message: "وارد کردن شماره تماس الزامی است" });
+		} else if (!/^09\d{9}$/.test(formValues.phoneNumber.trim())) {
+			errors.push({ item: "phoneNumber", message: "شماره تماس باید با ۰۹ شروع شده و ۱۱ رقم باشد" });
+		}
+		if (!selectedUserType) {
+			errors.push({ item: "userType", message: "انتخاب نوع کاربری الزامی است" });
+		}
+		if (selectedLanguages.length === 0) {
+			errors.push({ item: "requiredLanguages", message: "حداقل یک زبان مورد نیاز را انتخاب کنید" });
+		}
+		if (!formValues.specialtyField?.trim()) {
+			errors.push({ item: "specialtyField", message: "وارد کردن حوزه تخصصی الزامی است" });
+		}
+		if (!selectedReferralSource) {
+			errors.push({ item: "referralSource", message: "انتخاب نحوه آشنایی با ما الزامی است" });
+		}
+		setFormErrors(errors);
+		return errors;
+	};
+
+	const uploadProfilePic = async () => {
+		if (profilePicFiles.length === 0) return;
+		setUploadingPic(true);
+		try {
+			const urls = await TabanEndpoints.uploadStorageFiles(profilePicFiles, "profile");
+			if (urls?.[0]) {
+				setUploadedProfilePic(urls[0]);
+				setProfilePicFiles([]);
+				showNotification({ type: "success", message: "تصویر پروفایل آپلود شد" });
+			} else {
+				throw new Error();
+			}
+		} catch {
+			showNotification({ type: "error", message: "آپلود تصویر پروفایل با خطا مواجه شد" });
+		} finally {
+			setUploadingPic(false);
+		}
+	};
+
+	const removeProfilePic = () => {
+		setUploadedProfilePic("");
+	};
+
+	const submitHandler = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		setFormSubmitted(true);
+		const errors = formValidator();
+		if (errors.length > 0) {
+			showNotification({
+				type: "error",
+				message: "لطفا موارد لازم در فرم را تکمیل کنید",
+			});
+			return;
+		}
+
+		const payload: UpdateUserPayload = {
+			firstName: formValues.firstName!.trim(),
+			lastName: formValues.lastName!.trim(),
+			nationalId: formValues.nationalId!.trim(),
+			phoneNumber: formValues.phoneNumber!.trim(),
+			userType: selectedUserType!.value,
+			requiredLanguages: selectedLanguages.map((l) => l.languageId),
+			specialtyField: formValues.specialtyField!.trim(),
+			referralSource: selectedReferralSource!.value,
+			referralCode: formValues.referralCode?.trim() || "",
+			profilePic: uploadedProfilePic,
+		};
+
+		executeUpdate(payload);
+	};
+
+	if (profileLoading && !profileResultData) {
+		return (
+			<div className="bg-white border border-neutral-200 rounded-2xl p-10 flex items-center justify-center gap-2 text-sm text-neutral-500">
+				<TabanLoading size={28} />
+				در حال دریافت اطلاعات...
+			</div>
+		);
+	}
+
+	return (
+		<form onSubmit={submitHandler} className="flex flex-col gap-5">
+			{/* اطلاعات شخصی */}
+			<section className="bg-white border border-neutral-200 rounded-2xl p-5 lg:p-6 shadow-sm">
+				<div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
+					<IconUser stroke="#1a3047" />
+					<h2 className="font-semibold peyda">اطلاعات شخصی</h2>
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<TabanInput
+						label="نام"
+						name="firstName"
+						groupMode
+						setValue={setFormValues}
+						value={formValues.firstName}
+						disabled={updateLoading}
+						isHandleError
+						hasError={!!findError(formErrors, "firstName")}
+						errorText={findError(formErrors, "firstName")?.message}
+					/>
+					<TabanInput
+						label="نام خانوادگی"
+						name="lastName"
+						groupMode
+						setValue={setFormValues}
+						value={formValues.lastName}
+						disabled={updateLoading}
+						isHandleError
+						hasError={!!findError(formErrors, "lastName")}
+						errorText={findError(formErrors, "lastName")?.message}
+					/>
+					<TabanInput
+						label="کد ملی"
+						name="nationalId"
+						groupMode
+						setValue={setFormValues}
+						value={formValues.nationalId}
+						isLtr
+						disabled={updateLoading}
+						isHandleError
+						hasError={!!findError(formErrors, "nationalId")}
+						errorText={findError(formErrors, "nationalId")?.message}
+					/>
+					<TabanInput
+						label="شماره تماس"
+						name="phoneNumber"
+						groupMode
+						setValue={setFormValues}
+						value={formValues.phoneNumber}
+						isLtr
+						disabled={updateLoading}
+						isHandleError
+						hasError={!!findError(formErrors, "phoneNumber")}
+						errorText={findError(formErrors, "phoneNumber")?.message}
+					/>
+				</div>
+			</section>
+
+			{/* تصویر پروفایل */}
+			<section className="bg-white border border-neutral-200 rounded-2xl p-5 lg:p-6 shadow-sm">
+				<div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
+					<IconCircleUser stroke="#1a3047" />
+					<h2 className="font-semibold peyda">تصویر پروفایل</h2>
+				</div>
+				<div className="flex flex-col md:flex-row gap-5 items-stretch md:items-center">
+					<div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/15 bg-primary/5 flex items-center justify-center shrink-0 mx-auto md:mx-0">
+						{uploadedProfilePic ? (
+							<img
+								src={uploadedProfilePic}
+								alt="profile"
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							<IconCircleUser width={56} height={56} stroke="#1a3047" />
+						)}
+					</div>
+					<div className="flex-1">
+						{uploadedProfilePic ? (
+							<div className="flex items-center justify-between gap-3 bg-success/5 border border-success/40 rounded-lg p-3">
+								<div className="text-sm text-success font-medium">
+									تصویر پروفایل با موفقیت آپلود شد
+								</div>
+								<TabanButton variant="bordered" onClick={removeProfilePic}>
+									حذف
+								</TabanButton>
+							</div>
+						) : (
+							<>
+								<FileUploader
+									files={profilePicFiles}
+									onChange={setProfilePicFiles}
+									multiple={false}
+									allowedExtensions={["PNG", "JPG", "WEBP"]}
+									accept="image/*"
+									isLoading={uploadingPic}
+									hasError={!!findError(formErrors, "profilePic")}
+									errorText={findError(formErrors, "profilePic")?.message}
+									hint="تصویر پروفایل خود را اینجا رها کنید یا برای انتخاب کلیک کنید"
+								/>
+								{profilePicFiles.length > 0 && (
+									<div className="mt-3 flex justify-end">
+										<TabanButton
+											isLoading={uploadingPic}
+											loadingText="در حال آپلود..."
+											onClick={uploadProfilePic}
+										>
+											آپلود تصویر
+										</TabanButton>
+									</div>
+								)}
+							</>
+						)}
+					</div>
+				</div>
+			</section>
+
+			{/* نوع کاربری و حوزه تخصصی */}
+			<section className="bg-white border border-neutral-200 rounded-2xl p-5 lg:p-6 shadow-sm">
+				<div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
+					<IconStar width={20} height={20} className="fill-primary stroke-0" />
+					<h2 className="font-semibold peyda">نوع کاربری و حوزه تخصصی</h2>
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<TabanAutocompleteWrapper
+							label="نوع کاربری"
+							hasInitialValue
+							options={userTypeOptions}
+							selectedOption={selectedUserType}
+							setSelectedOption={setSelectedUserType}
+							valueField="value"
+							displayField="label"
+							loading={false}
+							disabled={updateLoading}
+							wrapperErrorText=""
+							resultStatus={true}
+							isHandleError
+							hasError={!!findError(formErrors, "userType")}
+							errorText={findError(formErrors, "userType")?.message}
+						/>
+					</div>
+					<TabanInput
+						label="حوزه تخصصی"
+						name="specialtyField"
+						groupMode
+						setValue={setFormValues}
+						value={formValues.specialtyField}
+						disabled={updateLoading}
+						isHandleError
+						hasError={!!findError(formErrors, "specialtyField")}
+						errorText={findError(formErrors, "specialtyField")?.message}
+					/>
+				</div>
+			</section>
+
+			{/* زبان‌های مورد نیاز */}
+			<section className="bg-white border border-neutral-200 rounded-2xl p-5 lg:p-6 shadow-sm">
+				<div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
+					<IconStar width={20} height={20} className="fill-primary stroke-0" />
+					<h2 className="font-semibold peyda">زبان‌های مورد نیاز شما</h2>
+				</div>
+				<div className="flex flex-col gap-3">
+					<TabanAutocompleteWrapper
+						label="زبان مورد نظر را انتخاب کنید"
+						options={availableLanguages}
+						selectedOption={languageAutoOption}
+						setSelectedOption={setLanguageAutoOption}
+						valueField="languageId"
+						displayField="languageName"
+						loading={languagesLoading}
+						onChange={addLanguage}
+						wrapperErrorText=""
+						resultStatus={true}
+					/>
+					{!!findError(formErrors, "requiredLanguages") && selectedLanguages.length === 0 && (
+						<div className="text-error text-xs flex items-center gap-1">
+							<IconRequired
+								viewBox="0 0 100 100"
+								width={14}
+								height={14}
+								className="fill-error stroke-0"
+							/>
+							{findError(formErrors, "requiredLanguages")?.message}
+						</div>
+					)}
+					{selectedLanguages.length > 0 && (
+						<div className="flex flex-wrap gap-2 pt-1">
+							{selectedLanguages.map((lang) => (
+								<div
+									key={lang.languageId}
+									className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium"
+								>
+									<span>{lang.languageName}</span>
+									<button
+										type="button"
+										onClick={() => removeLanguage(lang.languageId)}
+										className="flex items-center justify-center w-5 h-5 rounded-full hover:bg-error/10 duration-150"
+									>
+										<IconCross
+											strokeOpacity={0}
+											width={14}
+											height={14}
+											className="fill-error"
+										/>
+									</button>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+			</section>
+
+			{/* آشنایی و کد معرف */}
+			<section className="bg-white border border-neutral-200 rounded-2xl p-5 lg:p-6 shadow-sm">
+				<div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
+					<IconStar width={20} height={20} className="fill-primary stroke-0" />
+					<h2 className="font-semibold peyda">آشنایی با ما</h2>
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<TabanAutocompleteWrapper
+							label="نحوه آشنایی با ما"
+							hasInitialValue
+							options={referralSourceOptions}
+							selectedOption={selectedReferralSource}
+							setSelectedOption={setSelectedReferralSource}
+							valueField="value"
+							displayField="label"
+							loading={false}
+							disabled={updateLoading}
+							wrapperErrorText=""
+							resultStatus={true}
+							isHandleError
+							hasError={!!findError(formErrors, "referralSource")}
+							errorText={findError(formErrors, "referralSource")?.message}
+						/>
+					</div>
+					<TabanInput
+						label="کد معرف (اختیاری)"
+						name="referralCode"
+						groupMode
+						setValue={setFormValues}
+						value={formValues.referralCode}
+						isLtr
+						disabled={updateLoading}
+					/>
+				</div>
+
+				{/* Referral incentive */}
+				<div className="mt-5 relative overflow-hidden rounded-xl border border-secondary/40 bg-gradient-to-l from-secondary/15 via-secondary/5 to-white p-4 lg:p-5">
+					<div className="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-secondary/15 blur-2xl"></div>
+					<div className="relative flex items-start gap-4">
+						<div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center shrink-0 text-2xl">
+							🎁
+						</div>
+						<div className="flex-1">
+							<div className="font-semibold peyda text-primary">
+								با کد معرف دوستانت رو خوشحال کن
+							</div>
+							<p className="text-xs text-neutral-700 mt-1 leading-7">
+								اگه با معرفی یکی از دوستانت اینجا اومدی، کد معرف اون عزیز رو وارد کن. به ازای
+								هر سفارشی که ثبت کنی، <span className="font-bold text-secondary">۱۰٪ از مبلغ
+								سفارش</span> به‌عنوان تخفیف به شخصی که تو رو معرفی کرده، هدیه داده می‌شه.
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			{/* اکشن‌ها */}
+			<div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+				<TabanButton variant="bordered" isLink href={backUrl || "/profile"}>
+					انصراف
+				</TabanButton>
+				<TabanButton
+					type="submit"
+					isLoading={updateLoading}
+					loadingText="در حال ذخیره..."
+					disabled={updateLoading || uploadingPic}
+				>
+					ذخیره اطلاعات
+				</TabanButton>
+			</div>
+		</form>
+	);
+}

@@ -245,7 +245,7 @@ export const menuItems: Route[] = [
 	},
 	{
 		title: "ترجمه آنلاین",
-		href: "/translation-order/translation-item",
+		href: "/new-order",
 		childrens: [],
 	},
 	{

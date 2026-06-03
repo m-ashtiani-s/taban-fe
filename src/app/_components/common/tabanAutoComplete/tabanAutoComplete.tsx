@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { TabanAutoCompleteProps } from "./tabanAutoComplete.type";
-import TabanLoading from "../tabanLoading.tsx/tabanLoading";
+import TabanLoading from "../tabanLoading/tabanLoading";
 
 export default function TabanAutoComplete<Option>({
 	placeholder = "",
@@ -29,6 +29,7 @@ export default function TabanAutoComplete<Option>({
 	height = 380,
 	renderItem,
 	emptyText,
+	hasInitialValue = false,
 }: TabanAutoCompleteProps<Option>) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLUListElement>(null);
@@ -39,6 +40,7 @@ export default function TabanAutoComplete<Option>({
 	const [searched, setSearched] = useState<boolean>(false);
 	const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 	const [inputFocused, setInputFocused] = useState<boolean>(false);
+	const [hasInitialValueState, setHasInitialValueState] = useState<boolean>(true);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setSearched(true);
@@ -114,7 +116,10 @@ export default function TabanAutoComplete<Option>({
 	};
 
 	useEffect(() => {
-		if (!isOpen && !selectedOption) {
+		if (hasInitialValue && hasInitialValueState && selectedOption) {
+			setInputValue(String(selectedOption[displayField]));
+			setHasInitialValueState(false);
+		} else if (!isOpen && !selectedOption) {
 			setInputValue("");
 		} else if (!isOpen && selectedOption && inputValue !== selectedOption[displayField]) {
 			setInputValue("");

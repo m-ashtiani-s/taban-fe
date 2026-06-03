@@ -4,7 +4,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<>
 			<title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</title>
-			<AuthGuard>{children}</AuthGuard>
+			<div className="container"><AuthGuard>{children}</AuthGuard></div>
 		</>
 	);
 }

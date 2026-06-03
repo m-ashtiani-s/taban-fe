@@ -23,6 +23,9 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
 			content: post.content?.rendered,
 			excerpt: post.excerpt?.rendered,
 			date: convertToJalali(post.date ?? ""),
+			// تاریخ‌های وردپرس timezone ندارند؛ از نسخه‌ی GMT با پسوند Z استفاده می‌کنیم تا ISO معتبر باشد
+			dateIso: post.date_gmt ? `${post.date_gmt}Z` : post.date ?? null,
+			modifiedIso: post.modified_gmt ? `${post.modified_gmt}Z` : post.modified ?? null,
 			image: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
 			author: post._embedded?.["author"]?.[0]?.name ?? null,
 			rank_math: post?.rank_math,

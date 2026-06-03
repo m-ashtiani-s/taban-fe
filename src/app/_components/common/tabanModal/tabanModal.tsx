@@ -14,9 +14,9 @@ const modalVariants = {
 	exit: { opacity: 0, y: "100vh" },
 };
 
-export default function TabanModal({ open, setOpen, title, children, onClose }: MemearButtonProps) {
+export default function TabanModal({ open, setOpen, title, children, onClose, width }: MemearButtonProps) {
 	const handleClose = () => {
-		!!onClose && onClose()
+		!!onClose && onClose();
 		setOpen(false);
 	};
 	return (
@@ -31,6 +31,7 @@ export default function TabanModal({ open, setOpen, title, children, onClose }: 
 					onClick={handleClose}
 				>
 					<motion.div
+						style={{ maxWidth: width }}
 						className="bg-white rounded-lg w-full max-w-md mx-auto shadow-lg relative max-lg:!w-11/12"
 						variants={modalVariants}
 						initial="hidden"
@@ -39,13 +40,7 @@ export default function TabanModal({ open, setOpen, title, children, onClose }: 
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center bg-secondary/15 px-4 py-2">
-							<IconCross
-								strokeOpacity={0}
-								width={24}
-								height={24}
-								className="relative -top-[2px]"
-								fill="#4d4d4d"
-							/>
+							<IconCross strokeOpacity={0} width={24} height={24} className="relative -top-[2px]" fill="#4d4d4d" />
 							<div className="font-semibold">{title}</div>
 						</div>
 						<div className="p-4">{children}</div>

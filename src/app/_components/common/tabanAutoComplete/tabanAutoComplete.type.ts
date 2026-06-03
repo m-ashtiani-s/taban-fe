@@ -24,4 +24,5 @@ export type TabanAutoCompleteProps<Option> = {
 	height?:number;
 	renderItem?: (option:Option)=>ReactNode;
 	emptyText?:string
+	hasInitialValue?: boolean;
 };

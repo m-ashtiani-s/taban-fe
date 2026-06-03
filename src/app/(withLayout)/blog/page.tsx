@@ -6,6 +6,19 @@ import { SITE_URL, WP_URL } from "@/config/global";
 import { BlogPostDto } from "@/types/blogPost.type";
 import { Paginate } from "@/types/paginate";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export async function generateMetadata({ searchParams }: { searchParams: { page?: string } }): Promise<Metadata> {
+	const page = parseInt(searchParams?.page || "1", 10);
+	const canonical = page > 1 ? `/blog?page=${page}` : "/blog";
+	const description = "جدیدترین اخبار و مقالات در حوزه‌ی ترجمه‌ی رسمی مدارک، مهاجرت و خدمات دارالترجمه‌ی رسمی‌یاب.";
+	return {
+		title: "مجله رسمی‌یاب",
+		description,
+		alternates: { canonical },
+		openGraph: { title: "مجله رسمی‌یاب", description, url: canonical, type: "website" },
+	};
+}
 
 async function getPosts(page: number = 1, perPage: number = 5): Promise<Paginate<BlogPostDto> | null> {
 	try {
@@ -43,11 +56,10 @@ export default async function Page({ searchParams }: { searchParams: { page?: st
 
 	return (
 		<>
-			<title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</title>
 			<section className="bg-primary">
 				<div className="container">
 					<div className="py-16 flex items-center justify-center flex-col gap-2">
-						<div className="peyda text-3xl font-semibold text-white">مجله خبری ما</div>
+						<h1 className="peyda text-3xl font-semibold text-white">مجله خبری ما</h1>
 						<div className="text-neutral-200">جدیدترین اخبار و مقالات در حوزه ترجمه مدارک رسمی</div>
 						<div className="flex w-full justify-center">
 							<div className="lg:!w-8/12 max-lg:!w-full relative mt-2 max-lg:!px-4">

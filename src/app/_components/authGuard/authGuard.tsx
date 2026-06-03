@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
-import TabanLoading from "../common/tabanLoading.tsx/tabanLoading";
+import TabanLoading from "../common/tabanLoading/tabanLoading";
 
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 	const pathname = usePathname();
