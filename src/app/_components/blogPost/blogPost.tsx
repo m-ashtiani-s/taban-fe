@@ -20,7 +20,7 @@ export default function BlogPost({ post }: BlogPostProps) {
 						/>
 					</div>
 				</div>
-				<div className="peyda text-lg font-semibold mt-6 h-14 overflow-clip">{post?.title}</div>
+				<h2 className="peyda text-lg font-semibold mt-6 h-14 overflow-clip">{post?.title}</h2>
 				<div className="text-neutral-600 h-12 overflow-clip mt-2" dangerouslySetInnerHTML={{ __html: post?.excerpt }}></div>
 			</div>
 		</Link>

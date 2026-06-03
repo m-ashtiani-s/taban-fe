@@ -7,4 +7,5 @@ export type MemearButtonProps = {
 	onClose?:()=>void,
 	title: string;
 	children: ReactNode;
+	width?:number
 };

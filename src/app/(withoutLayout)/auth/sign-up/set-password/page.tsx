@@ -63,7 +63,11 @@ export default function Page() {
 				storage.set(StorageKey?.TOKEN, `${setPasswordResultData?.data?.acceeToken}`);
 				storage.set(StorageKey?.USERNAME, JSON.stringify(setPasswordResultData?.data?.username));
 				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
-				router.push(`/auth/sign-up/complete-profile?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+				if (searchParams?.backUrl) {
+					window.location.href = searchParams.backUrl;
+				} else {
+					window.location.href = "/profile";
+				}
 			} else {
 				showNotification({
 					type: "error",
@@ -152,7 +156,7 @@ export default function Page() {
 						className="!w-full"
 						disabled={formDisabled || setPasswordLoading}
 					>
-						تکمیل پروفایل
+						ورود به حساب کاربری
 					</TabanButton>
 				</div>
 			</form>

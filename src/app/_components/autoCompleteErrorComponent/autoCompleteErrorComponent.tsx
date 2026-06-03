@@ -1,6 +1,6 @@
 
 import TabanButton from "../common/tabanButton/tabanButton";
-import TabanLoading from "../common/tabanLoading.tsx/tabanLoading";
+import TabanLoading from "../common/tabanLoading/tabanLoading";
 import { IconCross, IconRetry } from "../icon/icons";
 import { AutoCompleteErrorComponentProps } from "./autoCompleteErrorComponent.types";
 

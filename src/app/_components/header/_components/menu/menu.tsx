@@ -1,135 +1,143 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { IconArrow, IconCircleUser, IconDocument, IconHome, IconInfo, IconSupport24, IconTranslate } from "@/app/_components/icon/icons";
+import { useProfiletore } from "@/stores/profile";
+import { menuItems } from "../../_constant/menuItems";
+import { MenuPopupProps } from "./menu.type";
 
-const subroute = [
-	{ href: "/", label: "پست مرسوله" },
-	{ href: "/پست-داخلی", label: "پست داخلی" },
-	{ href: "/پست-درون-شهری-ماهکس", label: "پست درون شهری" },
-	{ href: "/پست-بین-شهری-ماهکس", label: "پست بین شهری" },
-	{ href: "/پست-بین-المللی", label: "پست بین‌المللی" },
-	{ href: "/کارگو", label: "کارگو" },
-	{ href: "/پست-هوایی-خارجی", label: "پست هوایی خارجی" },
-	{ href: "/پست-سریع-فلش", label: "پست سریع فلش" },
-];
+const iconFor = (href: string) => {
+	if (href === "/") return IconHome;
+	if (href.startsWith("/blog")) return IconDocument;
+	if (href.startsWith("/new-order")) return IconTranslate;
+	if (href.startsWith("/about")) return IconInfo;
+	if (href.startsWith("/contact")) return IconSupport24;
+	return IconArrow;
+};
 
-export const MenuPopup: React.FC<{ open: boolean; setOpen: React.Dispatch<React.SetStateAction<boolean>> }> = ({ open, setOpen }) => {
-	const [hiden, setHiden] = useState<boolean>(false);
-	const [accordionOpen, setAccordionOpen] = useState(false);
-
-	const boxMotions = {
-		initial: { opacity: 0 },
-	};
-
-	const transitionProps = {
-		duration: 0.2,
-		scale: {
-			type: "spring",
-			damping: 50,
-			stiffness: 400,
-		},
-	};
-
-	const hide = {
-		opacity: 0,
-		transitionEnd: {
-			display: "none",
-		},
-	};
-
-	const show = {
-		opacity: 1,
-		display: "block",
-	};
+export const MenuPopup: React.FC<MenuPopupProps> = ({ open, setOpen }) => {
+	const [hidden, setHidden] = useState<boolean>(true);
+	const pathname = usePathname();
+	const profile = useProfiletore((state) => state.profile);
 
 	useEffect(() => {
 		if (!open) {
-			setTimeout(() => {
-				setHiden(!open);
-			}, 400);
-		} else {
-			setTimeout(() => {
-				setHiden(!open);
-			}, 1);
+			const t = setTimeout(() => setHidden(true), 350);
+			return () => clearTimeout(t);
 		}
+		setHidden(false);
 	}, [open]);
 
-	return (
-		<>
-			{!hiden && (
-				<motion.div
-					variants={boxMotions}
-					initial="initial"
-					animate={!!open ? show : hide}
-					transition={transitionProps}
-					className="w-full h-screen bg-black/60 fixed z-[100] top-0 left-0 search"
-				>
-					<div onClick={() => setOpen(false)} className="w-full h-screen absolute z-[100] top-0 left-0 "></div>
+	const close = () => setOpen(false);
 
-					<motion.div
-						onClick={(e) => e.preventDefault()}
-						initial={{ right: -500 }}
-						animate={{ right: 0 }}
-						transition={{
-							delay: 0.2,
-							duration: 0.2,
-							scale: {
-								type: "spring",
-								damping: 50,
-								stiffness: 400,
-							},
-						}}
-						className="bg-white p-8 w-7/12 fixed  left-0 top-0 z-[101] pt-6  overflow-auto h-full"
-					>
-						<span className="absolute top-8 right-8 duration-200 ease-in-out hover:rotate-90 cursor-pointer p-2">
-							{/* <IconClose stroke="black" onClick={() => setOpen(false)} className="" width={24} height={24} viewBox="0 0 16 16" /> */}
-						</span>
-						<div className="container">
-							<div className="flex flex-col md:!flex-row max-md:gap-12">
-								<div className="w-full">
-									<Link href="/" className="">
-										<Image width={50} height={56} src="/images/logo2.svg" alt="logo" className="" />
+	if (hidden) return null;
+
+	return (
+		<motion.div
+			initial={{ opacity: 0 }}
+			animate={{ opacity: open ? 1 : 0 }}
+			transition={{ duration: 0.25 }}
+			className="w-full h-screen bg-black/50 backdrop-blur-sm fixed z-[110] top-0 left-0"
+		>
+			<div onClick={close} className="w-full h-full absolute z-[110] top-0 left-0" />
+
+			<motion.div
+				onClick={(e) => e.stopPropagation()}
+				initial={{ x: "100%" }}
+				animate={{ x: open ? "0%" : "100%" }}
+				transition={{ type: "spring", damping: 40, stiffness: 300 }}
+				className="bg-white w-[75%] max-w-sm fixed right-0 top-0 z-[111] h-full flex flex-col shadow-2xl"
+			>
+				{/* User / auth card */}
+				<div className="px-5 pt-4">
+					{profile ? (
+						<Link
+							href="/profile"
+							onClick={close}
+							className="flex items-center gap-3 bg-gradient-to-l from-primary to-primary/85 text-white rounded-2xl p-4 duration-200 active:scale-[0.98]"
+						>
+							<span className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+								<IconCircleUser className="stroke-white w-6 h-6" />
+							</span>
+							<span className="flex flex-col min-w-0">
+								<span className="font-semibold peyda truncate">
+									{profile.fullName?.trim() || "کاربر رسمی‌یاب"}
+								</span>
+								<span className="text-xs text-white/70">مشاهده پیشخوان</span>
+							</span>
+							<IconArrow className="-rotate-90 fill-white/80 mr-auto" width={20} height={20} strokeWidth={0} />
+						</Link>
+					) : (
+						<Link
+							href="/auth"
+							onClick={close}
+							className="flex items-center justify-center gap-2 bg-secondary hover:bg-suppliment text-white rounded-2xl p-4 font-semibold duration-200 active:scale-[0.98]"
+						>
+							<IconCircleUser className="stroke-white w-5 h-5" />
+							ورود / ثبت‌نام
+						</Link>
+					)}
+				</div>
+
+				{/* Navigation */}
+				<nav className="flex-1 overflow-y-auto px-3 py-4">
+					<ul className="flex flex-col gap-1">
+						{menuItems.map((item) => {
+							const Icon = iconFor(item.href);
+							const isActive =
+								item.href === "/" ? pathname === "/" : pathname.startsWith(item.href.replace(/\/$/, ""));
+							return (
+								<li key={item.href}>
+									<Link
+										href={item.href}
+										onClick={close}
+										className={`group flex items-center gap-3 px-3 py-3 rounded-xl duration-200 ${
+											isActive
+												? "bg-primary/10 text-primary"
+												: "text-neutral-600 hover:bg-neutral-100"
+										}`}
+									>
+										<span
+											className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 duration-200 ${
+												isActive
+													? "bg-primary/15"
+													: "bg-neutral-100 group-hover:bg-white"
+											}`}
+										>
+											<Icon
+												strokeWidth={1.5}
+												className={`w-5 h-5 ${isActive ? "stroke-primary" : "stroke-neutral-500"}`}
+											/>
+										</span>
+										<span className="text-[15px] font-medium">{item.title}</span>
+										<IconArrow
+											className={`mr-auto -rotate-90 ${isActive ? "fill-primary" : "fill-neutral-300"}`}
+											width={18}
+											height={18}
+											strokeWidth={0}
+										/>
 									</Link>
-									<ul className="flex pr-0 flex-col text-[15px] gap-3 mt-6">
-										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
-											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="/">
-												خانه
-											</Link>
-										</li>
-										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
-											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="/intelligent-architect">
-												طراح هوشمند
-											</Link>
-										</li>
-										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
-											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
-												فروشگاه
-											</Link>
-										</li>
-										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
-											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
-												مجله معمار
-											</Link>
-										</li>
-										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
-											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
-												درباره ما
-											</Link>
-										</li>
-										<li className="border-b border-b-neutral-2 pb-3 text-neutral-5">
-											<Link onClick={() => setOpen(false)} className="duration-200 hover:text-neutral-1" href="#">
-												تماس با ما
-											</Link>
-										</li>
-									</ul>
-								</div>
-							</div>
-						</div>
-					</motion.div>
-				</motion.div>
-			)}
-		</>
+								</li>
+							);
+						})}
+					</ul>
+				</nav>
+
+				{/* CTA footer */}
+				<div className="px-5 py-4 border-t border-neutral-100">
+					<Link
+						href="/new-order"
+						onClick={close}
+						className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl py-3.5 font-semibold duration-200 active:scale-[0.98] shadow-sm"
+					>
+						<IconTranslate strokeWidth={0} className="fill-white w-5 h-5" />
+						سفارش ترجمه آنلاین
+					</Link>
+				</div>
+			</motion.div>
+		</motion.div>
 	);
 };

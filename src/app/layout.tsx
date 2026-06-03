@@ -1,67 +1,73 @@
-"use client";
-
 import { Metadata, Viewport } from "next";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "./providers";
 import "../styles/globals.css";
 import "./globals.css";
-import { Header } from "./_components/header/header";
-import { Footer } from "./_components/footer/footer";
 import { Notifications } from "./_components/notification/notification";
-import { AuthGuard } from "./_components/authGuard/authGuard";
-import { useProfiletore } from "@/stores/profile";
-import { Profile } from "@/types/profile.type";
-import { Res } from "@/types/responseType";
-import { API_URL } from "@/config/global";
-import { readData } from "@/core/http-service/http-service";
-import { useEffect } from "react";
-import { useCartStore } from "@/stores/cart";
-import { Cart } from "@/types/cart.type";
-import { storage } from "@/utils/Storage";
-import { StorageKey } from "@/types/StorageKey";
-import { TabanEndpoints } from "./_api/endpoints";
-import { useApi } from "@/hooks/useApi";
-import { useNotificationStore } from "@/stores/notification.store";
+import AppBootstrap from "./_components/appBootstrap/appBootstrap";
+import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/config/site";
+
+export const metadata: Metadata = {
+	metadataBase: new URL(SITE_BASE_URL),
+	title: {
+		default: SITE_TITLE,
+		template: `%s | ${SITE_NAME}`,
+	},
+	description: SITE_DESCRIPTION,
+	applicationName: SITE_NAME,
+	alternates: { canonical: "/" },
+	icons: { icon: "/images/logo2.svg" },
+	openGraph: {
+		type: "website",
+		siteName: SITE_NAME,
+		locale: "fa_IR",
+		url: SITE_BASE_URL,
+		title: SITE_TITLE,
+		description: SITE_DESCRIPTION,
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: SITE_TITLE,
+		description: SITE_DESCRIPTION,
+	},
+	robots: {
+		index: true,
+		follow: true,
+	},
+};
 
 export const viewport: Viewport = {
-	themeColor: [
-		{ media: "(prefers-color-scheme: light)", color: "red" },
-		{ media: "(prefers-color-scheme: dark)", color: "black" },
-	],
+	themeColor: "#1a3047",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-	const { profile, setProfile } = useProfiletore();
-	const showNotification = useNotificationStore((state) => state.showNotification);
-	const { result: profileResult, fetchData: executeProfile } = useApi(async () => await TabanEndpoints.getProfile());
+	const organizationLd = {
+		"@context": "https://schema.org",
+		"@type": "Organization",
+		name: SITE_NAME,
+		url: SITE_BASE_URL,
+		logo: `${SITE_BASE_URL}/images/logo2.svg`,
+	};
 
-	useEffect(() => {
-		executeProfile();
-	}, []);
-
-	useEffect(() => {
-		if (profileResult) {
-			if (profileResult?.success) {
-				setProfile(profileResult?.data?.data);
-			} else {
-				setProfile(null);
-				profileResult?.statusCode !== 401 &&
-					showNotification({
-						type: "error",
-						message: profileResult?.description ?? "دریافت پروفایل با خطا مواجه شد",
-					});
-			}
-		}
-	}, [profileResult]);
+	const websiteLd = {
+		"@context": "https://schema.org",
+		"@type": "WebSite",
+		name: SITE_NAME,
+		url: SITE_BASE_URL,
+		inLanguage: "fa-IR",
+	};
 
 	return (
-		<html dir="rtl">
-			<head>
-				<link rel="icon" href="/images/logo2.svg" />
-				<meta name="theme-color" content="#1a3047" />
-				{/* <title>رسمی‌یاب | پلتفرمم آنلاین ترجمه رسمی</ title> */}
-			</head>
+		<html lang="fa" dir="rtl">
 			<body className="content-center bg-white text-primary">
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
+				/>
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }}
+				/>
 				<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
 					<NextTopLoader
 						color="#1a3047"
@@ -76,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						zIndex={1600}
 						showAtBottom={false}
 					/>
+					<AppBootstrap />
 					<Notifications />
 					{children}
 				</Providers>
