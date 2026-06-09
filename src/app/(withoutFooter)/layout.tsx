@@ -31,7 +31,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<>
 			<Header />
-			<div className="h-[calc(100dvh)] pt-[100px]">{children}</div>
+			<div className="h-[calc(100dvh)] pt-[72px]">{children}</div>
 		</>
 	);
 }

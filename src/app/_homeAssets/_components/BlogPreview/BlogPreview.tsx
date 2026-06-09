@@ -7,8 +7,8 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "./style.scss";
 import { useEffect, useState } from "react";
-import { BlogPreviewProps } from "./blogPreview.type";
 import BlogPost from "@/app/_components/blogPost/blogPost";
+import { BlogPreviewProps } from "./blogPreview1.type";
 
 export default function BlogPreview({ posts }: BlogPreviewProps) {
 	const [width, setWidth] = useState<number>(0);
