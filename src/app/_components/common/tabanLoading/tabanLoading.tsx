@@ -2,8 +2,8 @@
 
 import styled from "styled-components";
 import { TabanLoadingProps } from "./tabanLoading.type";
-import { Spinner } from "@nextui-org/spinner";
 import { useEffect, useRef, useState } from "react";
+import { Spinner } from "@nextui-org/react";
 
 const LoaderCircle = styled.div<{ size: number; color: string; thickness: number }>`
 	width: ${(props) => props.size}px;
