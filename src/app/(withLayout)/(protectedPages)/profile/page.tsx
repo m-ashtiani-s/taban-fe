@@ -7,21 +7,17 @@ import { TabanEndpoints } from "@/app/_api/endpoints";
 import { useProfiletore } from "@/stores/profile";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
-import {
-	IconCart,
-	IconDocument,
-	IconStar,
-	IconTranslate,
-	IconUser,
-} from "@/app/_components/icon/icons";
+import { IconCart, IconDocument, IconStar, IconTranslate, IconUser } from "@/app/_components/icon/icons";
 import ReferralCode from "./_components/referralCode/referralCode";
 
 export default function Page() {
 	const { profile } = useProfiletore();
 
-	const { resultData: completionData, fetchData: executeCompletion, loading: completionLoading } = useApi(
-		async () => await TabanEndpoints.getProfileCompletionStatus(),
-	);
+	const {
+		resultData: completionData,
+		fetchData: executeCompletion,
+		loading: completionLoading,
+	} = useApi(async () => await TabanEndpoints.getProfileCompletionStatus());
 
 	useEffect(() => {
 		executeCompletion();
@@ -57,14 +53,7 @@ export default function Page() {
 				<div className="bg-white border border-secondary/40 rounded-2xl p-5 lg:p-6 flex flex-col md:flex-row items-stretch md:items-center gap-5 shadow-sm">
 					<div className="relative w-24 h-24 shrink-0 mx-auto md:mx-0">
 						<svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
-							<circle
-								cx="18"
-								cy="18"
-								r="15"
-								fill="none"
-								stroke="rgba(184, 162, 124, 0.2)"
-								strokeWidth="3"
-							/>
+							<circle cx="18" cy="18" r="15" fill="none" stroke="rgba(184, 162, 124, 0.2)" strokeWidth="3" />
 							<circle
 								cx="18"
 								cy="18"
@@ -88,8 +77,8 @@ export default function Page() {
 							پروفایلت ناقصه
 						</div>
 						<p className="text-sm text-neutral-600 leading-7">
-							برای ثبت سفارش ترجمه، تکمیل پروفایل الزامیه. با تکمیل اطلاعات، تجربه راحت‌تری
-							از خدمات رسمی‌یاب خواهی داشت.
+							برای ثبت سفارش ترجمه، تکمیل پروفایل الزامیه. با تکمیل اطلاعات، تجربه راحت‌تری از خدمات رسمی‌یاب خواهی
+							داشت.
 						</p>
 						{completion?.incompleteItems && completion.incompleteItems.length > 0 && (
 							<div className="flex flex-wrap gap-1.5 mt-3">
@@ -118,18 +107,16 @@ export default function Page() {
 				</div>
 			) : (
 				<div className="bg-white border border-success/40 rounded-2xl p-5 lg:p-6 flex items-center gap-4 shadow-sm">
-					<div className="w-14 h-14 rounded-full bg-success/15 flex items-center justify-center text-success text-2xl">
-						✓
-					</div>
-					<div className="flex-1">
-						<div className="font-semibold text-success peyda">پروفایل شما تکمیل است</div>
-						<div className="text-sm text-neutral-600 mt-0.5">
-							می‌توانید با خیال راحت سفارش ترجمه ثبت کنید.
+					<div className="w-14 h-14 rounded-full bg-success/15 flex items-center justify-center text-success text-2xl">✓</div>
+					<div className="flex max-lg:flex-col gap-4 lg:justify-between lg:flex-1">
+						<div className="flex-1">
+							<div className="font-semibold text-success peyda">پروفایل شما تکمیل است</div>
+							<div className="text-sm text-neutral-600 mt-0.5">می‌توانید با خیال راحت سفارش ترجمه ثبت کنید.</div>
 						</div>
+						<TabanButton variant="bordered" isLink href="/profile/info">
+							مشاهده پروفایل
+						</TabanButton>
 					</div>
-					<TabanButton variant="bordered" isLink href="/profile/info">
-						مشاهده پروفایل
-					</TabanButton>
 				</div>
 			)}
 
@@ -143,9 +130,7 @@ export default function Page() {
 						<IconTranslate stroke="#1a3047" strokeWidth={0} className="fill-primary" />
 					</div>
 					<div className="flex-1">
-						<div className="font-semibold peyda group-hover:text-primary duration-200">
-							ثبت سفارش ترجمه
-						</div>
+						<div className="font-semibold peyda group-hover:text-primary duration-200">ثبت سفارش ترجمه</div>
 						<p className="text-xs text-neutral-500 mt-1 leading-6">
 							پرونده‌هایت رو بفرست تا با بهترین کیفیت ترجمه رسمی بشن.
 						</p>
@@ -160,12 +145,8 @@ export default function Page() {
 						<IconUser stroke="#b8a27c" />
 					</div>
 					<div className="flex-1">
-						<div className="font-semibold peyda group-hover:text-primary duration-200">
-							اطلاعات پروفایل
-						</div>
-						<p className="text-xs text-neutral-500 mt-1 leading-6">
-							اطلاعات حساب کاربری خودت رو مشاهده و ویرایش کن.
-						</p>
+						<div className="font-semibold peyda group-hover:text-primary duration-200">اطلاعات پروفایل</div>
+						<p className="text-xs text-neutral-500 mt-1 leading-6">اطلاعات حساب کاربری خودت رو مشاهده و ویرایش کن.</p>
 					</div>
 				</Link>
 
@@ -177,12 +158,8 @@ export default function Page() {
 						<IconCart stroke="#1a3047" />
 					</div>
 					<div className="flex-1">
-						<div className="font-semibold peyda group-hover:text-primary duration-200">
-							سبد خرید
-						</div>
-						<p className="text-xs text-neutral-500 mt-1 leading-6">
-							سفارش‌های ترجمه ثبت‌شده خود را مدیریت کنید.
-						</p>
+						<div className="font-semibold peyda group-hover:text-primary duration-200">سبد خرید</div>
+						<p className="text-xs text-neutral-500 mt-1 leading-6">سفارش‌های ترجمه ثبت‌شده خود را مدیریت کنید.</p>
 					</div>
 				</Link>
 			</div>
@@ -196,8 +173,8 @@ export default function Page() {
 					<div className="flex-1">
 						<div className="font-semibold peyda text-primary">کد معرف اختصاصی شما</div>
 						<p className="text-xs text-neutral-600 mt-1 leading-6">
-							کد زیر رو با دوستانت به اشتراک بذار. هر بار که کسی با کد تو ثبت‌نام و سفارش
-							ثبت کنه، ۱۰٪ از مبلغ سفارش به‌عنوان تخفیف به تو تعلق می‌گیره.
+							کد زیر رو با دوستانت به اشتراک بذار. هر بار که کسی با کد تو ثبت‌نام و سفارش ثبت کنه، ۱۰٪ از مبلغ سفارش
+							به‌عنوان تخفیف به تو تعلق می‌گیره.
 						</p>
 					</div>
 					<ReferralCode code={profile.ownReferralCode} />

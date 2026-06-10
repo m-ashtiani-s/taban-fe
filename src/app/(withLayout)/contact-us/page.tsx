@@ -184,7 +184,7 @@ export default function ContactUsPage() {
                                                 <IconTelegram viewBox="0 0 192 192" className="stroke-white" strokeWidth={18} width={22} height={22} />
                                             </Link>
                                             <Link href="/" className="bg-secondary h-9 w-9 rounded-xl flex items-center justify-center hover:opacity-90 duration-200">
-                                                <IconWhatsapp className="fill-white" strokeWidth={0.8} width={20} height={20} />
+                                                <IconWhatsapp className="fill-white stroke-white" strokeWidth={0.8} width={20} height={20} />
                                             </Link>
                                         </div>
                                     </div>
