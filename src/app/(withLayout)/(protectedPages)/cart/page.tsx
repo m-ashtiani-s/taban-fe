@@ -54,7 +54,7 @@ export default function CartPage() {
 	const isLoading = getCart.loading && !getCart.result;
 
 	return (
-		<div className="flex flex-col gap-6 pt-16 max-lg:px-4">
+		<div className="flex flex-col gap-6 pt-16 max-lg:pt-8 max-lg:px-4">
 			<TabanModal
 				open={!!deleteTarget}
 				setOpen={(v) => !v && setDeleteTarget(null)}
@@ -157,7 +157,7 @@ export default function CartPage() {
 								</div>
 							)}
 						</div>
-						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-neutral-100 pt-4">
+						<div className="flex flex-row items-start sm:items-center justify-between gap-4 border-t border-neutral-100 pt-4">
 							<div className="flex flex-col gap-1">
 								<div className="text-sm text-neutral-500">مبلغ قابل پرداخت</div>
 								<div className="peyda font-bold text-2xl text-primary flex items-center gap-2">

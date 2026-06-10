@@ -11,7 +11,7 @@ type ErrorProps = {
 export default function Error({ error, reset }: ErrorProps) {
 	return (
 		
-		<div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-suppliment to-white flex items-center justify-center px-4 py-16">
+		<div className="relative min-h-[100dvh] w-full overflow-hidden bg-gradient-to-b from-suppliment to-white flex items-center justify-center px-4 py-16">
 			<div className="pointer-events-none absolute inset-0 -z-[1]">
 				<div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-error/10 blur-3xl" />
 				<div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />

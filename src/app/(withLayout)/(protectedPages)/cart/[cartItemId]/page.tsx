@@ -245,7 +245,7 @@ export default function CartEditPage() {
 	const documentKeys = Object.keys(editState.translationItemNames);
 
 	return (
-		<div className="flex flex-col gap-4 pt-16">
+		<div className="flex flex-col gap-4 pt-16 max-lg:pt-8 px-4">
 			{/* Step indicator bar */}
 			<div className="bg-white border border-neutral-200 rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3">
 				<div>

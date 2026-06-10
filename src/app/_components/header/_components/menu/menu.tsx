@@ -40,7 +40,7 @@ export const MenuPopup: React.FC<MenuPopupProps> = ({ open, setOpen }) => {
 			initial={{ opacity: 0 }}
 			animate={{ opacity: open ? 1 : 0 }}
 			transition={{ duration: 0.25 }}
-			className="w-full h-screen bg-black/50 backdrop-blur-sm fixed z-[1112] top-0 left-0"
+			className="w-full h-[100dvh] bg-black/50 backdrop-blur-sm fixed z-[1112] top-0 left-0"
 		>
 			<div onClick={close} className="w-full h-full absolute z-[1112] top-0 left-0" />
 

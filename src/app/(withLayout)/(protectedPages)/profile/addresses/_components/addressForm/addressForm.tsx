@@ -284,7 +284,7 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 						</div>
 					</section>
 
-					<div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+					<div className="flex  flex-row justify-end gap-3">
 						<TabanButton variant="bordered" onClick={() => router.push(backUrl || "/profile/addresses")} disabled={submitLoading}>
 							انصراف
 						</TabanButton>
@@ -295,7 +295,7 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 				</div>
 
 				{/* live preview */}
-				<div className="lg:col-span-1 lg:sticky lg:top-[88px]">
+				<div className="lg:col-span-1 lg:sticky lg:top-[88px] max-lg:hidden">
 					<div className="text-xs text-neutral-400 mb-2 flex items-center gap-1.5">
 						<IconUser width={14} height={14} className="stroke-neutral-400" />
 						پیش‌نمایش آدرس

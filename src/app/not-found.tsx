@@ -10,7 +10,7 @@ export default function NotFound() {
 	return (
 		<>
 			<Header />
-			<div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-suppliment to-white flex items-center justify-center px-4 py-16">
+			<div className="relative min-h-[100dvh] w-full overflow-hidden bg-gradient-to-b from-suppliment to-white flex items-center justify-center px-4 py-16">
 				{/* لکه‌های پس‌زمینه‌ی نرم */}
 				<div className="pointer-events-none absolute inset-0 -z-[1]">
 					<div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-secondary/15 blur-3xl" />

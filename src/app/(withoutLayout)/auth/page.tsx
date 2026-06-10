@@ -99,7 +99,7 @@ export default function Page() {
 	};
 
 	return (
-		<div className="w-full lg:!p-6 lg:!border border-secondary rounded-2xl h-full max-lg:!h-screen flex items-center justify-center flex-col bg-white">
+		<div className="w-full lg:!p-6 lg:!border border-secondary rounded-2xl h-full max-lg:!h-[100dvh] flex items-center justify-center flex-col bg-white">
 			<MobileTopHeader pageName="" hasBAck backUrl="/" backAction={router.back} />
 			<form className="max-lg:!p-4 h-full flex justify-center flex-col max-lg:!-mt-16 !w-full" onSubmit={checkUsernameHandler}>
 				<div className="w-full flex justify-center relative">

@@ -58,7 +58,7 @@ export const SuccessPopup: React.FC<{ text: string; open: boolean; setOpen: Reac
 					initial="initial"
 					animate={!!open ? show : hide}
 					transition={transitionProps}
-					className="w-full h-screen bg-black/60 fixed z-[100] top-0 left-0 search"
+					className="w-full h-[100dvh] bg-black/60 fixed z-[100] top-0 left-0 search"
 				>
 					<div
 						onClick={() => {
@@ -66,7 +66,7 @@ export const SuccessPopup: React.FC<{ text: string; open: boolean; setOpen: Reac
 							setFormValues({});
 							setSubmited(false)
 						}}
-						className="w-full h-screen absolute z-[100] top-0 left-0 "
+						className="w-full h-[100dvh] absolute z-[100] top-0 left-0 "
 					></div>
 
 					<motion.div

@@ -4,7 +4,7 @@ import { CheckProfileErrorProps } from "./checkProfileError.type";
 
 export default function CheckProfileError({executeCheckProfile}:CheckProfileErrorProps) {
 	return (
-		<div className="h-screen w-full flex items-center justify-center">
+		<div className="h-[100dvh] w-full flex items-center justify-center">
 			<div
 				className={` z-100 max-lg:!z-[3000] lg:!border lg:!border-surface-variant theme-scrol rounded-lg px-6 py-4 overflow-y-auto`}
 			>

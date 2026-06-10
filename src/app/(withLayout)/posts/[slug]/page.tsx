@@ -106,7 +106,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
     };
 
     return (
-        <article className="bg-suppliment min-h-screen">
+        <article className="bg-suppliment min-h-[100dvh]">
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 

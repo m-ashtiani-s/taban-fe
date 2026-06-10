@@ -42,7 +42,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
     const data = await getPosts(currentPage, PER_PAGE, term);
 
     return (
-        <div className="bg-suppliment min-h-screen">
+        <div className="bg-suppliment min-h-[100dvh]">
             {/* ── Hero ── */}
             <section className="relative bg-primary overflow-hidden">
                 <div
