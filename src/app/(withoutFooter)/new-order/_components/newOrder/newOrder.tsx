@@ -247,7 +247,7 @@ export default function NewOrder() {
 
 	if (initializing) {
 		return (
-			<div className="min-h-screen w-full flex items-center justify-center gap-2 text-sm text-neutral-500">
+			<div className="min-h-[100dvh] w-full flex items-center justify-center gap-2 text-sm text-neutral-500">
 				<TabanLoading size={24} />
 				در حال آماده‌سازی سفارش شما...
 			</div>
@@ -255,7 +255,7 @@ export default function NewOrder() {
 	}
 
 	return (
-		<div className="min-h-screen w-full bg-gradient-to-b from-secondary/[0.04] to-transparent py-8 lg:py-12 max-lg:px-4">
+		<div className="min-h-[100dvh] w-full bg-gradient-to-b from-secondary/[0.04] to-transparent py-8 lg:py-12 max-lg:px-4">
 			<div className="container">
 				<div className="max-w-5xl mx-auto flex flex-col gap-8">
 					<div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur px-5 py-5 lg:px-8">

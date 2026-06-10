@@ -9,9 +9,9 @@ const backdropVariants = {
 };
 
 const modalVariants = {
-	hidden: { opacity: 0, y: "-100vh" },
+	hidden: { opacity: 0, y: "-100dvh" },
 	visible: { opacity: 1, y: 0 },
-	exit: { opacity: 0, y: "100vh" },
+	exit: { opacity: 0, y: "100dvh" },
 };
 
 export default function TabanModal({ open, setOpen, title, children, onClose, width }: MemearButtonProps) {

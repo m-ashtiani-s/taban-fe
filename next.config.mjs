@@ -9,6 +9,12 @@ const nextConfig = {
 				port: "",
 				pathname: "/**",
 			},
+			{
+				protocol: "http",
+				hostname: "185.124.174.82",
+				port: "9000",
+				pathname: "/**",
+			},
 		],
 	},
 	async rewrites() {

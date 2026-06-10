@@ -36,7 +36,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 
 	if (checkProfileLoading || profileLoading) {
 		return (
-			<div className="flex justify-center items-center h-screen gap-4">
+			<div className="flex justify-center items-center h-[100dvh] gap-4">
 				<TabanLoading size={36} />
 				لطفا منتظر بمانید
 			</div>

@@ -77,7 +77,8 @@ export default function ProfileSidebar() {
 
 	return (
 		<>
-			<aside className="w-full lg:w-[280px] shrink-0 lg:sticky lg:top-[88px] lg:self-start">
+			{/* ── Desktop sidebar ── */}
+			<aside className="hidden lg:block lg:w-[280px] shrink-0 lg:sticky lg:top-[88px] lg:self-start">
 				<div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
 					{/* user header */}
 					<div className="relative bg-gradient-to-bl from-primary to-primary/85 px-5 py-5 text-white">
@@ -195,6 +196,60 @@ export default function ProfileSidebar() {
 					</nav>
 				</div>
 			</aside>
+
+			{/* ── Mobile horizontal nav — content-first, compact, sticky, scrollable ── */}
+			<div className="lg:hidden -mx-4 sticky top-[48px] z-30 bg-white/95 backdrop-blur border-b border-neutral-200">
+				<div className="flex items-center gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					{menu.map((item) => {
+						const active = item.matchExact ? pathname === item.href : pathname.startsWith(item.href);
+						return (
+							<Link
+								key={item.href}
+								href={item.href}
+								className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm whitespace-nowrap shrink-0 border duration-200 [&_svg]:w-[18px] [&_svg]:h-[18px] ${
+									active
+										? "bg-primary text-white border-primary shadow-sm [&_svg]:stroke-white"
+										: "bg-white text-neutral-700 border-neutral-200 [&_svg]:stroke-neutral-500"
+								}`}
+							>
+								<span className="shrink-0">{item.icon}</span>
+								<span>{item.label}</span>
+							</Link>
+						);
+					})}
+
+					{completion && !completion.isCompleted && (
+						<Link
+							href="/profile/complete"
+							className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm whitespace-nowrap shrink-0 border border-secondary/40 bg-secondary/10 text-secondary duration-200"
+						>
+							<span className="font-semibold">تکمیل پروفایل</span>
+							<span className="text-[11px] opacity-80">{Math.round(completion.completionPercent)}٪</span>
+						</Link>
+					)}
+
+					<Link
+						href={displayProfile?.customerType === "ENTERPRISE" ? "/enterprise-customers/profile" : "/enterprise-customers"}
+						className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm whitespace-nowrap shrink-0 border duration-200 [&_svg]:w-[18px] [&_svg]:h-[18px] ${
+							pathname.startsWith("/enterprise-customers")
+								? "bg-primary text-white border-primary shadow-sm [&_svg]:stroke-white"
+								: "bg-secondary/10 text-secondary border-secondary/40 [&_svg]:stroke-secondary"
+						}`}
+					>
+						<IconDashboard />
+						<span>{displayProfile?.customerType === "ENTERPRISE" ? "پنل سازمانی" : "مشتری سازمانی"}</span>
+					</Link>
+
+					<button
+						type="button"
+						onClick={() => setLogoutOpen(true)}
+						className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm whitespace-nowrap shrink-0 border border-error/30 bg-error/10 text-error duration-200 [&_svg]:w-[18px] [&_svg]:h-[18px]"
+					>
+						<IconLogout stroke="#f87272" />
+						<span>خروج</span>
+					</button>
+				</div>
+			</div>
 
 			<TabanModal
 				onClose={() => {}}

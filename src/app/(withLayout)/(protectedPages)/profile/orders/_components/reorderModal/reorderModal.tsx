@@ -234,7 +234,7 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 								</div>
 							</div>
 
-							<div className="flex flex-col sm:flex-row gap-3">
+							<div className="flex flex-row gap-3">
 								<TabanButton variant="bordered" onClick={backToList} disabled={add.loading} className="flex-1 justify-center">
 									انصراف
 								</TabanButton>
