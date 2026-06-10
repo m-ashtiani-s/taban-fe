@@ -40,16 +40,16 @@ export const MenuPopup: React.FC<MenuPopupProps> = ({ open, setOpen }) => {
 			initial={{ opacity: 0 }}
 			animate={{ opacity: open ? 1 : 0 }}
 			transition={{ duration: 0.25 }}
-			className="w-full h-screen bg-black/50 backdrop-blur-sm fixed z-[110] top-0 left-0"
+			className="w-full h-screen bg-black/50 backdrop-blur-sm fixed z-[1112] top-0 left-0"
 		>
-			<div onClick={close} className="w-full h-full absolute z-[110] top-0 left-0" />
+			<div onClick={close} className="w-full h-full absolute z-[1112] top-0 left-0" />
 
 			<motion.div
 				onClick={(e) => e.stopPropagation()}
 				initial={{ x: "100%" }}
 				animate={{ x: open ? "0%" : "100%" }}
 				transition={{ type: "spring", damping: 40, stiffness: 300 }}
-				className="bg-white w-[75%] max-w-sm fixed right-0 top-0 z-[111] h-full flex flex-col shadow-2xl"
+				className="bg-white w-[75%] max-w-sm fixed right-0 top-0 z-[1113] h-full flex flex-col shadow-2xl"
 			>
 				{/* User / auth card */}
 				<div className="px-5 pt-4">

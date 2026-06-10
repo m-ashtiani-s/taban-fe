@@ -53,7 +53,7 @@ export default function SelectCard({
 				</div>
 			</div>
 
-			<div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+			<div className="flex items-center gap-2 shrink-0">
 				{trailing}
 				{indicator !== "none" && (
 					<div

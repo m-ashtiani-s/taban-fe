@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "./style.scss";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MenuPopup } from "./_components/menu/menu";
@@ -133,6 +134,13 @@ function HeaderMenu({ children, number }: { children: MenuItem[]; number: number
 export const Header = () => {
 	const { profile, setProfile } = useProfiletore();
 	const { setCart } = useCartStore();
+	const pathname = usePathname();
+
+	const isItemActive = (href: string) => {
+		const clean = href.replace(/\/$/, "");
+		if (clean === "" || clean === "/") return pathname === "/";
+		return pathname === clean || pathname.startsWith(`${clean}/`);
+	};
 	const [open, setOpen] = useState<boolean>(false);
 	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
 
@@ -180,7 +188,11 @@ export const Header = () => {
 							{menuItems?.map((it) => (
 								<div
 									key={it?.title}
-									className="group cursor-pointer relative font-medium text-sm duration-200 border-b-2 border-b-primary/0 hover:!border-b-neutral-200 pb-2 mt-2 text-neutral-200 hover:!text-neutral-200"
+									className={`group cursor-pointer relative font-medium text-sm duration-200 border-b-2 pb-2 mt-2 text-neutral-200 hover:!text-neutral-200 ${
+										isItemActive(it?.href)
+											? "border-b-neutral-200"
+											: "border-b-primary/0 hover:!border-b-neutral-200"
+									}`}
 								>
 									<Link href={it?.href} className="flex gap-1 items-center px-2">
 										{it?.title}
@@ -286,7 +298,7 @@ export const Header = () => {
 				</div>
 			</header>
 			<header
-				className={`lg:!hidden w-full top-0 right-0 rounded-none border-white border-b-neutral-200 fixed duration-300  z-[100] bg-white shadow-sm border py-1`}
+				className={`lg:!hidden w-full top-0 right-0 rounded-none border-white border-b-neutral-200 fixed duration-300  z-[111] bg-white shadow-sm border py-1`}
 			>
 				<MenuPopup open={open} setOpen={setOpen} />
 				<div className="w-full ">

@@ -117,8 +117,8 @@ export default function ContactForm() {
                         setValue={setValues}
                         name="mobile"
                         groupMode
-                        isLtr
-                        isNumber
+                        // isLtr
+                        // isNumber
                         placeholder="شماره موبایل *"
                     />
                     {!!findError("mobile") && <span className="text-error text-xs mt-1">{findError("mobile")?.message}</span>}
