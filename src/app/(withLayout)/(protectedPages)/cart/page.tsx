@@ -253,7 +253,13 @@ function CartItemCard({
 										<span>{toCurrency(doc.justiceCertification.price)} تومان</span>
 									</div>
 								)}
-								{doc.justiceInquiries?.map((i) => (
+								{doc.embassyApprovals?.map((e) => (
+										<div key={e.embassyRateId} className="flex items-center justify-between">
+											<span>{e.embassyName}</span>
+											<span>{toCurrency(e.price)} تومان</span>
+										</div>
+									))}
+									{doc.justiceInquiries?.map((i) => (
 									<div key={i.justiceInquiryRateId} className="flex items-center justify-between">
 										<span>{i.justiceInquiryName}</span>
 										<span>{toCurrency(i.price)} تومان</span>

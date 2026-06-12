@@ -355,7 +355,13 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 									<span>{toCurrency(d.justiceCertification.price)} تومان</span>
 								</div>
 							)}
-							{d.justiceInquiries.map((i) => (
+							{d.embassyApprovals?.map((e) => (
+									<div key={e.embassyRateId} className="flex items-center justify-between">
+										<span>{e.embassyName}</span>
+										<span>{toCurrency(e.price)} تومان</span>
+									</div>
+								))}
+								{d.justiceInquiries.map((i) => (
 								<div key={i.justiceInquiryRateId} className="flex items-center justify-between">
 									<span>{i.justiceInquiryName}</span>
 									<span>{toCurrency(i.price)} تومان</span>

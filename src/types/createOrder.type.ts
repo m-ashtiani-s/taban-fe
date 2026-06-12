@@ -17,6 +17,11 @@ export type CreateOrder = {
 		translationItemId: string;
 		justiceInquiries: JusticeInquirySelection[];
 	}[];
+	embassyItems?: {
+		translationItemTitle: string;
+		translationItemId: string;
+		embassies: EmbassySelection[];
+	}[];
 	mfaCertification?: {
 		translationItemTitle: string;
 		translationItemId: string;
@@ -45,4 +50,8 @@ export type CertificationSelection = {
 
 export type JusticeInquirySelection = {
 	justiceInquiryRateId: string;
+};
+
+export type EmbassySelection = {
+	embassyRateId: string;
 };

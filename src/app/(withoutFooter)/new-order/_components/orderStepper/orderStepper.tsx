@@ -1,5 +1,5 @@
 import { Fragment, useMemo } from "react";
-import { IconCheck } from "@/app/_components/icon/icons";
+import { IconCheck, IconTick } from "@/app/_components/icon/icons";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { PHASES, StepKey } from "../../_config/steps";
 
@@ -52,7 +52,7 @@ export default function OrderStepper({ steps, currentStep }: OrderStepperProps) 
 												: "bg-white text-neutral-400 border border-dashed border-neutral-300"
 									}`}
 								>
-									{isDone ? <IconCheck className="stroke-white w-4 h-4" strokeWidth={2} /> : convertToPersianNumber(index + 1)}
+									{isDone ? <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} /> : convertToPersianNumber(index + 1)}
 								</div>
 								<span
 									className={`hidden md:block text-center text-xs leading-5 h-5 whitespace-nowrap transition-colors duration-300 ${

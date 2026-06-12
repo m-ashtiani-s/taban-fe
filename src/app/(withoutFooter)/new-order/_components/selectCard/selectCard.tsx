@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { IconCheck } from "@/app/_components/icon/icons";
+import { IconCheck, IconTick } from "@/app/_components/icon/icons";
 
 type SelectCardProps = {
 	selected: boolean;
@@ -61,7 +61,7 @@ export default function SelectCard({
 							indicator === "radio" ? "rounded-full" : "rounded-md"
 						} border ${selected ? "bg-secondary border-secondary" : "border-neutral-300 group-hover:border-secondary/60"}`}
 					>
-						{selected && <IconCheck className="stroke-white w-4 h-4" strokeWidth={2} />}
+						{selected && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 					</div>
 				)}
 			</div>

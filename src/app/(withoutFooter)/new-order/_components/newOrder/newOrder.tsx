@@ -23,6 +23,7 @@ import BaseStep from "../steps/baseStep/baseStep";
 import SpecialsStep from "../steps/specialsStep/specialsStep";
 import CertificationsStep from "../steps/certificationsStep/certificationsStep";
 import InquiriesStep from "../steps/inquiriesStep/inquiriesStep";
+import EmbassyStep from "../steps/embassyStep/embassyStep";
 import UploadStep from "../steps/uploadStep/uploadStep";
 import PassportStep from "../steps/passportStep/passportStep";
 import CheckoutStep from "../steps/checkoutStep/checkoutStep";
@@ -105,6 +106,7 @@ export default function NewOrder() {
 				mfaCertification: [],
 				justiceCertification: [],
 				justiceInquiriesItems: [],
+				embassyItems: [],
 				...(language ? { language } : {}),
 			}));
 			// تک‌مدرک نیازی به نام‌گذاری ندارد؛ مستقیم به انتخاب زبان می‌رویم
@@ -160,6 +162,7 @@ export default function NewOrder() {
 			mfaCertification: [],
 			justiceCertification: [],
 			justiceInquiriesItems: [],
+			embassyItems: [],
 		}));
 	};
 
@@ -175,6 +178,7 @@ export default function NewOrder() {
 			mfaCertification: [],
 			justiceCertification: [],
 			justiceInquiriesItems: [],
+			embassyItems: [],
 		}));
 	};
 
@@ -234,6 +238,8 @@ export default function NewOrder() {
 				return <CertificationsStep rates={rates} />;
 			case "inquiries":
 				return <InquiriesStep rates={rates} />;
+			case "embassy":
+				return <EmbassyStep rates={rates} />;
 			case "upload":
 				return <UploadStep />;
 			case "passport":
