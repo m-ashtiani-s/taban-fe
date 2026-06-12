@@ -19,6 +19,8 @@ import { useNotificationStore } from "@/stores/notification.store";
 import {
 	IconArrowLine,
 	IconDocument,
+	IconEmbassy,
+	IconGuarantee,
 	IconInquiry,
 	IconJustice,
 	IconMfa,
@@ -30,7 +32,7 @@ import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 import { OrderEndpoints } from "../../../_api/endpoint";
 import { OrderedDoc } from "../../../_types/order.type";
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 type EditState = {
 	translationItemId: string;
@@ -43,6 +45,7 @@ type EditState = {
 	mfaCertification: Record<string, string | null>;
 	justiceCertification: Record<string, string | null>;
 	justiceInquiries: Record<string, string[]>;
+	embassies: Record<string, string[]>;
 	passports: string[];
 	assets: string[];
 };
@@ -55,6 +58,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 	const mfaCertification: Record<string, string | null> = {};
 	const justiceCertification: Record<string, string | null> = {};
 	const justiceInquiries: Record<string, string[]> = {};
+	const embassies: Record<string, string[]> = {};
 
 	payload.documents.forEach((d) => {
 		translationItemNames[d.documentKey] = d.title;
@@ -66,6 +70,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		mfaCertification[d.documentKey] = d.mfaCertificationRateId ?? null;
 		justiceCertification[d.documentKey] = d.justiceCertificationRateId ?? null;
 		justiceInquiries[d.documentKey] = d.justiceInquiryRateIds ?? [];
+		embassies[d.documentKey] = d.embassyRateIds ?? [];
 	});
 
 	return {
@@ -79,6 +84,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		mfaCertification,
 		justiceCertification,
 		justiceInquiries,
+		embassies,
 		passports: payload.passports ?? [],
 		assets: payload.assets ?? [],
 	};
@@ -105,6 +111,7 @@ export default function OrderItemEditPage() {
 	const dynamicRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getDynamicRates(filters));
 	const certificationRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getCertificationRates(filters));
 	const justiceInquiryRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getJusticeInquiriesRates(filters));
+	const embassyRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getEmbassyRates(filters));
 	const calculation = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload));
 	const updateItem = useApi(async (payload: AddDocumentToCartPayload) => await OrderEndpoints.updateOrderItem(orderId, cartItemId, payload));
 	const uploadAssets = useApi(async (files: File[]) => await TranslationEndpoints.uploadStorageFiles(files, "assets"));
@@ -133,6 +140,7 @@ export default function OrderItemEditPage() {
 		dynamicRates.fetchData(filters);
 		certificationRates.fetchData(filters);
 		justiceInquiryRates.fetchData(filters);
+		embassyRates.fetchData(filters);
 	};
 
 	useEffect(() => {
@@ -183,12 +191,13 @@ export default function OrderItemEditPage() {
 			mfaCertificationRateId: editState.mfaCertification[key] ?? null,
 			justiceCertificationRateId: editState.justiceCertification[key] ?? null,
 			justiceInquiryRateIds: editState.justiceInquiries[key] ?? [],
+			embassyRateIds: editState.embassies[key] ?? [],
 		}));
 		return { translationItemId: editState.translationItemId, languageId: editState.languageId, documents };
 	}, [editState]);
 
 	useEffect(() => {
-		if (step === 9 && calcPayload) calculation.fetchData(calcPayload);
+		if (step === 10 && calcPayload) calculation.fetchData(calcPayload);
 	}, [step]);
 
 	const goNext = () => {
@@ -548,6 +557,58 @@ export default function OrderItemEditPage() {
 				)}
 
 				{step === 7 && (
+						<div className="flex flex-col gap-4">
+							<div className="peyda font-bold text-xl text-primary">تایید سفارت</div>
+							{embassyRates.loading && !embassyRates.result ? (
+								<div className="flex justify-center py-8">
+									<TabanLoading size={24} />
+								</div>
+							) : embassyRates.result?.success && (embassyRates.result.data?.data?.length ?? 0) > 0 ? (
+								<div className="flex flex-col gap-6">
+									{documentKeys.map((key) => (
+										<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
+											<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
+												<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+												تایید سفارت برای {editState.translationItemNames[key]}
+											</div>
+											<div className="flex flex-wrap gap-4">
+												{embassyRates.result?.data?.data?.map((embassy, index) => {
+													const isSelected = (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
+													return (
+														<motion.div key={embassy.embassyRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+															<div
+																onClick={() => {
+																	setEditState((prev) => {
+																		if (!prev) return prev;
+																		const current = prev.embassies[key] ?? [];
+																		const updated = isSelected
+																			? current.filter((id) => id !== embassy.embassyRateId)
+																			: [...current, embassy.embassyRateId];
+																		return { ...prev, embassies: { ...prev.embassies, [key]: updated } };
+																	});
+																}}
+																className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
+																	isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"
+																}`}
+															>
+																
+																<IconEmbassy viewBox="0 0 50 64"  width={32} height={32} className={`shrink-0 ${isSelected ? "stroke-white stroke-2" : "stroke-primary stroke-2"}`} />
+																<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{embassy.embassyName}</span>
+															</div>
+														</motion.div>
+													);
+												})}
+											</div>
+										</div>
+									))}
+								</div>
+							) : (
+								<div className="text-sm text-neutral-400 py-4 text-center">تایید سفارتی برای این ترکیب تعریف نشده است</div>
+							)}
+						</div>
+					)}
+
+					{step === 8 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">آپلود مدارک و اسناد</div>
 						<FileUploader
@@ -571,7 +632,7 @@ export default function OrderItemEditPage() {
 					</div>
 				)}
 
-				{step === 8 && (
+				{step === 9 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">آپلود تصویر پاسپورت</div>
 						<FileUploader
@@ -595,7 +656,7 @@ export default function OrderItemEditPage() {
 					</div>
 				)}
 
-				{step === 9 && (
+				{step === 10 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">خلاصه آیتم</div>
 						{calculation.loading && !calculation.result ? (
@@ -643,6 +704,12 @@ export default function OrderItemEditPage() {
 															<span>{toCurrency(doc.justiceCertification.price)} تومان</span>
 														</div>
 													)}
+													{doc.embassyApprovals?.map((e) => (
+														<div key={e.embassyRateId} className="flex justify-between">
+															<span>{e.embassyName}</span>
+															<span>{toCurrency(e.price)} تومان</span>
+														</div>
+													))}
 													{doc.justiceInquiries.map((i) => (
 														<div key={i.justiceInquiryRateId} className="flex justify-between">
 															<span>{i.justiceInquiryName}</span>

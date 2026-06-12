@@ -6,6 +6,7 @@ export type RateCalculationDocumentInput = {
 	mfaCertificationRateId?: string | null;
 	justiceCertificationRateId?: string | null;
 	justiceInquiryRateIds: string[];
+	embassyRateIds?: string[];
 };
 
 export type RateCalculationRequest = {
@@ -33,6 +34,12 @@ export type RateCalculationInquiryLine = {
 	price: number;
 };
 
+export type RateCalculationEmbassyLine = {
+	embassyRateId: string;
+	embassyName: string;
+	price: number;
+};
+
 export type RateCalculationDocumentBreakdown = {
 	documentKey: string;
 	title: string;
@@ -52,6 +59,9 @@ export type RateCalculationDocumentBreakdown = {
 	certificationsTotal: number;
 	justiceInquiries: RateCalculationInquiryLine[];
 	inquiriesTotal: number;
+	/** تاییدات سفارت انتخاب‌شده برای این سند. در breakdownهای قدیمیِ ذخیره‌شده ممکن است موجود نباشد. */
+	embassyApprovals?: RateCalculationEmbassyLine[];
+	embassyTotal?: number;
 	documentTotal: number;
 };
 
@@ -59,6 +69,8 @@ export type RateCalculationSummary = {
 	translationPrice: number;
 	certificationPrice: number;
 	inquiryPrice: number;
+	/** مجموع نرخ تایید سفارت. در breakdownهای قدیمیِ ذخیره‌شده ممکن است موجود نباشد. */
+	embassyPrice?: number;
 	subtotal: number;
 	taxPercent: number;
 	taxPrice: number;

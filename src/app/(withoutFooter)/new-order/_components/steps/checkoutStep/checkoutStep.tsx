@@ -67,6 +67,8 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 				mfaCertificationRateId: mfa?.certificationRateId ?? null,
 				justiceCertificationRateId: justice?.certificationRateId ?? null,
 				justiceInquiryRateIds: inquiries,
+					embassyRateIds:
+						order?.embassyItems?.find((e) => e?.translationItemId === key)?.embassies?.map((e) => e.embassyRateId) ?? [],
 			};
 		});
 
@@ -255,6 +257,8 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 								<SummaryRow label="مبلغ تاییدات ترجمه" value={breakdown.summary.certificationPrice} />
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="مبلغ استعلام‌های ترجمه" value={breakdown.summary.inquiryPrice} />
+								<div className="h-[1px] w-full bg-neutral-200" />
+								<SummaryRow label="مبلغ تایید سفارت" value={breakdown.summary.embassyPrice ?? 0} />
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="جمع جزء" value={breakdown.summary.subtotal} />
 								<div className="h-[1px] w-full bg-neutral-200" />

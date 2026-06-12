@@ -196,7 +196,13 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 													<span>{toCurrency(doc.justiceCertification.price)} تومان</span>
 												</div>
 											)}
-											{doc.justiceInquiries.map((iq) => (
+											{doc.embassyApprovals?.map((e) => (
+													<div key={e.embassyRateId} className="flex justify-between">
+														<span>{e.embassyName}</span>
+														<span>{toCurrency(e.price)} تومان</span>
+													</div>
+												))}
+												{doc.justiceInquiries.map((iq) => (
 												<div key={iq.justiceInquiryRateId} className="flex justify-between">
 													<span>{iq.justiceInquiryName}</span>
 													<span>{toCurrency(iq.price)} تومان</span>
@@ -220,6 +226,10 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 								<div className="flex justify-between">
 									<span className="text-neutral-500">مبلغ استعلام‌ها</span>
 									<span className="font-medium">{toCurrency(breakdown.summary.inquiryPrice)} تومان</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-neutral-500">مبلغ تایید سفارت</span>
+										<span className="font-medium">{toCurrency(breakdown.summary.embassyPrice ?? 0)} تومان</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-neutral-500">مالیات ({breakdown.summary.taxPercent}٪)</span>

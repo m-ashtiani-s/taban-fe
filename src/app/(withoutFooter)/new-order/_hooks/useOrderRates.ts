@@ -19,6 +19,7 @@ export function useOrderRates() {
 	const dynamicRates = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getDynamicRates(filters));
 	const certifications = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getCertificationRates(filters));
 	const justiceInquiries = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getJusticeInquiriesRates(filters));
+	const embassies = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getEmbassyRates(filters));
 
 	const [attempted, setAttempted] = useState(false);
 	const lastKey = useRef<string>("");
@@ -34,8 +35,9 @@ export function useOrderRates() {
 			dynamicRates.fetchData(filters);
 			certifications.fetchData(filters);
 			justiceInquiries.fetchData(filters);
+			embassies.fetchData(filters);
 		},
-		[baseRate, dynamicRates, certifications, justiceInquiries]
+		[baseRate, dynamicRates, certifications, justiceInquiries, embassies]
 	);
 
 	const reset = useCallback(() => {
@@ -45,9 +47,10 @@ export function useOrderRates() {
 		dynamicRates.setResult(null);
 		certifications.setResult(null);
 		justiceInquiries.setResult(null);
-	}, [baseRate, dynamicRates, certifications, justiceInquiries]);
+		embassies.setResult(null);
+	}, [baseRate, dynamicRates, certifications, justiceInquiries, embassies]);
 
-	const loading = baseRate.loading || dynamicRates.loading || certifications.loading || justiceInquiries.loading;
+	const loading = baseRate.loading || dynamicRates.loading || certifications.loading || justiceInquiries.loading || embassies.loading;
 	const ready = attempted && !loading;
 
 	const retryAll = useCallback(() => {
@@ -69,6 +72,10 @@ export function useOrderRates() {
 		() => !!(justiceInquiries.result?.success && (justiceInquiries.result.data?.data?.length ?? 0) > 0),
 		[justiceInquiries.result]
 	);
+	const hasEmbassy = useMemo(
+		() => !!(embassies.result?.success && (embassies.result.data?.data?.length ?? 0) > 0),
+		[embassies.result]
+	);
 
 	/** توالی مراحل دقیقا مطابق منطق ناوبری فلوی قدیمی */
 	const steps = useMemo<StepKey[]>(() => {
@@ -77,15 +84,17 @@ export function useOrderRates() {
 		if (hasSpecials) list.push("specials");
 		list.push("certifications");
 		if (hasInquiries) list.push("inquiries");
+		if (hasEmbassy) list.push("embassy");
 		list.push("upload", "passport", "checkout");
 		return list;
-	}, [hasBase, hasSpecials, hasInquiries]);
+	}, [hasBase, hasSpecials, hasInquiries, hasEmbassy]);
 
 	return {
 		baseRate,
 		dynamicRates,
 		certifications,
 		justiceInquiries,
+		embassies,
 		fetchAll,
 		retryAll,
 		reset,
@@ -95,6 +104,7 @@ export function useOrderRates() {
 		hasBase,
 		hasSpecials,
 		hasInquiries,
+		hasEmbassy,
 		steps,
 	};
 }

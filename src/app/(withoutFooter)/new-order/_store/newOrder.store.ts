@@ -10,6 +10,7 @@ export const createEmptyOrder = (): CreateOrder => ({
 	translationItemNames: {},
 	specialItems: [],
 	justiceInquiriesItems: [],
+	embassyItems: [],
 	mfaCertification: [],
 	justiceCertification: [],
 	passports: [],
