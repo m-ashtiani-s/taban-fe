@@ -2,11 +2,14 @@ export type RateCalculationDocumentInput = {
 	documentKey: string;
 	title: string;
 	baseRateCount: number;
+	copyCount?: number;
 	specials: { dynamicRateId: string; count: number }[];
 	mfaCertificationRateId?: string | null;
 	justiceCertificationRateId?: string | null;
 	justiceInquiryRateIds: string[];
 	embassyRateIds?: string[];
+	/** فایل‌های آپلودشده‌ی این مدرک. در payloadهای قدیمی ممکن است موجود نباشد. */
+	assets?: string[];
 };
 
 export type RateCalculationRequest = {
@@ -43,6 +46,8 @@ export type RateCalculationEmbassyLine = {
 export type RateCalculationDocumentBreakdown = {
 	documentKey: string;
 	title: string;
+	/** تعداد نسخه‌ی این مدرک. در breakdownهای قدیمی ممکن است موجود نباشد (پیش‌فرض ۱). */
+	copyCount?: number;
 	base: {
 		baseRateId: string;
 		title: string;

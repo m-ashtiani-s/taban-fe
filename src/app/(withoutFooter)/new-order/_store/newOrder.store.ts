@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { CreateOrder } from "@/types/createOrder.type";
+import { generateUUID } from "@/utils/string";
 
 export const createEmptyOrder = (): CreateOrder => ({
 	translationItemCount: 1,
@@ -11,10 +12,13 @@ export const createEmptyOrder = (): CreateOrder => ({
 	specialItems: [],
 	justiceInquiriesItems: [],
 	embassyItems: [],
+	copyCount: {},
 	mfaCertification: [],
 	justiceCertification: [],
 	passports: [],
 	assets: [],
+	assetsByDoc: {},
+	uploadScope: generateUUID(),
 });
 
 export type NewOrderState = {

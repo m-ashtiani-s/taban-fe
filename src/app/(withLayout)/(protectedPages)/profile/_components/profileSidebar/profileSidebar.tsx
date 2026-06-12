@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 import { useProfiletore } from "@/stores/profile";
-import { IconCart, IconCircleUser, IconDashboard, IconLogout, IconOrder, IconTruck, IconUser } from "@/app/_components/icon/icons";
+import { IconCart, IconCircleUser, IconDashboard, IconDocument, IconLogout, IconOrder, IconTruck, IconUser } from "@/app/_components/icon/icons";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { Profile } from "@/types/profile.type";
@@ -28,6 +28,12 @@ const menu = [
 		label: "آدرس‌های من",
 		href: "/profile/addresses",
 		icon: <IconTruck />,
+		matchExact: false,
+	},
+	{
+		label: "پاسپورت‌های من",
+		href: "/profile/passports",
+		icon: <IconDocument />,
 		matchExact: false,
 	},
 	{

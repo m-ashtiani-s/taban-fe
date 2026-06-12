@@ -12,27 +12,29 @@ import { useApi } from "@/hooks/useApi";
 import { AddDocumentToCartPayload, CartItem } from "@/types/cart.type";
 import { RateCalculationDocumentInput, RateCalculationRequest } from "@/types/rateCalculation.type";
 import { RateFilters } from "@/types/rateFilters.type";
-import { toCurrency } from "@/utils/string";
+import { toCurrency, assetFolderName, generateUUID } from "@/utils/string";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
+import { useProfiletore } from "@/stores/profile";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
-import FileUploader from "@/app/_components/common/fileUploader/fileUploader";
+import UploadBox from "@/app/_components/common/uploadBox/uploadBox";
+import PassportPicker from "@/app/_components/common/passportPicker/passportPicker";
 import { useNotificationStore } from "@/stores/notification.store";
 import {
 	IconArrowLine,
 	IconDocument,
 	IconEmbassy,
-	IconGuarantee,
 	IconInquiry,
 	IconJustice,
 	IconMfa,
+	IconRequired,
 	IconTranslate,
-	IconUpload,
 } from "@/app/_components/icon/icons";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type EditState = {
 	translationItemId: string;
@@ -46,8 +48,9 @@ type EditState = {
 	justiceCertification: Record<string, string | null>;
 	justiceInquiries: Record<string, string[]>;
 	embassies: Record<string, string[]>;
+	copyCount: Record<string, string>;
 	passports: string[];
-	assets: string[];
+	assetsByDoc: Record<string, string[]>;
 };
 
 function buildInitialState(item: CartItem): EditState {
@@ -59,6 +62,8 @@ function buildInitialState(item: CartItem): EditState {
 	const justiceCertification: Record<string, string | null> = {};
 	const justiceInquiries: Record<string, string[]> = {};
 	const embassies: Record<string, string[]> = {};
+	const copyCount: Record<string, string> = {};
+	const assetsByDoc: Record<string, string[]> = {};
 
 	payload.documents.forEach((doc) => {
 		translationItemNames[doc.documentKey] = doc.title;
@@ -71,7 +76,19 @@ function buildInitialState(item: CartItem): EditState {
 		justiceCertification[doc.documentKey] = doc.justiceCertificationRateId ?? null;
 		justiceInquiries[doc.documentKey] = doc.justiceInquiryRateIds ?? [];
 		embassies[doc.documentKey] = doc.embassyRateIds ?? [];
+		copyCount[doc.documentKey] = (doc.copyCount ?? 1).toString();
+		assetsByDoc[doc.documentKey] = doc.assets ?? [];
 	});
+
+	// انتقال فایل‌های قدیمیِ سطح‌بالا به اولین مدرک (سفارش‌های پیش از جداسازی per-document)
+	const firstDocKey = payload.documents[0]?.documentKey;
+	if (
+		firstDocKey &&
+		!payload.documents.some((d) => (assetsByDoc[d.documentKey]?.length ?? 0) > 0) &&
+		(payload.assets?.length ?? 0) > 0
+	) {
+		assetsByDoc[firstDocKey] = payload.assets ?? [];
+	}
 
 	return {
 		translationItemId: payload.translationItemId,
@@ -85,8 +102,9 @@ function buildInitialState(item: CartItem): EditState {
 		justiceCertification,
 		justiceInquiries,
 		embassies,
+		copyCount,
 		passports: payload.passports ?? [],
-		assets: payload.assets ?? [],
+		assetsByDoc,
 	};
 }
 
@@ -96,12 +114,13 @@ export default function CartEditPage() {
 	const cartItemId = params?.cartItemId as string;
 	const { cart, setCart } = useCartStore();
 	const showNotification = useNotificationStore((s) => s.showNotification);
+	const profile = useProfiletore((s) => s.profile);
+	// ریشه‌ی پوشه‌ی آپلود: شناسه‌ی کاربر واردشده (در این صفحه همیشه موجود است)
+	const fallbackUploadScope = useMemo(() => generateUUID(), []);
+	const uploadScope = profile?.userId || fallbackUploadScope;
 
 	const [step, setStep] = useState(1);
 	const [editState, setEditState] = useState<EditState | null>(null);
-
-	const [assetFiles, setAssetFiles] = useState<File[]>([]);
-	const [passportFiles, setPassportFiles] = useState<File[]>([]);
 
 	const getCart = useApi(async () => await CartEndpoints.getCart());
 	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
@@ -110,10 +129,9 @@ export default function CartEditPage() {
 	const certificationRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getCertificationRates(filters));
 	const justiceInquiryRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getJusticeInquiriesRates(filters));
 	const embassyRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getEmbassyRates(filters));
+	const translationItem = useApi(async (id: string) => await TranslationEndpoints.getTranslationItem(id));
 	const calculation = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload));
 	const updateItem = useApi(async (payload: AddDocumentToCartPayload) => await CartEndpoints.updateCartItem(cartItemId, payload));
-	const uploadAssets = useApi(async (files: File[]) => await TranslationEndpoints.uploadStorageFiles(files, "assets"));
-	const uploadPassports = useApi(async (files: File[]) => await TranslationEndpoints.uploadStorageFiles(files, "passports"));
 
 	// Initialize edit state from cart store or fetch from API
 	useEffect(() => {
@@ -135,6 +153,11 @@ export default function CartEditPage() {
 		}
 	}, [getCart.result]);
 
+	// واکشی توضیحات آپلود مدرک (که ادمین نوشته) برای نمایش در مرحله‌ی آپلود
+	useEffect(() => {
+		if (editState?.translationItemId) translationItem.fetchData(editState.translationItemId);
+	}, [editState?.translationItemId]);
+
 	// Fetch all rates based on current translationItem + language
 	const fetchRates = (state: EditState) => {
 		const filters: RateFilters = {
@@ -147,31 +170,6 @@ export default function CartEditPage() {
 		justiceInquiryRates.fetchData(filters);
 		embassyRates.fetchData(filters);
 	};
-
-	// Upload handlers
-	useEffect(() => {
-		if (!uploadAssets.result) return;
-		if (uploadAssets.result.success) {
-			const urls = uploadAssets.result.data ?? [];
-			setEditState((prev) => prev ? { ...prev, assets: [...prev.assets, ...urls] } : prev);
-			setAssetFiles([]);
-			showNotification({ type: "success", message: "آپلود مدارک با موفقیت انجام شد" });
-		} else {
-			showNotification({ type: "error", message: uploadAssets.result.description || "آپلود مدارک با خطا مواجه شد" });
-		}
-	}, [uploadAssets.result]);
-
-	useEffect(() => {
-		if (!uploadPassports.result) return;
-		if (uploadPassports.result.success) {
-			const urls = uploadPassports.result.data ?? [];
-			setEditState((prev) => prev ? { ...prev, passports: [...prev.passports, ...urls] } : prev);
-			setPassportFiles([]);
-			showNotification({ type: "success", message: "آپلود پاسپورت با موفقیت انجام شد" });
-		} else {
-			showNotification({ type: "error", message: uploadPassports.result.description || "آپلود پاسپورت با خطا مواجه شد" });
-		}
-	}, [uploadPassports.result]);
 
 	// Update cart item result handler
 	useEffect(() => {
@@ -200,9 +198,11 @@ export default function CartEditPage() {
 			specials: Object.entries(editState.specialItems[key] ?? {})
 				.filter(([, cnt]) => Number(cnt) > 0)
 				.map(([dynamicRateId, cnt]) => ({ dynamicRateId, count: Number(cnt) })),
+			copyCount: Number(editState.copyCount[key] ?? 1) || 1,
+			assets: editState.assetsByDoc[key] ?? [],
 			mfaCertificationRateId: editState.mfaCertification[key] ?? null,
 			justiceCertificationRateId: editState.justiceCertification[key] ?? null,
-			justiceInquiryRateIds: editState.justiceInquiries[key] ?? [],
+			justiceInquiryRateIds: editState.justiceCertification[key] ? (editState.justiceInquiries[key] ?? []) : [],
 			embassyRateIds: editState.embassies[key] ?? [],
 		}));
 		return { translationItemId: editState.translationItemId, languageId: editState.languageId, documents };
@@ -210,7 +210,7 @@ export default function CartEditPage() {
 
 	// Trigger calculation on summary step
 	useEffect(() => {
-		if (step === 10 && calcPayload) {
+		if (step === 11 && calcPayload) {
 			calculation.fetchData(calcPayload);
 		}
 	}, [step]);
@@ -227,7 +227,7 @@ export default function CartEditPage() {
 		updateItem.fetchData({
 			...calcPayload,
 			passports: editState.passports,
-			assets: editState.assets,
+			assets: Object.values(editState.assetsByDoc).flat(),
 		});
 	};
 
@@ -252,6 +252,7 @@ export default function CartEditPage() {
 	}
 
 	const documentKeys = Object.keys(editState.translationItemNames);
+	const uploadDescription = (translationItem.result?.success ? translationItem.result.data?.data?.uploadDescription ?? "" : "").trim();
 
 	return (
 		<div className="flex flex-col gap-4 pt-16 max-lg:pt-8 px-4">
@@ -672,89 +673,56 @@ export default function CartEditPage() {
 							</div>
 						) : justiceInquiryRates.result?.success && (justiceInquiryRates.result.data?.data?.length ?? 0) > 0 ? (
 							<div className="flex flex-col gap-6">
-								{documentKeys.map((key) => (
-									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											استعلام برای {editState.translationItemNames[key]}
-										</div>
-										<div className="flex flex-wrap gap-4">
-											{justiceInquiryRates.result?.data?.data?.map(
-												(inquiry, index) => {
-													const isSelected = (
-														editState.justiceInquiries[key] ?? []
-													).includes(inquiry.justiceInquiryRateId);
-													return (
-														<motion.div
-															key={inquiry.justiceInquiryRateId}
-															className="flex-1 min-w-48"
-															initial={{ opacity: 0, y: 8 }}
-															animate={{ opacity: 1, y: 0 }}
-															transition={{ delay: index * 0.04 }}
-														>
-															<div
-																onClick={() => {
-																	setEditState((prev) => {
-																		if (!prev) return prev;
-																		const current =
-																			prev.justiceInquiries[
-																				key
-																			] ?? [];
-																		const updated = isSelected
-																			? current.filter(
-																					(id) =>
-																						id !==
-																						inquiry.justiceInquiryRateId
-																				)
-																			: [
-																					...current,
-																					inquiry.justiceInquiryRateId,
-																				];
-																		return {
-																			...prev,
-																			justiceInquiries: {
-																				...prev.justiceInquiries,
-																				[key]: updated,
-																			},
-																		};
-																	});
-																}}
-																className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
-																	isSelected
-																		? "bg-secondary border-secondary"
-																		: "border-neutral-300 hover:bg-secondary/10"
-																}`}
-															>
-																<IconInquiry
-																	width={32}
-																	height={32}
-																	viewBox="0 0 1024 1024"
-																	className={`shrink-0 ${
-																		isSelected
-																			? "fill-white stroke-0"
-																			: "fill-primary stroke-0"
-																	}`}
-																/>
-																<span
-																	className={`peyda font-semibold text-sm ${
-																		isSelected ? "text-white" : ""
-																	}`}
+								{documentKeys.map((key) => {
+									const inqAllowed = !!editState.justiceCertification[key];
+									return (
+										<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
+											<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
+												<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+												استعلام برای {editState.translationItemNames[key]}
+											</div>
+											<div className="relative">
+												<div className={`flex flex-wrap gap-4 ${inqAllowed ? "" : "opacity-40 pointer-events-none select-none"}`}>
+													{justiceInquiryRates.result?.data?.data?.map((inquiry, index) => {
+														const isSelected = inqAllowed && (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
+														return (
+															<motion.div key={inquiry.justiceInquiryRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+																<div
+																	onClick={() => {
+																		if (!inqAllowed) return;
+																		setEditState((prev) => {
+																			if (!prev) return prev;
+																			const current = prev.justiceInquiries[key] ?? [];
+																			const updated = isSelected
+																				? current.filter((id) => id !== inquiry.justiceInquiryRateId)
+																				: [...current, inquiry.justiceInquiryRateId];
+																			return { ...prev, justiceInquiries: { ...prev.justiceInquiries, [key]: updated } };
+																		});
+																	}}
+																	className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"}`}
 																>
-																	{inquiry.justiceInquiryName}
-																</span>
-															</div>
-														</motion.div>
-													);
-												}
-											)}
+																	<IconInquiry width={32} height={32} viewBox="0 0 1024 1024" className={`shrink-0 ${isSelected ? "fill-white stroke-0" : "fill-primary stroke-0"}`} />
+																	<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{inquiry.justiceInquiryName}</span>
+																</div>
+															</motion.div>
+														);
+													})}
+												</div>
+												{!inqAllowed && (
+													<div className="absolute inset-0 flex items-center justify-center p-2">
+														<div className="flex items-center gap-2.5 bg-white/90 backdrop-blur-[2px] border border-secondary/40 shadow-sm rounded-2xl px-4 py-3 max-w-sm">
+															<IconJustice width={26} height={26} viewBox="0 0 48 48" className="fill-secondary stroke-0 shrink-0" />
+															<span className="text-xs leading-6 text-primary peyda font-semibold">برای انتخاب استعلام‌های این مدرک، ابتدا «مهر دادگستری» را در مرحله‌ی تاییدات فعال کنید</span>
+														</div>
+													</div>
+												)}
+											</div>
 										</div>
-									</div>
-								))}
+									);
+								})}
 							</div>
 						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">
-								استعلامی برای این ترکیب تعریف نشده است
-							</div>
+							<div className="text-sm text-neutral-400 py-4 text-center">استعلامی برای این ترکیب تعریف نشده است</div>
 						)}
 					</div>
 				)}
@@ -795,7 +763,7 @@ export default function CartEditPage() {
 																	isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"
 																}`}
 															>
-																<IconEmbassy viewBox="0 0 50 64"  width={32} height={32} className={`shrink-0 ${isSelected ? "stroke-white stroke-" : "stroke-primary stroke-2"}`} />
+																<IconEmbassy viewBox="0 0 50 64"  width={32} height={32} className={`shrink-0 ${isSelected ? "stroke-white stroke-2" : "stroke-primary stroke-2"}`} />
 																<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{embassy.embassyName}</span>
 															</div>
 														</motion.div>
@@ -812,81 +780,90 @@ export default function CartEditPage() {
 					)}
 
 					{/* Step 8: Upload documents */}
-				{step === 8 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">آپلود مدارک و اسناد</div>
-						<FileUploader
-							files={assetFiles}
-							onChange={setAssetFiles}
-							uploadedUrls={editState.assets}
-							onRemoveUploaded={(url) =>
-								setEditState((prev) =>
-									prev ? { ...prev, assets: prev.assets.filter((u) => u !== url) } : prev
-								)
-							}
-							multiple
-							accept="image/*,.pdf"
-							allowedExtensions={["PDF", "JPG", "PNG"]}
-							hint="مدارک خود را اینجا رها کنید یا برای انتخاب کلیک کنید"
-							isLoading={uploadAssets.loading}
-						/>
-						{assetFiles.length > 0 && (
-							<div className="flex justify-end">
-								<TabanButton
-									onClick={() => uploadAssets.fetchData(assetFiles)}
-									isLoading={uploadAssets.loading}
-									disabled={uploadAssets.loading}
-									icon={
-										<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-white" />
-									}
-								>
-									آپلود مدارک
-								</TabanButton>
+					{step === 8 && (
+						<div className="flex flex-col gap-4">
+							<div className="peyda font-bold text-xl text-primary">آپلود مدارک و اسناد</div>
+							{uploadDescription && (
+								<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-4">
+									<div className="flex items-center gap-2 peyda font-bold text-primary mb-2 text-sm">
+										<IconRequired viewBox="0 0 100 100" width={18} height={18} className="fill-secondary stroke-0" />
+										نکات بارگذاری مدارک
+									</div>
+									<div className="text-sm text-neutral-600 leading-7 whitespace-pre-line">{uploadDescription}</div>
+								</div>
+							)}
+							<div className="flex items-start gap-2 text-xs text-neutral-600 bg-secondary/5 border border-secondary/20 rounded-xl p-3.5">
+								<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
+								<span className="leading-6">
+									این مدارک برای انجام ترجمه‌ی رسمی کافی نیست؛ پیک مجموعه برای دریافت اصل مدارک به محل شما مراجعه می‌کند و بارگذاری در این مرحله صرفاً برای افزایش سرعت ترجمه است.
+								</span>
 							</div>
-						)}
-					</div>
-				)}
+							<div className="flex flex-col gap-6">
+								{documentKeys.map((key) => (
+									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
+										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
+											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+											آپلود {editState.translationItemNames[key]}
+										</div>
+										<UploadBox
+											value={editState.assetsByDoc[key] ?? []}
+											onChange={(urls) => setEditState((prev) => (prev ? { ...prev, assetsByDoc: { ...prev.assetsByDoc, [key]: urls } } : prev))}
+											folder={assetFolderName(uploadScope, editState.translationItemNames[key] ?? "")}
+											hint="فایل‌های این مدرک را اینجا رها کنید یا انتخاب نمایید"
+										/>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
 
-				{/* Step 9: Upload passport */}
+					{/* Step 9: Upload passport */}
 				{step === 9 && (
 					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">آپلود تصویر پاسپورت</div>
-						<FileUploader
-							files={passportFiles}
-							onChange={setPassportFiles}
-							uploadedUrls={editState.passports}
-							onRemoveUploaded={(url) =>
-								setEditState((prev) =>
-									prev
-										? { ...prev, passports: prev.passports.filter((u) => u !== url) }
-										: prev
-								)
-							}
-							multiple
-							accept="image/*,.pdf"
-							allowedExtensions={["PDF", "JPG", "PNG"]}
-							hint="تصویر پاسپورت خود را اینجا رها کنید یا برای انتخاب کلیک کنید"
-							isLoading={uploadPassports.loading}
-						/>
-						{passportFiles.length > 0 && (
-							<div className="flex justify-end">
-								<TabanButton
-									onClick={() => uploadPassports.fetchData(passportFiles)}
-									isLoading={uploadPassports.loading}
-									disabled={uploadPassports.loading}
-									icon={
-										<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-white" />
-									}
-								>
-									آپلود پاسپورت
-								</TabanButton>
-							</div>
-						)}
+						<div className="peyda font-bold text-xl text-primary">پاسپورت</div>
+						<PassportPicker value={editState.passports} onChange={(urls) => setEditState((prev) => (prev ? { ...prev, passports: urls } : prev))} />
 					</div>
 				)}
 
-				{/* Step 10: Summary */}
-				{step === 10 && (
+				{/* Step 10: Copies */}
+					{step === 10 && (
+						<div className="flex flex-col gap-4">
+							<div className="peyda font-bold text-xl text-primary">تعداد نسخه مدارک</div>
+							<div className="flex flex-col gap-6">
+								{documentKeys.map((key) => (
+									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
+										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
+											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+											تعداد نسخه برای {editState.translationItemNames[key]}
+										</div>
+										<div className="w-64">
+											<TabanInput
+												isNumber
+												type="number"
+												value={editState.copyCount[key] ?? "1"}
+												groupMode
+												setValue={(val: Record<string, string>) =>
+													setEditState((prev) =>
+														prev ? { ...prev, copyCount: { ...prev.copyCount, [key]: val[key] ?? "" } } : prev
+													)
+												}
+												name={key}
+											/>
+										</div>
+									</div>
+								))}
+							</div>
+							<div className="flex items-start gap-2 text-xs text-neutral-500 bg-neutral-100/60 border border-neutral-200 rounded-xl p-3.5">
+								<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
+								<span className="leading-6">
+									در نسخه‌های اضافه، هزینه‌ی ترجمه تغییری نمی‌کند؛ فقط هزینه‌ی تاییدات، استعلام‌ها و تایید سفارت به ازای هر نسخه دریافت می‌شود.
+								</span>
+							</div>
+						</div>
+					)}
+
+					{/* Step 11: Summary */}
+				{step === 11 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">خلاصه سفارش</div>
 						{calculation.loading && !calculation.result ? (
@@ -917,6 +894,11 @@ export default function CartEditPage() {
 													<div className="flex items-center gap-1.5 text-sm font-bold text-secondary">
 														<div className="w-2 h-2 rounded bg-primary/70 rotate-45" />
 														{doc.title}
+														{(doc.copyCount ?? 1) > 1 && (
+															<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
+																× {convertToPersianNumber(String(doc.copyCount))} نسخه
+															</span>
+														)}
 													</div>
 													<div className="font-semibold text-sm">
 														{toCurrency(doc.documentTotal)} تومان
@@ -992,6 +974,8 @@ export default function CartEditPage() {
 													{toCurrency(bd.summary.embassyPrice ?? 0)} تومان
 											</span>
 										</div>
+										{bd.summary.taxPercent > 0 && (
+											<>
 										<div className="flex justify-between text-sm py-1">
 											<span>
 												مالیات ({bd.summary.taxPercent}٪):
@@ -1000,6 +984,8 @@ export default function CartEditPage() {
 												{toCurrency(bd.summary.taxPrice)} تومان
 											</span>
 										</div>
+											</>
+										)}
 										<div className="h-px bg-neutral-100 my-1" />
 										<div className="flex justify-between font-bold py-1">
 											<span>مبلغ کل سفارش:</span>

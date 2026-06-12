@@ -6,6 +6,7 @@ import { CartEndpoints } from "@/app/_api/cartEndpoints";
 import { useApi } from "@/hooks/useApi";
 import { AppliedCoupon, AppliedCouponItemDiscount, CartItem } from "@/types/cart.type";
 import { toCurrency } from "@/utils/string";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
@@ -228,6 +229,11 @@ function CartItemCard({
 								<div className="flex items-center gap-1.5 font-semibold text-secondary">
 									<div className="w-1.5 h-1.5 rounded-sm bg-secondary rotate-45 shrink-0" />
 									{doc.title}
+									{(doc.copyCount ?? 1) > 1 && (
+										<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
+											× {convertToPersianNumber(String(doc.copyCount))} نسخه
+										</span>
+									)}
 								</div>
 								<div className="font-bold text-primary">
 									{toCurrency(doc.documentTotal)}
@@ -284,6 +290,8 @@ function CartItemCard({
 			</div>
 
 			<div className="border-t border-neutral-100 pt-3 flex flex-col gap-2">
+				{breakdown.summary.taxPercent > 0 && (
+					<>
 				<div className="flex items-center justify-between text-sm">
 					<span className="text-neutral-500">جمع جزء</span>
 					<span className="font-medium">
@@ -291,6 +299,8 @@ function CartItemCard({
 						<span className="text-[11px] font-normal text-neutral-500 mr-1">تومان</span>
 					</span>
 				</div>
+					</>
+				)}
 				{breakdown.summary.taxPercent > 0 && (
 					<div className="flex items-center justify-between text-sm">
 						<span className="text-neutral-500">مالیات ({breakdown.summary.taxPercent}٪)</span>

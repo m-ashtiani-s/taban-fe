@@ -27,6 +27,13 @@ export const TranslationEndpoints = {
 		});
 		return res?.data;
 	},
+	getTranslationItem: async (translationItemId: string) => {
+		const res = await httpClient.call<Res<TranslationItem>>({
+			method: "GET",
+			url: `v1/translation/translation-items/${translationItemId}`,
+		});
+		return res?.data;
+	},
 	getLanguages: async () => {
 		const res = await httpClient.call<Res<Language[]>>({
 			method: "GET",

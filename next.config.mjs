@@ -5,14 +5,14 @@ const nextConfig = {
 		remotePatterns: [
 			{
 				protocol: "https",
-				hostname: "ayliweb.ir",
+				hostname: "rasmiyab.com",
 				port: "",
 				pathname: "/**",
 			},
 			{
-				protocol: "http",
-				hostname: "185.124.174.82",
-				port: "9000",
+				protocol: "https",
+				hostname: "minio.rasmiyab.com",
+				port: "",
 				pathname: "/**",
 			},
 		],
@@ -21,7 +21,17 @@ const nextConfig = {
 		return [
 			{
 				source: "/wp-json/:path*",
-				destination: "https://rasmiyab.ayliweb.ir/wp-json/:path*",
+				destination: "https://wp.rasmiyab.com/wp-json/:path*",
+			},
+		];
+	},
+	async redirects() {
+		return [
+			{
+				source: "/:path*",
+				has: [{ type: "header", key: "x-forwarded-proto", value: "http" }],
+				destination: "https://rasmiyab.com/:path*",
+				permanent: true,
 			},
 		];
 	},

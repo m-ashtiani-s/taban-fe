@@ -57,18 +57,22 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 			const justice = order?.justiceCertification?.find((j) => j?.translationItemId === key)?.justiceCertification ?? null;
 
 			const inquiries =
-				order?.justiceInquiriesItems?.find((j) => j?.translationItemId === key)?.justiceInquiries?.map((i) => i.justiceInquiryRateId) ?? [];
+				justice
+						? order?.justiceInquiriesItems?.find((j) => j?.translationItemId === key)?.justiceInquiries?.map((i) => i.justiceInquiryRateId) ?? []
+						: [];
 
 			return {
 				documentKey: key,
 				title: order?.translationItemNames?.[key] ?? "",
 				baseRateCount: Number(order?.baseRateCount?.[key] ?? 1) || 1,
+					copyCount: Number(order?.copyCount?.[key] ?? 1) || 1,
 				specials,
 				mfaCertificationRateId: mfa?.certificationRateId ?? null,
 				justiceCertificationRateId: justice?.certificationRateId ?? null,
 				justiceInquiryRateIds: inquiries,
 					embassyRateIds:
 						order?.embassyItems?.find((e) => e?.translationItemId === key)?.embassies?.map((e) => e.embassyRateId) ?? [],
+					assets: order?.assetsByDoc?.[key] ?? [],
 			};
 		});
 
@@ -85,7 +89,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 		return await CartEndpoints.addToCart({
 			...calculationPayload,
 			passports: order?.passports ?? [],
-			assets: order?.assets ?? [],
+			assets: Object.values(order?.assetsByDoc ?? {}).flat(),
 			customerId: order?.customerId ?? null,
 		});
 	});
@@ -260,10 +264,14 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="مبلغ تایید سفارت" value={breakdown.summary.embassyPrice ?? 0} />
 								<div className="h-[1px] w-full bg-neutral-200" />
+								{breakdown.summary.taxPercent > 0 && (
+									<>
 								<SummaryRow label="جمع جزء" value={breakdown.summary.subtotal} />
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label={`مالیات (${breakdown.summary.taxPercent.toString()}٪)`} value={breakdown.summary.taxPrice} />
 								<div className="h-[1px] w-full bg-neutral-200" />
+									</>
+								)}
 								<SummaryRow label="مبلغ کل ترجمه" value={breakdown.summary.totalPrice} bold />
 
 								<div className="flex items-start gap-2 text-xs text-neutral-500 bg-neutral-100/60 border border-neutral-200 rounded-xl p-3 mt-1">
