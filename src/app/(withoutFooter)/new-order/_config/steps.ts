@@ -22,6 +22,7 @@ export type StepKey =
 	| "embassy"
 	| "upload"
 	| "passport"
+	| "copies"
 	| "checkout";
 
 export type Phase = {
@@ -40,5 +41,6 @@ export const PHASES: Phase[] = [
 	{ title: "تایید سفارت", steps: ["embassy"] },
 	{ title: "آپلود مدارک", steps: ["upload"] },
 	{ title: "آپلود پاسپورت", steps: ["passport"] },
+	{ title: "تعداد نسخه", steps: ["copies"] },
 	{ title: "پرداخت", steps: ["checkout"] },
 ];

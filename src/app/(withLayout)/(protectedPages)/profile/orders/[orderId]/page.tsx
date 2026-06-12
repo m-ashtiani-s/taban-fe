@@ -7,6 +7,7 @@ import { useApi } from "@/hooks/useApi";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { toCurrency } from "@/utils/string";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { formatJalaliDate } from "@/utils/dateFormater";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
@@ -332,6 +333,11 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 							<div className="flex items-center gap-1.5 font-semibold text-secondary">
 								<div className="w-1.5 h-1.5 rounded-sm bg-secondary rotate-45 shrink-0" />
 								{d.title}
+								{(d.copyCount ?? 1) > 1 && (
+									<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
+										× {convertToPersianNumber(String(d.copyCount))} نسخه
+									</span>
+								)}
 							</div>
 							<div className="font-bold text-primary">
 								{toCurrency(d.documentTotal)}

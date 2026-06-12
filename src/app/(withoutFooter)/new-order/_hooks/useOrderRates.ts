@@ -85,7 +85,7 @@ export function useOrderRates() {
 		list.push("certifications");
 		if (hasInquiries) list.push("inquiries");
 		if (hasEmbassy) list.push("embassy");
-		list.push("upload", "passport", "checkout");
+		list.push("upload", "passport", "copies", "checkout");
 		return list;
 	}, [hasBase, hasSpecials, hasInquiries, hasEmbassy]);
 

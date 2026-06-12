@@ -7,11 +7,12 @@ import { IconUpload } from "@/app/_components/icon/icons";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useApi } from "@/hooks/useApi";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
-import { useNewOrderStore } from "../../_store/newOrder.store";
 
 type UploadBoxProps = {
-	/** فیلد مقصد در سفارش */
-	target: "assets" | "passports";
+	/** فهرست url فایل‌های آپلودشده (کنترل‌شده از بیرون) */
+	value: string[];
+	/** با هر تغییر (آپلود موفق یا حذف) فهرست کامل جدید برگردانده می‌شود */
+	onChange: (urls: string[]) => void;
 	/** پوشه‌ی ذخیره‌سازی در استوریج (اختیاری) */
 	folder?: string;
 	hint?: string;
@@ -19,15 +20,15 @@ type UploadBoxProps = {
 };
 
 /**
- * باکس آپلود مشترک برای مدارک و پاسپورت. منطق آپلود و نگه‌داری url ها در سفارش
- * یکسان است و فقط فیلد مقصد و متن‌ها تغییر می‌کنند.
+ * باکس آپلود کنترل‌شده و قابل‌استفاده‌ی مجدد برای مدارک و پاسپورت. منطق آپلود و
+ * نمایش فایل‌ها یکسان است و state از بیرون (value/onChange) مدیریت می‌شود تا بتوان
+ * برای هر مدرک یک باکس مجزا با پوشه‌ی جداگانه داشت.
  */
-export default function UploadBox({ target, folder, hint, emptyHint }: UploadBoxProps) {
+export default function UploadBox({ value, onChange, folder, hint, emptyHint }: UploadBoxProps) {
 	const showNotification = useNotificationStore((state) => state.showNotification);
-	const { order, setOrder } = useNewOrderStore();
 	const [files, setFiles] = useState<File[]>([]);
 
-	const uploaded = order?.[target] ?? [];
+	const uploaded = value ?? [];
 	const hasUploaded = uploaded.length > 0;
 	const hasPendingFiles = files.length > 0;
 
@@ -37,7 +38,7 @@ export default function UploadBox({ target, folder, hint, emptyHint }: UploadBox
 		if (!uploadApi.result) return;
 		if (uploadApi.result.success) {
 			const newUrls = uploadApi.result.data ?? [];
-			setOrder((prev) => ({ ...prev, [target]: [...(prev?.[target] ?? []), ...newUrls] }));
+			onChange([...(value ?? []), ...newUrls]);
 			setFiles([]);
 			showNotification({ type: "success", message: "آپلود با موفقیت انجام شد" });
 		} else {
@@ -54,7 +55,7 @@ export default function UploadBox({ target, folder, hint, emptyHint }: UploadBox
 	};
 
 	const removeUploaded = (url: string) => {
-		setOrder((prev) => ({ ...prev, [target]: (prev?.[target] ?? []).filter((u) => u !== url) }));
+		onChange((value ?? []).filter((u) => u !== url));
 	};
 
 	return (

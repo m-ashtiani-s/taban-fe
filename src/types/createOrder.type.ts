@@ -34,7 +34,11 @@ export type CreateOrder = {
 	}[];
 	passports?: string[];
 	assets?: string[];
-	copyCount?: Record<string, number>;
+	/** فایل‌های آپلودشده به تفکیک هر مدرک (کلید: documentKey همان مدرک) */
+	assetsByDoc?: Record<string, string[]>;
+	/** ریشه‌ی پوشه‌ی آپلود برای کاربر مهمان (تا همه‌ی فایل‌های یک سفارش زیر یک پوشه بمانند) */
+	uploadScope?: string;
+	copyCount?: Record<string, string>;
 	// در صورت ثبت سفارش توسط مشتری سازمانی برای یک مشتری زیرمجموعه، آی‌دی آن مشتری اینجا نگه داشته می‌شود
 	customerId?: string | null;
 };

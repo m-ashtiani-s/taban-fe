@@ -10,6 +10,7 @@ import { CartEndpoints } from "@/app/_api/cartEndpoints";
 import { RateCalculationRequest } from "@/types/rateCalculation.type";
 import { AddDocumentToCartPayload } from "@/types/cart.type";
 import { toCurrency } from "@/utils/string";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
@@ -170,6 +171,11 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 											<div className="flex items-center gap-1.5 text-sm font-bold text-secondary">
 												<div className="w-2 h-2 rounded bg-primary/70 rotate-45" />
 												{doc.title}
+												{(doc.copyCount ?? 1) > 1 && (
+													<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
+														× {convertToPersianNumber(String(doc.copyCount))} نسخه
+													</span>
+												)}
 											</div>
 											<div className="font-semibold text-sm">{toCurrency(doc.documentTotal)} تومان</div>
 										</div>
@@ -231,10 +237,14 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 										<span className="text-neutral-500">مبلغ تایید سفارت</span>
 										<span className="font-medium">{toCurrency(breakdown.summary.embassyPrice ?? 0)} تومان</span>
 								</div>
+								{breakdown.summary.taxPercent > 0 && (
+									<>
 								<div className="flex justify-between">
 									<span className="text-neutral-500">مالیات ({breakdown.summary.taxPercent}٪)</span>
 									<span className="font-medium">{toCurrency(breakdown.summary.taxPrice)} تومان</span>
 								</div>
+									</>
+								)}
 								<div className="border-t border-neutral-200 mt-1 pt-2 flex items-center justify-between">
 									<span className="font-bold">مبلغ کل (قیمت روز)</span>
 									<span className="peyda font-bold text-lg text-primary">

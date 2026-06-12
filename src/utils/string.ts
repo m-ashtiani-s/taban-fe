@@ -47,6 +47,25 @@ export const roundFloatNumber = (e: number) => {
 	return Math.round(e * 100) / 100;
 };
 
+/** ریشه‌ی پوشه‌ی آپلود: شناسه‌ی کاربر اگر وارد شده باشد، وگرنه یک شناسه‌ی تصادفی برای تفکیک. */
+const uploadRoot = (scope: string): string => (scope ?? "").trim() || "anonymous";
+
+/**
+ * نام پوشه‌ی ذخیره‌سازی فایل‌های یک مدرک را بر اساس کاربر و نام همان مدرک می‌سازد:
+ * «<scope>/assets/<نام مدرک>». فاصله‌ها و جداکننده‌های مسیر پاک‌سازی می‌شوند تا کلید
+ * استوریج معتبر بماند، ولی حروف فارسیِ نام برای قابل‌تشخیص بودن پوشه حفظ می‌شود.
+ */
+export const assetFolderName = (scope: string, documentName: string): string => {
+	const cleaned = (documentName ?? "")
+		.trim()
+		.replace(/[\\/]+/g, "-")
+		.replace(/\s+/g, "_");
+	return `${uploadRoot(scope)}/assets/${cleaned || "document"}`;
+};
+
+/** پوشه‌ی ذخیره‌سازی تصاویر پاسپورت برای یک کاربر: «<scope>/passport». */
+export const passportFolderName = (scope: string): string => `${uploadRoot(scope)}/passport`;
+
 export const getVerificationCodeFailCauseName = (code?: String) => {
 	switch (code) {
 		case "CONSIGNEE_UNAVAILABLE":
