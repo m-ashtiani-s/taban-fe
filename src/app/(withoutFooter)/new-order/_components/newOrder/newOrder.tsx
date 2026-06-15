@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { IconArrowLine, IconCircleUser } from "@/app/_components/icon/icons";
+import { IconArrowLine } from "@/app/_components/icon/icons";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
-import AuthModal from "@/app/_components/common/authModal/authModal";
-import { useProfiletore } from "@/stores/profile";
 import { useApi } from "@/hooks/useApi";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { Language } from "@/types/language.type";
@@ -48,32 +46,9 @@ function buildDefaultNames(title: string, count: number): Record<string, string>
  * منطق و شکل دیتای سفارش دقیقا مطابق فلوی قبلی باقی مانده است.
  */
 export default function NewOrder() {
-	const { order, setOrder, resetOrder } = useNewOrderStore();
+	const { order, setOrder } = useNewOrderStore();
 	const rates = useOrderRates();
 	const [currentStep, setCurrentStep] = useState<StepKey>("selectItem");
-
-	// از این پس ثبت سفارش نیازمند ورود است (پاسپورت‌ها به کاربر گره خورده‌اند). اگر کاربر
-	// وارد نشده باشد، مودال ورود از همان ابتدا باز می‌شود؛ قابل بستن است و با بنرِ «ورود» قابل بازکردن مجدد.
-	const profile = useProfiletore((s) => s.profile);
-	// وضعیت لودینگ پروفایل از استور (تا اولین واکشیِ AppBootstrap resolve نشود true است)
-	const profileLoading = useProfiletore((s) => s.loading);
-	const isAuthed = !!profile;
-	const [authOpen, setAuthOpen] = useState<boolean>(false);
-	// پس از مشخص‌شدن وضعیت، اگر کاربر وارد نشده باشد مودال ورود باز می‌شود
-	useEffect(() => {
-		if (!profileLoading && !isAuthed) setAuthOpen(true);
-	}, [profileLoading, isAuthed]);
-
-	// تا وقتی کاربر وارد نشده، فلو قفل است: استپ اول نمایش داده می‌شود و اگر کاربر وسط
-	// مسیر از حساب خارج شود، سفارش پاک و به استپ اول بازگردانده می‌شود. (در حین بارگذاری
-	// پروفایل ریست نمی‌کنیم تا داده‌ی کاربرِ واردشده از بین نرود.)
-	useEffect(() => {
-		if (!isAuthed && !profileLoading) {
-			resetOrder();
-			rates.reset();
-			setCurrentStep("selectItem");
-		}
-	}, [isAuthed, profileLoading]);
 
 	const count = order?.translationItemCount ?? 1;
 	// مرحله‌ی نام‌گذاری فقط وقتی لازم است که بیش از یک نسخه باشد؛ تک‌مدرک خودکار نام‌گذاری می‌شود
@@ -296,17 +271,8 @@ export default function NewOrder() {
 
 	return (
 		<div className="min-h-[100dvh] w-full bg-gradient-to-b from-secondary/[0.04] to-transparent py-8 lg:py-12 max-lg:px-4">
-			<AuthModal
-				open={authOpen}
-				setOpen={setAuthOpen}
-				title="ورود برای ثبت سفارش"
-				description="برای ثبت سفارش ترجمه و استفاده از پاسپورت‌های خود، ابتدا وارد حساب کاربری شوید."
-				onSuccess={() => setAuthOpen(false)}
-			/>
-
 			<div className="container">
-				<div className="max-w-5xl mx-auto w-full relative">
-					<div className={`flex flex-col gap-8 ${!isAuthed ? "pointer-events-none select-none" : ""}`}>
+				<div className="max-w-5xl mx-auto flex flex-col gap-8">
 					<div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur px-5 py-5 lg:px-8">
 						<OrderStepper steps={steps} currentStep={currentStep} />
 					</div>
@@ -333,7 +299,7 @@ export default function NewOrder() {
 							</motion.div>
 						)}
 					</div>
-					<div className={`flex items-center justify-between gap-3 ${!isAuthed ? "hidden" : ""}`}>
+					<div className="flex items-center justify-between gap-3">
 						<TabanButton variant="text" onClick={goPrev} disabled={isFirst}>
 							مرحله قبلی
 						</TabanButton>
@@ -345,28 +311,7 @@ export default function NewOrder() {
 						)}
 					</div>
 				</div>
-
-				{!isAuthed && (
-					<div className="absolute inset-0 z-20 bg-white/40 backdrop-blur-md rounded-3xl flex items-center justify-center p-4">
-						{profileLoading ? (
-							<div className="flex flex-col items-center gap-3 text-sm text-neutral-500">
-								<TabanLoading size={32} />
-								در حال بارگذاری حساب کاربری...
-							</div>
-						) : (
-							<div className="rounded-3xl border border-secondary/30 bg-white shadow-xl px-8 py-10 flex flex-col items-center gap-4 text-center max-w-md">
-								<div className="w-14 h-14 rounded-2xl bg-secondary/15 flex items-center justify-center">
-									<IconCircleUser width={32} height={32} className="stroke-secondary" />
-								</div>
-								<div className="peyda font-bold text-lg text-primary">برای ثبت سفارش وارد شوید</div>
-								<div className="text-sm text-neutral-500 leading-7">برای ادامه‌ی ثبت سفارش و استفاده از پاسپورت‌های خود، ابتدا وارد حساب کاربری شوید.</div>
-								<TabanButton onClick={() => setAuthOpen(true)}>ورود به حساب</TabanButton>
-							</div>
-						)}
-					</div>
-				)}
 			</div>
 		</div>
-	</div>
-);
+	);
 }
