@@ -160,6 +160,8 @@ export const Header = () => {
 		await localStorage.removeItem("token");
 		setProfile(null);
 		setLogoutOpen(false);
+		// رفرش یک‌باره‌ی صفحه تا کل state اپ به حالت خروج برگردد
+		window.location.reload();
 	};
 
 	return (

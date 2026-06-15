@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { TabanEndpoints } from "@/app/_api/endpoints";
@@ -46,7 +46,6 @@ const menu = [
 
 export default function ProfileSidebar() {
 	const pathname = usePathname();
-	const router = useRouter();
 	const [logoutOpen, setLogoutOpen] = useState(false);
 	const { profile, setProfile } = useProfiletore();
 
@@ -78,7 +77,8 @@ export default function ProfileSidebar() {
 		await localStorage.removeItem("token");
 		setProfile(null);
 		setLogoutOpen(false);
-		router.push("/");
+		// رفرش کامل صفحه (بازگشت به خانه) تا کل state اپ به حالت خروج برگردد
+		window.location.href = "/";
 	};
 
 	return (
