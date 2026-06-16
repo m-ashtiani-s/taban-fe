@@ -69,6 +69,7 @@ export default function AddressCard({ address, onEdit, onToggleStatus }: Address
 					<span>پلاک: {detailOrDash(address.plaque)}</span>
 					<span>واحد: {detailOrDash(address.unit)}</span>
 					<span dir="ltr">تلفن ثابت: {detailOrDash(address.landlineNumber)}</span>
+					<span dir="ltr">کد پستی: {detailOrDash(address.postalCode)}</span>
 				</div>
 				{address.addressDescription && (
 					<div className="text-xs text-neutral-500 bg-neutral-50 rounded-lg px-3 py-2 leading-6">

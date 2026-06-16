@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 	const term = searchParams.get("term") || "";
 
 	try {
-		const endpoint = `${WP_URL}/wp-json/wp/v2/posts?_embed&per_page=${pageSize}&page=${page}${term ? `&search=${encodeURIComponent(term)}` : ""}`;
+		const endpoint = `${WP_URL}/wp-json/wp/v2/posts?_embed&per_page=${pageSize}&page=${page}&orderby=post_index&order=desc${term ? `&search=${encodeURIComponent(term)}` : ""}`;
 		console.log("object");
 		const response = await axios.get<BlogPostDtoApi[]>(endpoint);
 

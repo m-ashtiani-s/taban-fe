@@ -114,6 +114,13 @@ export default function NewOrder() {
 			}));
 			// تک‌مدرک نیازی به نام‌گذاری ندارد؛ مستقیم به انتخاب زبان می‌رویم
 			setCurrentStep(handoffCount > 1 ? "naming" : "language");
+			// اگر زبان از URL پیش‌انتخاب شده، مستقیم نرخ‌ها رو فچ می‌کنیم.
+			// نمی‌توان فقط به effect نرخ‌ها (itemId/languageId) تکیه کرد چون اگر
+			// store قبلاً همین مقادیر رو داشته باشه، dep تغییر نمی‌کنه و effect
+			// بعد از reset() دوباره فایر نمی‌شه (race condition روی اتصال کُند).
+			if (language) {
+				rates.fetchAll(item.translationItemId, language.languageId);
+			}
 		}
 		setInitializing(false);
 	}, [hasHandoff, initializing, handoffItemId, handoffLanguageId, handoffCount, handoffItems.result, handoffLanguages.result]);

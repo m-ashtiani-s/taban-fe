@@ -18,6 +18,7 @@ type LocationOption = { id: number; name: string };
 
 type FormValues = {
 	title?: string;
+	postalCode?: string;
 	plaque?: string;
 	unit?: string;
 	fullAddress?: string;
@@ -45,6 +46,7 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 		isEdit && address
 			? {
 					title: address.title ?? "",
+					postalCode: address.postalCode ?? "",
 					plaque: address.plaque ?? "",
 					unit: address.unit ?? "",
 					fullAddress: address.fullAddress ?? "",
@@ -108,6 +110,7 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 		if (!selectedProvince) errors.push({ item: "province", message: "انتخاب استان الزامی است" });
 		if (!selectedCity) errors.push({ item: "city", message: "انتخاب شهر الزامی است" });
 		if (!formValues.fullAddress?.trim()) errors.push({ item: "fullAddress", message: "آدرس کامل الزامی است" });
+		if (!/^\d{10}$/.test(formValues.postalCode?.trim() ?? "")) errors.push({ item: "postalCode", message: "کد پستی باید دقیقاً ۱۰ رقم باشد" });
 		setFormErrors(errors);
 		return errors;
 	};
@@ -126,6 +129,7 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 			provinceCode: selectedProvince!.id,
 			cityName: selectedCity!.name,
 			cityCode: selectedCity!.id,
+			postalCode: formValues.postalCode!.trim(),
 			plaque: formValues.plaque?.trim() || null,
 			unit: formValues.unit?.trim() || null,
 			fullAddress: formValues.fullAddress!.trim(),
@@ -224,6 +228,18 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 									errorText={findError(formErrors, "city")?.message}
 								/>
 							</div>
+							<TabanInput
+								label="کد پستی"
+								name="postalCode"
+								groupMode
+								isLtr
+								setValue={setFormValues}
+								value={formValues.postalCode}
+								disabled={submitLoading}
+								isHandleError
+								hasError={!!findError(formErrors, "postalCode")}
+								errorText={findError(formErrors, "postalCode")?.message}
+							/>
 						</div>
 					</section>
 
@@ -325,6 +341,7 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 								<span>پلاک: {previewValue(formValues.plaque)}</span>
 								<span>واحد: {previewValue(formValues.unit)}</span>
 								<span dir="ltr">تلفن ثابت: {previewValue(formValues.landlineNumber)}</span>
+								<span dir="ltr">کد پستی: {previewValue(formValues.postalCode)}</span>
 							</div>
 							{formValues.addressDescription?.trim() && (
 								<div className="text-xs text-neutral-500 bg-neutral-50 rounded-lg px-3 py-2 leading-6">
