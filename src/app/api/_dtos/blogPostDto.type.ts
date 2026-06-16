@@ -52,6 +52,7 @@ export type BlogPostDtoApi = {
 		description:string;
 		focus_keyword:string
 	},
+	post_index?: number,
 
 	_links: {
 		self: { href: string }[];

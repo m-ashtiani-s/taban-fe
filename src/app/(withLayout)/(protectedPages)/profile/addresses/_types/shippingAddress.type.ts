@@ -5,6 +5,7 @@ export type ShippingAddress = {
 	provinceCode: number;
 	cityName: string;
 	cityCode: number;
+	postalCode: string;
 	plaque: string | null;
 	unit: string | null;
 	fullAddress: string;
@@ -29,6 +30,7 @@ export type ShippingAddressPayload = {
 	provinceCode: number;
 	cityName: string;
 	cityCode: number;
+	postalCode: string;
 	plaque?: string | null;
 	unit?: string | null;
 	fullAddress: string;
