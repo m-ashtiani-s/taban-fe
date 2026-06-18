@@ -20,8 +20,10 @@ import PassportPicker from "@/app/_components/common/passportPicker/passportPick
 import { useNotificationStore } from "@/stores/notification.store";
 import {
 	IconArrowLine,
+	IconCheck,
 	IconDocument,
 	IconEmbassy,
+	IconInfo,
 	IconInquiry,
 	IconJustice,
 	IconMfa,
@@ -47,6 +49,7 @@ type EditState = {
 	mfaCertification: Record<string, string | null>;
 	justiceCertification: Record<string, string | null>;
 	justiceInquiries: Record<string, string[]>;
+	selfInquiry: Record<string, boolean>;
 	embassies: Record<string, string[]>;
 	copyCount: Record<string, string>;
 	passports: string[];
@@ -61,6 +64,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 	const mfaCertification: Record<string, string | null> = {};
 	const justiceCertification: Record<string, string | null> = {};
 	const justiceInquiries: Record<string, string[]> = {};
+	const selfInquiry: Record<string, boolean> = {};
 	const embassies: Record<string, string[]> = {};
 	const copyCount: Record<string, string> = {};
 	const assetsByDoc: Record<string, string[]> = {};
@@ -75,6 +79,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		mfaCertification[d.documentKey] = d.mfaCertificationRateId ?? null;
 		justiceCertification[d.documentKey] = d.justiceCertificationRateId ?? null;
 		justiceInquiries[d.documentKey] = d.justiceInquiryRateIds ?? [];
+		selfInquiry[d.documentKey] = d.selfInquiry ?? false;
 		embassies[d.documentKey] = d.embassyRateIds ?? [];
 		copyCount[d.documentKey] = (d.copyCount ?? 1).toString();
 		assetsByDoc[d.documentKey] = d.assets ?? [];
@@ -101,6 +106,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		mfaCertification,
 		justiceCertification,
 		justiceInquiries,
+		selfInquiry,
 		embassies,
 		copyCount,
 		passports: payload.passports ?? [],
@@ -189,10 +195,12 @@ export default function OrderItemEditPage() {
 				.map(([dynamicRateId, cnt]) => ({ dynamicRateId, count: Number(cnt) })),
 			mfaCertificationRateId: editState.mfaCertification[key] ?? null,
 			justiceCertificationRateId: editState.justiceCertification[key] ?? null,
-			justiceInquiryRateIds: editState.justiceCertification[key] ? (editState.justiceInquiries[key] ?? []) : [],
+			justiceInquiryRateIds:
+				editState.justiceCertification[key] && !editState.selfInquiry[key] ? (editState.justiceInquiries[key] ?? []) : [],
 			embassyRateIds: editState.embassies[key] ?? [],
 			copyCount: Number(editState.copyCount[key] ?? 1) || 1,
 			assets: editState.assetsByDoc[key] ?? [],
+			selfInquiry: !!editState.selfInquiry[key],
 		}));
 		return { translationItemId: editState.translationItemId, languageId: editState.languageId, documents };
 	}, [editState]);
@@ -504,6 +512,13 @@ export default function OrderItemEditPage() {
 						) : (
 							<div className="text-sm text-neutral-400 py-4 text-center">تاییداتی برای این ترکیب تعریف نشده است</div>
 						)}
+
+						<div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-2.5">
+							<IconInfo className="stroke-amber-600 w-5 h-5 shrink-0 mt-0.5" />
+							<span className="text-sm leading-7 text-amber-700">
+								لازم به ذکر است که جهت اخذ تاییدات، ارائه‌ی اصل مدارک به ارگان‌های مربوطه الزامی است.
+							</span>
+						</div>
 					</div>
 				)}
 
@@ -518,6 +533,7 @@ export default function OrderItemEditPage() {
 							<div className="flex flex-col gap-6">
 								{documentKeys.map((key) => {
 									const inqAllowed = !!editState.justiceCertification[key];
+									const selfInq = !!editState.selfInquiry[key];
 									return (
 										<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
 											<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
@@ -525,14 +541,14 @@ export default function OrderItemEditPage() {
 												استعلام برای {editState.translationItemNames[key]}
 											</div>
 											<div className="relative">
-												<div className={`flex flex-wrap gap-4 ${inqAllowed ? "" : "opacity-40 pointer-events-none select-none"}`}>
+												<div className={`flex flex-wrap gap-4 ${inqAllowed && !selfInq ? "" : "opacity-40 pointer-events-none select-none"}`}>
 													{justiceInquiryRates.result?.data?.data?.map((inquiry, index) => {
-														const isSelected = inqAllowed && (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
+														const isSelected = inqAllowed && !selfInq && (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
 														return (
 															<motion.div key={inquiry.justiceInquiryRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
 																<div
 																	onClick={() => {
-																		if (!inqAllowed) return;
+																		if (!inqAllowed || selfInq) return;
 																		setEditState((prev) => {
 																			if (!prev) return prev;
 																			const current = prev.justiceInquiries[key] ?? [];
@@ -560,6 +576,44 @@ export default function OrderItemEditPage() {
 													</div>
 												)}
 											</div>
+
+											{inqAllowed && (
+												<div className="mt-4">
+													<button
+														type="button"
+														onClick={() =>
+															setEditState((prev) => {
+																if (!prev) return prev;
+																const next = !prev.selfInquiry[key];
+																const justiceInquiries = next
+																	? { ...prev.justiceInquiries, [key]: [] }
+																	: prev.justiceInquiries;
+																return { ...prev, selfInquiry: { ...prev.selfInquiry, [key]: next }, justiceInquiries };
+															})
+														}
+														className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
+															selfInq ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+														}`}
+													>
+														<span
+															className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+																selfInq ? "bg-secondary border-secondary" : "border-neutral-300"
+															}`}
+														>
+															{selfInq && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+														</span>
+														<span className="text-sm font-medium text-primary">استعلام‌های این مدرک را خودم تهیه می‌کنم</span>
+													</button>
+													{selfInq && (
+														<div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 p-3 flex items-start gap-2.5">
+															<IconInfo className="stroke-sky-600 w-5 h-5 shrink-0 mt-0.5" />
+															<span className="text-xs leading-6 text-sky-700">
+																می‌توانید بعداً در پنل کاربری، در بخش جزئیات سفارش، نتیجه‌ی استعلام را برای ما آپلود کنید. کارشناسان ما در این زمینه شما را راهنمایی می‌کنند.
+															</span>
+														</div>
+													)}
+												</div>
+											)}
 										</div>
 									);
 								})}

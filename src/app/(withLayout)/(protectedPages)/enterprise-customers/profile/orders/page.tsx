@@ -14,7 +14,7 @@ import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 import { IconEye, IconOrder, IconUser } from "@/app/_components/icon/icons";
 import { OrderEndpoints } from "@/app/(withLayout)/(protectedPages)/profile/orders/_api/endpoint";
 import { Order, OrderStatus } from "@/app/(withLayout)/(protectedPages)/profile/orders/_types/order.type";
-import { orderStatusMeta } from "@/app/(withLayout)/(protectedPages)/profile/orders/_constants/orderStatus";
+import { orderFlowSteps, orderStatusMeta } from "@/app/(withLayout)/(protectedPages)/profile/orders/_constants/orderStatus";
 import { CustomerEndpoints } from "../../_api/endpoint";
 import { Customer } from "../../_types/customer.type";
 
@@ -22,11 +22,8 @@ const PAGE_SIZE = 10;
 
 const statusFilters: { label: string; value: OrderStatus | "all" }[] = [
 	{ label: "همه", value: "all" },
-	{ label: "در انتظار بررسی", value: "pending" },
-	{ label: "تایید جهت پرداخت", value: "approved" },
-	{ label: "پرداخت‌شده", value: "paid" },
-	{ label: "در حال انجام", value: "processing" },
-	{ label: "تحویل‌شده", value: "delivered" },
+	...orderFlowSteps.map((s) => ({ label: s.label, value: s.key })),
+	{ label: "نیازمند ویرایش", value: "needs_editing" as OrderStatus },
 ];
 
 type CustomerOption = { customerId: string; fullName: string };

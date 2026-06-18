@@ -1,6 +1,6 @@
 "use client";
 
-import { IconInquiry, IconJustice } from "@/app/_components/icon/icons";
+import { IconCheck, IconInfo, IconInquiry, IconJustice } from "@/app/_components/icon/icons";
 import { JusticeInquiryRate } from "@/types/justiceInquiry.type";
 import { JusticeInquirySelection } from "@/types/createOrder.type";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
@@ -26,15 +26,32 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 	const hasJusticeCert = (docKey: string): boolean =>
 		!!order?.justiceCertification?.find((it) => it?.translationItemId === docKey)?.justiceCertification;
 
+	const isSelfInquiry = (docKey: string): boolean => !!order?.selfInquiryByDoc?.[docKey];
+
 	const isSelected = (rateId: string, docKey: string): boolean => {
-		if (!hasJusticeCert(docKey)) return false;
+		if (!hasJusticeCert(docKey) || isSelfInquiry(docKey)) return false;
 		const item = order?.justiceInquiriesItems?.find((it) => it?.translationItemId === docKey);
 		return !!item?.justiceInquiries?.some((it) => it?.justiceInquiryRateId === rateId);
 	};
 
-	const toggle = (rate: JusticeInquiryRate, docKey: string, docTitle: string) => {
-		// بدون مهر دادگستری، انتخاب استعلام مجاز نیست
+	// با فعال‌کردن «خودم می‌گیرم»، انتخاب استعلام‌های همان مدرک پاک می‌شود
+	const toggleSelfInquiry = (docKey: string) => {
 		if (!hasJusticeCert(docKey)) return;
+		setOrder((prev) => {
+			const next = !prev?.selfInquiryByDoc?.[docKey];
+			return {
+				...prev,
+				selfInquiryByDoc: { ...(prev?.selfInquiryByDoc ?? {}), [docKey]: next },
+				justiceInquiriesItems: next
+					? (prev?.justiceInquiriesItems ?? []).filter((it) => it?.translationItemId !== docKey)
+					: (prev?.justiceInquiriesItems ?? []),
+			};
+		});
+	};
+
+	const toggle = (rate: JusticeInquiryRate, docKey: string, docTitle: string) => {
+		// بدون مهر دادگستری یا وقتی کاربر خودش استعلام می‌گیرد، انتخاب استعلام مجاز نیست
+		if (!hasJusticeCert(docKey) || isSelfInquiry(docKey)) return;
 		const selection: JusticeInquirySelection = { justiceInquiryRateId: rate.justiceInquiryRateId };
 		setOrder((prev) => {
 			const others = (prev?.justiceInquiriesItems ?? []).filter((it) => it?.translationItemId !== docKey);
@@ -57,12 +74,13 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 			<div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
 				{keys.map((docKey, index) => {
 					const allowed = hasJusticeCert(docKey);
+						const selfInq = isSelfInquiry(docKey);
 					return (
 						<DocumentSection key={docKey} index={index} title={names[docKey] ?? "مدرک"}>
 							<div className="relative">
 								<div
 									className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${
-										allowed ? "" : "opacity-40 pointer-events-none select-none"
+										allowed && !selfInq ? "" : "opacity-40 pointer-events-none select-none"
 									}`}
 								>
 									{inquiryRates.map((rate) => (
@@ -87,6 +105,35 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 									</div>
 								)}
 							</div>
+
+								{allowed && (
+									<div className="mt-4 pt-4 border-t border-dashed border-neutral-200">
+										<button
+											type="button"
+											onClick={() => toggleSelfInquiry(docKey)}
+											className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
+												selfInq ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+											}`}
+										>
+											<span
+												className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+													selfInq ? "bg-secondary border-secondary" : "border-neutral-300"
+												}`}
+											>
+												{selfInq && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+											</span>
+											<span className="text-sm font-medium text-primary">استعلام‌های این مدرک را خودم تهیه می‌کنم</span>
+										</button>
+										{selfInq && (
+											<div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 p-3 flex items-start gap-2.5">
+												<IconInfo className="stroke-sky-600 w-5 h-5 shrink-0 mt-0.5" />
+												<span className="text-xs leading-6 text-sky-700">
+													می‌توانید بعداً در پنل کاربری، در بخش جزئیات سفارش، نتیجه‌ی استعلام را برای ما آپلود کنید. کارشناسان ما در این زمینه شما را راهنمایی می‌کنند.
+												</span>
+											</div>
+										)}
+									</div>
+								)}
 						</DocumentSection>
 					);
 				})}

@@ -39,6 +39,8 @@ export type CreateOrder = {
 	/** ریشه‌ی پوشه‌ی آپلود برای کاربر مهمان (تا همه‌ی فایل‌های یک سفارش زیر یک پوشه بمانند) */
 	uploadScope?: string;
 	copyCount?: Record<string, string>;
+	/** مدارکی که کاربر استعلام‌هایشان را خودش تهیه می‌کند (کلید: documentKey همان مدرک) */
+	selfInquiryByDoc?: Record<string, boolean>;
 	// در صورت ثبت سفارش توسط مشتری سازمانی برای یک مشتری زیرمجموعه، آی‌دی آن مشتری اینجا نگه داشته می‌شود
 	customerId?: string | null;
 };
