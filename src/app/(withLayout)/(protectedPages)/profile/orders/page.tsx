@@ -13,20 +13,15 @@ import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 import { IconCart, IconDocument, IconEye, IconOrder } from "@/app/_components/icon/icons";
 import { OrderEndpoints } from "./_api/endpoint";
 import { Order, OrderStatus } from "./_types/order.type";
-import { orderStatusMeta } from "./_constants/orderStatus";
+import { orderFlowSteps, orderStatusMeta } from "./_constants/orderStatus";
 import ReorderModal from "./_components/reorderModal/reorderModal";
 
 const PAGE_SIZE = 10;
 
 const statusFilters: { label: string; value: OrderStatus | "all" }[] = [
 	{ label: "همه", value: "all" },
-	{ label: "در انتظار بررسی", value: "pending" },
-	{ label: "تایید جهت پرداخت", value: "approved" },
-	{ label: "پرداخت‌شده", value: "paid" },
-	{ label: "در حال انجام", value: "processing" },
-	{ label: "ارسال‌شده", value: "shipped" },
-	{ label: "تحویل‌شده", value: "delivered" },
-	{ label: "رد‌شده", value: "rejected" },
+	...orderFlowSteps.map((s) => ({ label: s.label, value: s.key })),
+	{ label: "نیازمند ویرایش", value: "needs_editing" as OrderStatus },
 ];
 
 export default function OrdersPage() {

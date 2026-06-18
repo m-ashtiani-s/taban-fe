@@ -2,14 +2,19 @@ import { RateCalculationResponse } from "@/types/rateCalculation.type";
 import { AddDocumentToCartPayload } from "@/types/cart.type";
 
 export type OrderStatus =
-	| "pending"
+	| "document_submission"
 	| "approved"
 	| "paid"
-	| "processing"
-	| "shipped"
+	| "admin_registration"
+	| "translating"
+	| "documents_received"
+	| "reviewing"
+	| "certifications"
+	| "ready_for_delivery"
+	| "translation_scan"
+	| "documents_sent"
 	| "delivered"
-	| "canceled"
-	| "rejected";
+	| "needs_editing";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 

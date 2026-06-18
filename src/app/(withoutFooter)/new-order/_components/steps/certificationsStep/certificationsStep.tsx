@@ -1,6 +1,6 @@
 "use client";
 
-import { IconJustice, IconMfa } from "@/app/_components/icon/icons";
+import { IconInfo, IconJustice, IconMfa } from "@/app/_components/icon/icons";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
 import { OrderRates } from "../../../_hooks/useOrderRates";
 import StepHeader from "../../stepHeader/stepHeader";
@@ -93,6 +93,13 @@ export default function CertificationsStep({ rates }: CertificationsStepProps) {
 						</div>
 					</DocumentSection>
 				))}
+
+				<div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-2.5">
+					<IconInfo className="stroke-amber-600 w-5 h-5 shrink-0 mt-0.5" />
+					<span className="text-sm leading-7 text-amber-700">
+						لازم به ذکر است که جهت اخذ تاییدات، ارائه‌ی اصل مدارک به ارگان‌های مربوطه الزامی است.
+					</span>
+				</div>
 			</div>
 		</div>
 	);

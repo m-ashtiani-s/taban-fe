@@ -55,9 +55,10 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 
 			const mfa = order?.mfaCertification?.find((m) => m?.translationItemId === key)?.mfaCertification ?? null;
 			const justice = order?.justiceCertification?.find((j) => j?.translationItemId === key)?.justiceCertification ?? null;
+			const selfInquiry = !!order?.selfInquiryByDoc?.[key];
 
 			const inquiries =
-				justice
+				justice && !selfInquiry
 						? order?.justiceInquiriesItems?.find((j) => j?.translationItemId === key)?.justiceInquiries?.map((i) => i.justiceInquiryRateId) ?? []
 						: [];
 
@@ -73,6 +74,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 					embassyRateIds:
 						order?.embassyItems?.find((e) => e?.translationItemId === key)?.embassies?.map((e) => e.embassyRateId) ?? [],
 					assets: order?.assetsByDoc?.[key] ?? [],
+					selfInquiry,
 			};
 		});
 
@@ -261,6 +263,18 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 								<SummaryRow label="مبلغ تاییدات ترجمه" value={breakdown.summary.certificationPrice} />
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="مبلغ استعلام‌های ترجمه" value={breakdown.summary.inquiryPrice} />
+								{breakdown.documents.some((d) => d.justiceInquiries.length > 0) && (
+									<div className="flex flex-col gap-1 pr-3 -mt-1">
+										{breakdown.documents
+											.flatMap((d) => d.justiceInquiries)
+											.map((inq, idx) => (
+												<div key={idx} className="flex items-center justify-between text-xs text-neutral-500">
+													<span>{inq.justiceInquiryName}</span>
+													<span>{toCurrency(inq.price)} تومان</span>
+												</div>
+											))}
+									</div>
+								)}
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="مبلغ تایید سفارت" value={breakdown.summary.embassyPrice ?? 0} />
 								<div className="h-[1px] w-full bg-neutral-200" />

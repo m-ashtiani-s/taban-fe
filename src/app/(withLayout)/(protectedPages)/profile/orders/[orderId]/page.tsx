@@ -13,21 +13,26 @@ import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
-import { IconArrow, IconCheck, IconClose, IconCross, IconDocument, IconEdit, IconInfo, IconMoney, IconOrder, IconRecycle, IconTruck, IconUser } from "@/app/_components/icon/icons";
+import { IconArrow, IconCheck, IconClose, IconCopy, IconCross, IconDocument, IconEdit, IconEye, IconGuarantee, IconInfo, IconMoney, IconOrder, IconTranslate, IconTruck, IconUpload, IconUser } from "@/app/_components/icon/icons";
 import { svgIcon } from "@/app/_components/icon/icon.types";
 import { OrderEndpoints } from "../_api/endpoint";
 import { Order, OrderCustomerInfo, OrderedDoc, OrderShippingAddressInfo, OrderStatus } from "../_types/order.type";
-import { guideToneClasses, orderStatusGuide, orderStatusMeta, paymentStatusMeta } from "../_constants/orderStatus";
+import { guideToneClasses, orderFlowSteps, orderStatusGuide, orderStatusMeta, paymentStatusMeta } from "../_constants/orderStatus";
 
 const statusGuideIcon: Record<OrderStatus, React.FC<svgIcon>> = {
-	pending: IconInfo,
+	document_submission: IconInfo,
 	approved: IconMoney,
 	paid: IconCheck,
-	processing: IconRecycle,
-	shipped: IconTruck,
+	admin_registration: IconEdit,
+	translating: IconTranslate,
+	documents_received: IconUpload,
+	reviewing: IconEye,
+	certifications: IconGuarantee,
+	ready_for_delivery: IconCheck,
+	translation_scan: IconCopy,
+	documents_sent: IconTruck,
 	delivered: IconCheck,
-	canceled: IconClose,
-	rejected: IconCross,
+	needs_editing: IconCross,
 };
 
 export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
@@ -101,9 +106,9 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 	const payMeta = paymentStatusMeta[order.paymentStatus];
 	const address = order.shippingAddress && typeof order.shippingAddress !== "string" ? (order.shippingAddress as OrderShippingAddressInfo) : null;
 	const customer = order.customer && typeof order.customer !== "string" ? (order.customer as OrderCustomerInfo) : null;
-	const editable = order.status === "pending" ||order.status === "rejected";
+	const editable = order.status === "document_submission" || order.status === "needs_editing";
 	const couponInfo = order.coupon && typeof order.coupon !== "string" ? order.coupon : null;
-	const canRemoveCoupon = !!couponInfo && (order.status === "pending" || order.status === "approved");
+	const canRemoveCoupon = !!couponInfo && (order.status === "document_submission" || order.status === "approved");
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -182,8 +187,10 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 					)}
 				</div>
 
-				{/* sidebar: address + totals */}
-				<div className="lg:col-span-1 flex flex-col gap-4 lg:sticky lg:top-[88px]">
+				{/* sidebar: flow + address + totals */}
+				<div className="lg:col-span-1 flex flex-col gap-4">
+					{order.status !== "needs_editing" && <StatusFlow order={order} />}
+
 					{customer && (
 						<div className="relative overflow-hidden bg-gradient-to-bl from-secondary/15 to-white border border-secondary/30 rounded-2xl p-5 flex flex-col gap-2">
 							<div className="flex items-center gap-2 text-sm font-semibold peyda pb-2 border-b border-secondary/20">
@@ -262,12 +269,58 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 	);
 }
 
+function StatusFlow({ order }: { order: Order }) {
+	const activeIndex = orderFlowSteps.findIndex((s) => s.key === order.status);
+
+	return (
+		<div className="bg-white border border-neutral-200 rounded-2xl p-5">
+			<div className="flex items-center gap-2 text-sm font-semibold peyda pb-3 border-b border-neutral-100 mb-3">
+				<IconOrder className="stroke-primary w-4 h-4" />
+				مراحل سفارش
+			</div>
+			<div className="flex flex-col">
+				{orderFlowSteps.map((step, i) => {
+					const done = activeIndex >= 0 && i < activeIndex;
+					const current = i === activeIndex;
+					const isLast = i === orderFlowSteps.length - 1;
+					return (
+						<div key={step.key} className="flex gap-3">
+							<div className="flex flex-col items-center">
+								<div
+									className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 duration-200 ${
+										done
+											? "bg-primary text-white"
+											: current
+												? "bg-primary text-white ring-4 ring-primary/15"
+												: "bg-neutral-100 text-neutral-400"
+									}`}
+								>
+									{done ? <IconCheck className="stroke-white w-4 h-4" /> : i + 1}
+								</div>
+								{!isLast && (
+									<div className={`w-0.5 flex-1 min-h-[26px] ${i < activeIndex ? "bg-primary" : "bg-neutral-200"}`} />
+								)}
+							</div>
+							<div className={isLast ? "pt-1" : "pt-1 pb-5"}>
+								<div className={`text-sm ${done || current ? "font-semibold text-primary" : "text-neutral-400"}`}>
+									{step.label}
+								</div>
+								{current && <div className="text-[11px] text-primary/70 mt-0.5">مرحله‌ی فعلی شما</div>}
+							</div>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
 function StatusGuidance({ order, onPay, paying }: { order: Order; onPay: () => void; paying: boolean }) {
 	const guide = orderStatusGuide[order.status];
 	const tone = guideToneClasses[guide.tone];
 	const Icon = statusGuideIcon[order.status];
 	const showPay = order.status === "approved";
-	const showRemarks = order.status === "rejected" && !!order.rejectedRemarks?.trim();
+	const showRemarks = order.status === "needs_editing" && !!order.rejectedRemarks?.trim();
 
 	return (
 		<div className={`relative overflow-hidden bg-gradient-to-l ${tone.container} border rounded-2xl p-5`}>

@@ -10,6 +10,8 @@ export type RateCalculationDocumentInput = {
 	embassyRateIds?: string[];
 	/** فایل‌های آپلودشده‌ی این مدرک. در payloadهای قدیمی ممکن است موجود نباشد. */
 	assets?: string[];
+	/** کاربر استعلام‌های این مدرک را خودش تهیه می‌کند (استعلام پولیِ ما انتخاب نمی‌شود). */
+	selfInquiry?: boolean;
 };
 
 export type RateCalculationRequest = {
