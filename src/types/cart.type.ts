@@ -10,6 +10,7 @@ export type AddDocumentToCartPayload = {
 	passports?: string[];
 	assets?: string[];
 	customerId?: string | null;
+	desiredDeliveryDate?: string | null;
 };
 
 export type CartItem = {

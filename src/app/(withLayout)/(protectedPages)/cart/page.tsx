@@ -290,6 +290,15 @@ function CartItemCard({
 			</div>
 
 			<div className="border-t border-neutral-100 pt-3 flex flex-col gap-2">
+				{!!breakdown.summary.tierDiscountPercent && breakdown.summary.tierDiscountPercent > 0 && (
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-emerald-600">تخفیف باشگاه مشتریان ({breakdown.summary.tierDiscountPercent}٪)</span>
+					<span className="font-bold text-emerald-600">
+						- {toCurrency(breakdown.summary.tierDiscountAmount ?? 0)}
+						<span className="text-[11px] font-normal text-neutral-500 mr-1">تومان</span>
+					</span>
+				</div>
+				)}
 				{breakdown.summary.taxPercent > 0 && (
 					<>
 				<div className="flex items-center justify-between text-sm">

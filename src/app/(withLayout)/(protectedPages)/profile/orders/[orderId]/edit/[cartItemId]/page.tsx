@@ -17,6 +17,7 @@ import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import UploadBox from "@/app/_components/common/uploadBox/uploadBox";
 import PassportPicker from "@/app/_components/common/passportPicker/passportPicker";
+import DeliverySection from "@/app/_components/common/deliverySection/deliverySection";
 import { useNotificationStore } from "@/stores/notification.store";
 import {
 	IconArrowLine,
@@ -54,6 +55,7 @@ type EditState = {
 	copyCount: Record<string, string>;
 	passports: string[];
 	assetsByDoc: Record<string, string[]>;
+	desiredDeliveryDate: string | null;
 };
 
 function buildInitialState(doc: OrderedDoc): EditState {
@@ -111,6 +113,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		copyCount,
 		passports: payload.passports ?? [],
 		assetsByDoc,
+		desiredDeliveryDate: payload.desiredDeliveryDate ?? null,
 	};
 }
 
@@ -197,7 +200,8 @@ export default function OrderItemEditPage() {
 			justiceCertificationRateId: editState.justiceCertification[key] ?? null,
 			justiceInquiryRateIds:
 				editState.justiceCertification[key] && !editState.selfInquiry[key] ? (editState.justiceInquiries[key] ?? []) : [],
-			embassyRateIds: editState.embassies[key] ?? [],
+			embassyRateIds:
+				editState.justiceCertification[key] && editState.mfaCertification[key] ? editState.embassies[key] ?? [] : [],
 			copyCount: Number(editState.copyCount[key] ?? 1) || 1,
 			assets: editState.assetsByDoc[key] ?? [],
 			selfInquiry: !!editState.selfInquiry[key],
@@ -217,7 +221,7 @@ export default function OrderItemEditPage() {
 
 	const submitUpdate = () => {
 		if (!calcPayload || !editState) return;
-		updateItem.fetchData({ ...calcPayload, passports: editState.passports, assets: Object.values(editState.assetsByDoc).flat() });
+		updateItem.fetchData({ ...calcPayload, passports: editState.passports, assets: Object.values(editState.assetsByDoc).flat(), desiredDeliveryDate: editState.desiredDeliveryDate });
 	};
 
 	if (!editState && !notFound && (getOrder.loading || !getOrder.result)) {
@@ -358,10 +362,10 @@ export default function OrderItemEditPage() {
 												isNumber
 												type="number"
 												value={editState.baseRateCount[key] ?? ""}
-												groupMode
-												setValue={(val: Record<string, string>) =>
+												// groupMode
+												setValue={(val: string) =>
 													setEditState((prev) =>
-														prev ? { ...prev, baseRateCount: { ...prev.baseRateCount, [key]: val[key] ?? "" } } : prev,
+														prev ? { ...prev, baseRateCount: { ...prev.baseRateCount, [key]: val ?? "" } } : prev,
 													)
 												}
 												name={key}
@@ -639,9 +643,23 @@ export default function OrderItemEditPage() {
 												<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
 												تایید سفارت برای {editState.translationItemNames[key]}
 											</div>
-											<div className="flex flex-wrap gap-4">
+											{!(editState.justiceCertification[key] && editState.mfaCertification[key]) && (
+												<div className="flex items-center gap-2.5 mb-3 bg-secondary/5 border border-secondary/30 rounded-xl px-3 py-2.5">
+													<IconEmbassy viewBox="0 0 50 64" width={22} height={22} className="stroke-secondary stroke-2 shrink-0" />
+													<span className="text-xs leading-6 text-primary peyda font-semibold">
+														برای انتخاب تایید سفارت این مدرک، ابتدا «مهر دادگستری» و «مهر وزارت امور خارجه» را در مرحله‌ی تاییدات فعال کنید
+													</span>
+												</div>
+											)}
+											<div
+												className={`flex flex-wrap gap-4 ${
+													editState.justiceCertification[key] && editState.mfaCertification[key]
+														? ""
+														: "opacity-40 pointer-events-none select-none"
+												}`}
+											>
 												{embassyRates.result?.data?.data?.map((embassy, index) => {
-													const isSelected = (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
+													const isSelected = !!editState.justiceCertification[key] && !!editState.mfaCertification[key] && (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
 													return (
 														<motion.div key={embassy.embassyRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
 															<div
@@ -735,9 +753,9 @@ export default function OrderItemEditPage() {
 												isNumber
 												type="number"
 												value={editState.copyCount[key] ?? "1"}
-												groupMode
-												setValue={(val: Record<string, string>) =>
-													setEditState((prev) => (prev ? { ...prev, copyCount: { ...prev.copyCount, [key]: val[key] ?? "" } } : prev))
+												// groupMode
+												setValue={(val: string) =>
+													setEditState((prev) => (prev ? { ...prev, copyCount: { ...prev.copyCount, [key]: val ?? "" } } : prev))
 												}
 												name={key}
 											/>
@@ -823,10 +841,23 @@ export default function OrderItemEditPage() {
 											</div>
 										))}
 										<div className="h-px bg-neutral-100 my-1" />
+										{!!bd.summary.tierDiscountPercent && bd.summary.tierDiscountPercent > 0 && (
+										<div className="flex justify-between text-sm py-1 text-emerald-600">
+											<span>تخفیف باشگاه مشتریان ({bd.summary.tierDiscountPercent}٪):</span>
+											<span className="font-semibold">{toCurrency(bd.summary.tierDiscountAmount ?? 0)}- تومان</span>
+										</div>
+										)}
 										<div className="flex justify-between font-bold py-1">
 											<span>مبلغ کل آیتم:</span>
 											<span className="text-lg text-primary">{toCurrency(bd.summary.totalPrice)} تومان</span>
 										</div>
+
+										<DeliverySection
+											hasJustice={bd.documents.some((d) => !!d.justiceCertification)}
+											hasMfa={bd.documents.some((d) => !!d.mfaCertification)}
+											desiredDate={editState.desiredDeliveryDate}
+											onDateChange={(d) => setEditState((prev) => (prev ? { ...prev, desiredDeliveryDate: d } : prev))}
+										/>
 									</div>
 								);
 							})()

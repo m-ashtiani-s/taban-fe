@@ -78,6 +78,10 @@ export type RateCalculationSummary = {
 	inquiryPrice: number;
 	/** مجموع نرخ تایید سفارت. در breakdownهای قدیمیِ ذخیره‌شده ممکن است موجود نباشد. */
 	embassyPrice?: number;
+	/** درصد تخفیف باشگاه مشتریان روی مبلغ ترجمه. در breakdownهای قدیمی ممکن است موجود نباشد. */
+	tierDiscountPercent?: number;
+	/** مبلغ تخفیف باشگاه مشتریان (روی مبلغ ترجمه). در breakdownهای قدیمی ممکن است موجود نباشد. */
+	tierDiscountAmount?: number;
 	subtotal: number;
 	taxPercent: number;
 	taxPrice: number;

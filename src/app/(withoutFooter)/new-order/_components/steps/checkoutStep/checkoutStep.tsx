@@ -7,12 +7,13 @@ import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { isLoggedIn } from "@/utils/auth";
 import { toCurrency } from "@/utils/string";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
-import { IconCart, IconCheck, IconRequired, IconTranslate } from "@/app/_components/icon/icons";
+import { IconCart, IconCheck, IconRequired, IconStar, IconTranslate } from "@/app/_components/icon/icons";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import AuthModal from "@/app/_components/common/authModal/authModal";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
+import DeliverySection from "@/app/_components/common/deliverySection/deliverySection";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useCartStore } from "@/stores/cart";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
@@ -35,7 +36,7 @@ const SummaryRow = ({ label, value, bold }: { label: string; value: number; bold
 
 export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 	const router = useRouter();
-	const { order, resetOrder } = useNewOrderStore();
+	const { order, setOrder, resetOrder } = useNewOrderStore();
 	const showNotification = useNotificationStore((state) => state.showNotification);
 	const setCart = useCartStore((state) => state.setCart);
 
@@ -72,7 +73,9 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 				justiceCertificationRateId: justice?.certificationRateId ?? null,
 				justiceInquiryRateIds: inquiries,
 					embassyRateIds:
-						order?.embassyItems?.find((e) => e?.translationItemId === key)?.embassies?.map((e) => e.embassyRateId) ?? [],
+						justice && mfa
+							? order?.embassyItems?.find((e) => e?.translationItemId === key)?.embassies?.map((e) => e.embassyRateId) ?? []
+							: [],
 					assets: order?.assetsByDoc?.[key] ?? [],
 					selfInquiry,
 			};
@@ -93,6 +96,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 			passports: order?.passports ?? [],
 			assets: Object.values(order?.assetsByDoc ?? {}).flat(),
 			customerId: order?.customerId ?? null,
+			desiredDeliveryDate: order?.desiredDeliveryDate ?? null,
 		});
 	});
 
@@ -259,6 +263,18 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 
 							<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-5 flex flex-col gap-3">
 								<SummaryRow label="مبلغ ترجمه" value={breakdown.summary.translationPrice} />
+								{!!breakdown.summary.tierDiscountPercent && breakdown.summary.tierDiscountPercent > 0 && (
+									<div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 -mt-1">
+										<div className="flex items-center gap-2 text-sm text-emerald-700">
+											<IconStar className="fill-emerald-500 stroke-0 w-4 h-4" />
+											<span>تخفیف باشگاه مشتریان ({breakdown.summary.tierDiscountPercent.toString()}٪)</span>
+										</div>
+										<div className="flex items-center gap-1 font-semibold text-emerald-700">
+											{toCurrency(breakdown.summary.tierDiscountAmount ?? 0)}-
+											<span className="text-xs font-normal text-emerald-500">تومان</span>
+										</div>
+									</div>
+								)}
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="مبلغ تاییدات ترجمه" value={breakdown.summary.certificationPrice} />
 								<div className="h-[1px] w-full bg-neutral-200" />
@@ -295,6 +311,13 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 									</span>
 								</div>
 							</div>
+
+							<DeliverySection
+								hasJustice={breakdown.documents.some((d) => !!d.justiceCertification)}
+								hasMfa={breakdown.documents.some((d) => !!d.mfaCertification)}
+								desiredDate={order?.desiredDeliveryDate ?? null}
+								onDateChange={(d) => setOrder((prev) => ({ ...prev, desiredDeliveryDate: d }))}
+							/>
 
 							<div className="flex items-center justify-end">
 								<TabanButton onClick={handleAddToCart} isLoading={addToCart.loading} disabled={addToCart.loading || !breakdown}>

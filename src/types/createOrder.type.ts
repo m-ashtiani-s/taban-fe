@@ -41,6 +41,8 @@ export type CreateOrder = {
 	copyCount?: Record<string, string>;
 	/** مدارکی که کاربر استعلام‌هایشان را خودش تهیه می‌کند (کلید: documentKey همان مدرک) */
 	selfInquiryByDoc?: Record<string, boolean>;
+	/** تاریخ تحویل دلخواهِ کاربر برای کل این آیتم (اختیاری) */
+	desiredDeliveryDate?: string | null;
 	// در صورت ثبت سفارش توسط مشتری سازمانی برای یک مشتری زیرمجموعه، آی‌دی آن مشتری اینجا نگه داشته می‌شود
 	customerId?: string | null;
 };
