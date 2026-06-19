@@ -13,7 +13,7 @@ import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
-import { IconArrow, IconCheck, IconClose, IconCopy, IconCross, IconDocument, IconEdit, IconEye, IconGuarantee, IconInfo, IconMoney, IconOrder, IconTranslate, IconTruck, IconUpload, IconUser } from "@/app/_components/icon/icons";
+import { IconArrow, IconCalendar, IconCheck, IconClose, IconCopy, IconCross, IconDocument, IconEdit, IconEye, IconGuarantee, IconInfo, IconMoney, IconOrder, IconTranslate, IconTruck, IconUpload, IconUser } from "@/app/_components/icon/icons";
 import { svgIcon } from "@/app/_components/icon/icon.types";
 import { OrderEndpoints } from "../_api/endpoint";
 import { Order, OrderCustomerInfo, OrderedDoc, OrderShippingAddressInfo, OrderStatus } from "../_types/order.type";
@@ -378,6 +378,14 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 					</TabanButton>
 				)}
 			</div>
+
+			{doc.payload?.desiredDeliveryDate && (
+				<div className="flex items-center gap-2 text-sm bg-secondary/5 border border-secondary/30 text-secondary rounded-xl px-3 py-2.5">
+					<IconCalendar className="stroke-secondary w-4 h-4 shrink-0" />
+					<span>تاریخ تحویل دلخواه شما:</span>
+					<span className="font-semibold">{convertToPersianNumber(doc.payload.desiredDeliveryDate)}</span>
+				</div>
+			)}
 
 			<div className="flex flex-col gap-3 border-t border-dashed border-neutral-200 pt-3">
 				{bd.documents.map((d) => (
