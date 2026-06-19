@@ -39,12 +39,16 @@ export type CreateOrder = {
 	/** ریشه‌ی پوشه‌ی آپلود برای کاربر مهمان (تا همه‌ی فایل‌های یک سفارش زیر یک پوشه بمانند) */
 	uploadScope?: string;
 	copyCount?: Record<string, string>;
+	/** شناسه‌ی نرخ اسکن انتخاب‌شده برای هر مدرک (کلید: documentKey، مقدار: scanRateId یا null) */
+	scanRateIdByDoc?: Record<string, string | null>;
 	/** مدارکی که کاربر استعلام‌هایشان را خودش تهیه می‌کند (کلید: documentKey همان مدرک) */
 	selfInquiryByDoc?: Record<string, boolean>;
 	/** تاریخ تحویل دلخواهِ کاربر برای کل این آیتم (اختیاری) */
 	desiredDeliveryDate?: string | null;
 	// در صورت ثبت سفارش توسط مشتری سازمانی برای یک مشتری زیرمجموعه، آی‌دی آن مشتری اینجا نگه داشته می‌شود
 	customerId?: string | null;
+	/** ترجمه رسمی است یا غیررسمی. پیش‌فرض: true (رسمی) */
+	isOfficial?: boolean;
 };
 
 export type SpecialItemsValue = {

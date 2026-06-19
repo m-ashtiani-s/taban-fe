@@ -8,8 +8,12 @@ export type RateCalculationDocumentInput = {
 	justiceCertificationRateId?: string | null;
 	justiceInquiryRateIds: string[];
 	embassyRateIds?: string[];
+	/** شناسه‌ی نرخ اسکن در صورت انتخاب اسکن برای این مدرک */
+	scanRateId?: string | null;
 	/** فایل‌های آپلودشده‌ی این مدرک. در payloadهای قدیمی ممکن است موجود نباشد. */
 	assets?: string[];
+	/** فایل‌های اسکن‌شده‌ی این مدرک که توسط ادمین آپلود می‌شوند. */
+	scanAssets?: string[];
 	/** کاربر استعلام‌های این مدرک را خودش تهیه می‌کند (استعلام پولیِ ما انتخاب نمی‌شود). */
 	selfInquiry?: boolean;
 };
@@ -18,6 +22,8 @@ export type RateCalculationRequest = {
 	translationItemId: string;
 	languageId: string;
 	documents: RateCalculationDocumentInput[];
+	/** ترجمه رسمی است یا خیر. false → سنام و مهر مترجم از نرخ پایه حذف می‌شوند. پیش‌فرض: true */
+	isOfficial?: boolean;
 };
 
 export type RateCalculationSpecialLine = {
@@ -45,6 +51,11 @@ export type RateCalculationEmbassyLine = {
 	price: number;
 };
 
+export type RateCalculationScanLine = {
+	scanRateId: string;
+	price: number;
+};
+
 export type RateCalculationDocumentBreakdown = {
 	documentKey: string;
 	title: string;
@@ -69,6 +80,8 @@ export type RateCalculationDocumentBreakdown = {
 	/** تاییدات سفارت انتخاب‌شده برای این سند. در breakdownهای قدیمیِ ذخیره‌شده ممکن است موجود نباشد. */
 	embassyApprovals?: RateCalculationEmbassyLine[];
 	embassyTotal?: number;
+	/** اطلاعات اسکن در صورت انتخاب برای این مدرک. در breakdownهای قدیمی موجود نیست. */
+	scan?: RateCalculationScanLine | null;
 	documentTotal: number;
 };
 
@@ -78,6 +91,8 @@ export type RateCalculationSummary = {
 	inquiryPrice: number;
 	/** مجموع نرخ تایید سفارت. در breakdownهای قدیمیِ ذخیره‌شده ممکن است موجود نباشد. */
 	embassyPrice?: number;
+	/** مجموع هزینه‌ی اسکن. در breakdownهای قدیمیِ ذخیره‌شده ممکن است موجود نباشد. */
+	scanPrice?: number;
 	/** درصد تخفیف باشگاه مشتریان روی مبلغ ترجمه. در breakdownهای قدیمی ممکن است موجود نباشد. */
 	tierDiscountPercent?: number;
 	/** مبلغ تخفیف باشگاه مشتریان (روی مبلغ ترجمه). در breakdownهای قدیمی ممکن است موجود نباشد. */

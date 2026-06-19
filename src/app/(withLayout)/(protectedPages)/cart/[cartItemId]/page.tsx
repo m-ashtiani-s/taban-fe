@@ -37,7 +37,7 @@ import {
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 12;
 
 type EditState = {
 	translationItemId: string;
@@ -53,9 +53,11 @@ type EditState = {
 	selfInquiry: Record<string, boolean>;
 	embassies: Record<string, string[]>;
 	copyCount: Record<string, string>;
+	scanRateIdByDoc: Record<string, string | null>;
 	passports: string[];
 	assetsByDoc: Record<string, string[]>;
 	desiredDeliveryDate: string | null;
+	isOfficial: boolean;
 };
 
 function buildInitialState(item: CartItem): EditState {
@@ -69,6 +71,7 @@ function buildInitialState(item: CartItem): EditState {
 	const selfInquiry: Record<string, boolean> = {};
 	const embassies: Record<string, string[]> = {};
 	const copyCount: Record<string, string> = {};
+	const scanRateIdByDoc: Record<string, string | null> = {};
 	const assetsByDoc: Record<string, string[]> = {};
 
 	payload.documents.forEach((doc) => {
@@ -84,6 +87,7 @@ function buildInitialState(item: CartItem): EditState {
 		selfInquiry[doc.documentKey] = doc.selfInquiry ?? false;
 		embassies[doc.documentKey] = doc.embassyRateIds ?? [];
 		copyCount[doc.documentKey] = (doc.copyCount ?? 1).toString();
+		scanRateIdByDoc[doc.documentKey] = doc.scanRateId ?? null;
 		assetsByDoc[doc.documentKey] = doc.assets ?? [];
 	});
 
@@ -111,9 +115,11 @@ function buildInitialState(item: CartItem): EditState {
 		selfInquiry,
 		embassies,
 		copyCount,
+		scanRateIdByDoc,
 		passports: payload.passports ?? [],
 		assetsByDoc,
 		desiredDeliveryDate: payload.desiredDeliveryDate ?? null,
+		isOfficial: payload.isOfficial !== false,
 	};
 }
 
@@ -138,6 +144,7 @@ export default function CartEditPage() {
 	const certificationRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getCertificationRates(filters));
 	const justiceInquiryRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getJusticeInquiriesRates(filters));
 	const embassyRates = useApi(async (filters: RateFilters) => await TranslationEndpoints.getEmbassyRates(filters));
+	const scanRates = useApi(async (filters: { translationItemId?: string } | null) => await TranslationEndpoints.getScanRates(filters));
 	const translationItem = useApi(async (id: string) => await TranslationEndpoints.getTranslationItem(id));
 	const calculation = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload));
 	const updateItem = useApi(async (payload: AddDocumentToCartPayload) => await CartEndpoints.updateCartItem(cartItemId, payload));
@@ -178,6 +185,7 @@ export default function CartEditPage() {
 		certificationRates.fetchData(filters);
 		justiceInquiryRates.fetchData(filters);
 		embassyRates.fetchData(filters);
+		scanRates.fetchData({ translationItemId: state.translationItemId });
 	};
 
 	// Update cart item result handler
@@ -216,13 +224,14 @@ export default function CartEditPage() {
 			embassyRateIds:
 				editState.justiceCertification[key] && editState.mfaCertification[key] ? editState.embassies[key] ?? [] : [],
 			selfInquiry: !!editState.selfInquiry[key],
+			scanRateId: editState.scanRateIdByDoc[key] ?? null,
 		}));
-		return { translationItemId: editState.translationItemId, languageId: editState.languageId, documents };
+		return { translationItemId: editState.translationItemId, languageId: editState.languageId, documents, isOfficial: editState.isOfficial };
 	}, [editState]);
 
 	// Trigger calculation on summary step
 	useEffect(() => {
-		if (step === 11 && calcPayload) {
+		if (step === 12 && calcPayload) {
 			calculation.fetchData(calcPayload);
 		}
 	}, [step]);
@@ -241,6 +250,7 @@ export default function CartEditPage() {
 			passports: editState.passports,
 			assets: Object.values(editState.assetsByDoc).flat(),
 			desiredDeliveryDate: editState.desiredDeliveryDate,
+			isOfficial: editState.isOfficial,
 		});
 	};
 
@@ -327,7 +337,7 @@ export default function CartEditPage() {
 					</div>
 				)}
 
-				{/* Step 2: Language */}
+				{/* Step 2: Language + official type */}
 				{step === 2 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">انتخاب زبان ترجمه</div>
@@ -386,6 +396,37 @@ export default function CartEditPage() {
 								errorText="دریافت لیست زبان‌ها با خطا مواجه شد"
 							/>
 						) : null}
+
+						{/* نوع ترجمه */}
+						<div className="flex flex-col gap-2 pt-2 border-t border-neutral-100">
+							<div className="text-sm font-semibold text-primary">نوع ترجمه</div>
+							<div className="flex flex-wrap gap-3">
+								{[
+									{ value: true, label: "ترجمه رسمی", desc: "شامل سنام و مهر مترجم" },
+									{ value: false, label: "ترجمه غیررسمی", desc: "بدون سنام و مهر مترجم" },
+								].map((opt) => {
+									const selected = editState.isOfficial === opt.value;
+									return (
+										<button
+											key={String(opt.value)}
+											type="button"
+											onClick={() => setEditState((prev) => prev ? { ...prev, isOfficial: opt.value } : prev)}
+											className={`flex items-start gap-3 text-right rounded-xl border px-4 py-3 duration-150 flex-1 min-w-48 ${
+												selected ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+											}`}
+										>
+											<span className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? "border-secondary bg-secondary" : "border-neutral-300"}`}>
+												{selected && <IconCheck className="stroke-white w-3 h-3" />}
+											</span>
+											<div className="flex flex-col gap-0.5">
+												<span className={`text-sm font-semibold ${selected ? "text-secondary" : "text-primary"}`}>{opt.label}</span>
+												<span className="text-xs text-neutral-500">{opt.desc}</span>
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						</div>
 					</div>
 				)}
 
@@ -935,8 +976,68 @@ export default function CartEditPage() {
 						</div>
 					)}
 
-					{/* Step 11: Summary */}
+					{/* Step 11: Scan */}
 				{step === 11 && (
+					<div className="flex flex-col gap-8">
+						<div className="flex flex-col gap-1.5">
+							<div className="peyda font-bold text-xl text-primary">اسکن مدارک</div>
+							<div className="text-sm text-neutral-500">در صورت نیاز، می‌توانید برای هر مدرک سرویس اسکن را انتخاب کنید</div>
+						</div>
+						<div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
+							{documentKeys.map((key) => {
+								const scanRate = scanRates.result?.success ? scanRates.result.data?.data?.[0] ?? null : null;
+								const isSelected = !!(editState.scanRateIdByDoc?.[key]);
+								return (
+									<div key={key} className="border border-neutral-200 rounded-xl p-4">
+										<div className="text-sm font-bold text-secondary mb-3 flex items-center gap-1.5">
+											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+											{editState.translationItemNames[key]}
+										</div>
+										<button
+											type="button"
+											onClick={() => {
+												setEditState((prev) => {
+													if (!prev) return prev;
+													const current = prev.scanRateIdByDoc ?? {};
+													const already = !!current[key];
+													return {
+														...prev,
+														scanRateIdByDoc: {
+															...current,
+															[key]: already ? null : (scanRate?.scanRateId ?? null),
+														},
+													};
+												});
+											}}
+											className={`flex items-center gap-3 w-full text-right rounded-xl border px-4 py-4 duration-150 ${
+												isSelected ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+											}`}
+										>
+											<span
+												className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+													isSelected ? "bg-secondary border-secondary" : "border-neutral-300"
+												}`}
+											>
+												{isSelected && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+											</span>
+											<div className="flex flex-1 items-center justify-between">
+												<span className="text-sm font-medium text-primary">اسکن این مدرک</span>
+												{scanRate && (
+													<span className={`text-sm font-semibold ${isSelected ? "text-secondary" : "text-neutral-500"}`}>
+														{toCurrency(scanRate.price)} تومان
+													</span>
+												)}
+											</div>
+										</button>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				)}
+
+				{/* Step 12: Summary */}
+				{step === 12 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">خلاصه سفارش</div>
 						{calculation.loading && !calculation.result ? (
@@ -1055,6 +1156,14 @@ export default function CartEditPage() {
 													{toCurrency(bd.summary.embassyPrice ?? 0)} تومان
 											</span>
 										</div>
+										{(bd.summary.scanPrice ?? 0) > 0 && (
+											<div className="flex justify-between text-sm py-1">
+												<span>مبلغ اسکن مدارک:</span>
+												<span className="font-semibold">
+													{toCurrency(bd.summary.scanPrice ?? 0)} تومان
+												</span>
+											</div>
+										)}
 										{bd.summary.taxPercent > 0 && (
 											<>
 										<div className="flex justify-between text-sm py-1">

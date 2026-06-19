@@ -20,6 +20,7 @@ export function useOrderRates() {
 	const certifications = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getCertificationRates(filters));
 	const justiceInquiries = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getJusticeInquiriesRates(filters));
 	const embassies = useApi(async (filters: RateFilters | null) => await TranslationEndpoints.getEmbassyRates(filters));
+	const scanRates = useApi(async (filters: { translationItemId?: string } | null) => await TranslationEndpoints.getScanRates(filters));
 
 	const [attempted, setAttempted] = useState(false);
 	const lastKey = useRef<string>("");
@@ -36,8 +37,10 @@ export function useOrderRates() {
 			certifications.fetchData(filters);
 			justiceInquiries.fetchData(filters);
 			embassies.fetchData(filters);
+			// نرخ اسکن فقط به مدرک وابسته است، نه به زبان
+			scanRates.fetchData({ translationItemId });
 		},
-		[baseRate, dynamicRates, certifications, justiceInquiries, embassies]
+		[baseRate, dynamicRates, certifications, justiceInquiries, embassies, scanRates]
 	);
 
 	const reset = useCallback(() => {
@@ -48,9 +51,10 @@ export function useOrderRates() {
 		certifications.setResult(null);
 		justiceInquiries.setResult(null);
 		embassies.setResult(null);
-	}, [baseRate, dynamicRates, certifications, justiceInquiries, embassies]);
+		scanRates.setResult(null);
+	}, [baseRate, dynamicRates, certifications, justiceInquiries, embassies, scanRates]);
 
-	const loading = baseRate.loading || dynamicRates.loading || certifications.loading || justiceInquiries.loading || embassies.loading;
+	const loading = baseRate.loading || dynamicRates.loading || certifications.loading || justiceInquiries.loading || embassies.loading || scanRates.loading;
 	const ready = attempted && !loading;
 
 	const retryAll = useCallback(() => {
@@ -76,6 +80,10 @@ export function useOrderRates() {
 		() => !!(embassies.result?.success && (embassies.result.data?.data?.length ?? 0) > 0),
 		[embassies.result]
 	);
+	const hasScan = useMemo(
+		() => !!(scanRates.result?.success && (scanRates.result.data?.data?.length ?? 0) > 0),
+		[scanRates.result]
+	);
 
 	/** توالی مراحل دقیقا مطابق منطق ناوبری فلوی قدیمی */
 	const steps = useMemo<StepKey[]>(() => {
@@ -85,9 +93,11 @@ export function useOrderRates() {
 		list.push("certifications");
 		if (hasInquiries) list.push("inquiries");
 		if (hasEmbassy) list.push("embassy");
-		list.push("upload", "passport", "copies", "checkout");
+		list.push("upload", "passport", "copies");
+		if (hasScan) list.push("scan");
+		list.push("checkout");
 		return list;
-	}, [hasBase, hasSpecials, hasInquiries, hasEmbassy]);
+	}, [hasBase, hasSpecials, hasInquiries, hasEmbassy, hasScan]);
 
 	return {
 		baseRate,
@@ -95,6 +105,7 @@ export function useOrderRates() {
 		certifications,
 		justiceInquiries,
 		embassies,
+		scanRates,
 		fetchAll,
 		retryAll,
 		reset,
@@ -105,6 +116,7 @@ export function useOrderRates() {
 		hasSpecials,
 		hasInquiries,
 		hasEmbassy,
+		hasScan,
 		steps,
 	};
 }

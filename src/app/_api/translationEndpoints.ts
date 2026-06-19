@@ -9,6 +9,7 @@ import { DynamicRate } from "@/types/dynamicRate.type";
 import { CertificationRate } from "@/types/certificationRate.type";
 import { JusticeInquiryRate } from "@/types/justiceInquiry.type";
 import { EmbassyRate } from "@/types/embassyRate.type";
+import { ScanRate } from "@/types/scanRate.type";
 import { RateCalculationRequest, RateCalculationResponse } from "@/types/rateCalculation.type";
 
 export const TranslationEndpoints = {
@@ -77,6 +78,14 @@ export const TranslationEndpoints = {
 		const res = await httpClient.call<Res<EmbassyRate[]>>({
 			method: "GET",
 			url: `v1/translation/embassy-rate`,
+			params: { ...filters },
+		});
+		return res?.data;
+	},
+	getScanRates: async (filters: { translationItemId?: string } | null) => {
+		const res = await httpClient.call<Res<ScanRate[]>>({
+			method: "GET",
+			url: `v1/translation/scan-rate`,
 			params: { ...filters },
 		});
 		return res?.data;

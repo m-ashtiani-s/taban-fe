@@ -27,6 +27,7 @@ import EmbassyStep from "../steps/embassyStep/embassyStep";
 import UploadStep from "../steps/uploadStep/uploadStep";
 import PassportStep from "../steps/passportStep/passportStep";
 import CopiesStep from "../steps/copiesStep/copiesStep";
+import ScanStep from "../steps/scanStep/scanStep";
 import CheckoutStep from "../steps/checkoutStep/checkoutStep";
 
 /** ساخت نام‌های پیش‌فرض مدارک (وقتی کاربر خودش نام نمی‌گذارد، مثلا تک‌مدرک) */
@@ -260,6 +261,8 @@ export default function NewOrder() {
 				return <PassportStep />;
 			case "copies":
 				return <CopiesStep />;
+			case "scan":
+				return <ScanStep rates={rates} />;
 			case "checkout":
 				return <CheckoutStep resetSteps={resetSteps} />;
 			default:
