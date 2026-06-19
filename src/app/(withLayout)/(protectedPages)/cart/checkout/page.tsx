@@ -335,7 +335,7 @@ export default function CheckoutPage() {
 								isLoading={createOrder.loading}
 								loadingText="در حال ثبت سفارش..."
 							>
-								ثبت نهایی سفارش
+							ثبت پرونده جهت بررسی
 							</TabanButton>
 							<TabanButton variant="text" isLink href="/cart" className="!w-full justify-center">
 								بازگشت به سبد خرید

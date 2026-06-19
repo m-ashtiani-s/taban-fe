@@ -19,6 +19,7 @@ export const createEmptyOrder = (): CreateOrder => ({
 	assets: [],
 	assetsByDoc: {},
 	uploadScope: generateUUID(),
+	isOfficial: true,
 });
 
 export type NewOrderState = {

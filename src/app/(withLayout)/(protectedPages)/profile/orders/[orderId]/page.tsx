@@ -360,7 +360,11 @@ function StatusGuidance({ order, onPay, paying }: { order: Order; onPay: () => v
 
 function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: boolean; onEdit: () => void }) {
 	const bd = doc.breakdown;
+	const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+	const isImage = (url: string) => /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url);
+
 	return (
+		<>
 		<div className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col gap-4">
 			<div className="flex items-start justify-between gap-3">
 				<div className="flex items-center gap-3">
@@ -388,7 +392,10 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 			)}
 
 			<div className="flex flex-col gap-3 border-t border-dashed border-neutral-200 pt-3">
-				{bd.documents.map((d) => (
+				{bd.documents.map((d) => {
+					const docPayload = doc.payload?.documents?.find((pd) => pd.documentKey === d.documentKey);
+					const scanAssets = docPayload?.scanAssets ?? [];
+					return (
 					<div key={d.documentKey} className="border border-neutral-200 rounded-xl p-3 flex flex-col gap-2 bg-neutral-50/30">
 						<div className="flex items-center justify-between text-sm">
 							<div className="flex items-center gap-1.5 font-semibold text-secondary">
@@ -434,9 +441,48 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 									<span>{toCurrency(i.price)} تومان</span>
 								</div>
 							))}
+							{d.scan && (
+								<div className="flex items-center justify-between text-secondary">
+									<span>اسکن مدرک</span>
+									<span>{toCurrency(d.scan.price)} تومان</span>
+								</div>
+							)}
 						</div>
+						{scanAssets.length > 0 && (
+							<div className="pt-2 border-t border-success/20 bg-success/5 rounded-xl p-2.5">
+								<div className="text-xs font-semibold text-success mb-2 flex items-center gap-1.5">
+									<IconCopy className="stroke-success w-3.5 h-3.5" />
+									نتیجه اسکن ({scanAssets.length} فایل)
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{scanAssets.map((url, idx) =>
+										isImage(url) ? (
+											<button
+												key={idx}
+												type="button"
+												onClick={() => setLightboxSrc(url)}
+												className="w-16 h-16 rounded-lg overflow-hidden border border-success/40 hover:border-success transition-colors cursor-zoom-in"
+											>
+												<img src={url} alt={`اسکن ${idx + 1}`} className="w-full h-full object-cover" />
+											</button>
+										) : (
+											<a
+												key={idx}
+												href={url}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="w-16 h-16 rounded-lg border border-success/40 bg-white hover:border-success flex flex-col items-center justify-center gap-1 transition-colors"
+											>
+												<IconDocument className="fill-success/70 stroke-0 w-6 h-6" />
+												<span className="text-[10px] text-success/70">PDF</span>
+											</a>
+										)
+									)}
+								</div>
+							</div>
+						)}
 					</div>
-				))}
+				);})}
 			</div>
 
 			<div className="flex items-center justify-between border-t border-neutral-100 pt-3">
@@ -447,5 +493,23 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 				</div>
 			</div>
 		</div>
+
+		{lightboxSrc && (
+			<div
+				className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+				onClick={() => setLightboxSrc(null)}
+			>
+				<div className="relative max-w-3xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+					<img src={lightboxSrc} alt="اسکن" className="max-w-full max-h-[85vh] rounded-xl object-contain" />
+					<button
+						onClick={() => setLightboxSrc(null)}
+						className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-white text-neutral-800 text-lg flex items-center justify-center shadow-md hover:bg-neutral-100 transition-colors"
+					>
+						✕
+					</button>
+				</div>
+			</div>
+		)}
+		</>
 	);
 }

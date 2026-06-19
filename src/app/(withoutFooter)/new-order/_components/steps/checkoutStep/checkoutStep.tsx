@@ -76,6 +76,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 						justice && mfa
 							? order?.embassyItems?.find((e) => e?.translationItemId === key)?.embassies?.map((e) => e.embassyRateId) ?? []
 							: [],
+					scanRateId: order?.scanRateIdByDoc?.[key] ?? null,
 					assets: order?.assetsByDoc?.[key] ?? [],
 					selfInquiry,
 			};
@@ -85,6 +86,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 			translationItemId: order.translationItem.translationItemId,
 			languageId: order.language.languageId,
 			documents,
+			isOfficial: order.isOfficial !== false,
 		};
 	}, [order]);
 
@@ -293,6 +295,12 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 								)}
 								<div className="h-[1px] w-full bg-neutral-200" />
 								<SummaryRow label="مبلغ تایید سفارت" value={breakdown.summary.embassyPrice ?? 0} />
+								{(breakdown.summary.scanPrice ?? 0) > 0 && (
+									<>
+										<div className="h-[1px] w-full bg-neutral-200" />
+										<SummaryRow label="مبلغ اسکن مدارک" value={breakdown.summary.scanPrice ?? 0} />
+									</>
+								)}
 								<div className="h-[1px] w-full bg-neutral-200" />
 								{breakdown.summary.taxPercent > 0 && (
 									<>

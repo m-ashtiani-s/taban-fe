@@ -11,6 +11,7 @@ export type AddDocumentToCartPayload = {
 	assets?: string[];
 	customerId?: string | null;
 	desiredDeliveryDate?: string | null;
+	isOfficial?: boolean;
 };
 
 export type CartItem = {
