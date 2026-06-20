@@ -13,11 +13,33 @@ import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
-import { IconArrow, IconCalendar, IconCheck, IconClose, IconCopy, IconCross, IconDocument, IconEdit, IconEye, IconGuarantee, IconInfo, IconMoney, IconOrder, IconTranslate, IconTruck, IconUpload, IconUser } from "@/app/_components/icon/icons";
+import {
+	IconArrow,
+	IconCalendar,
+	IconCheck,
+	IconClose,
+	IconCopy,
+	IconCross,
+	IconDocument,
+	IconEdit,
+	IconEye,
+	IconGuarantee,
+	IconInfo,
+	IconMoney,
+	IconOrder,
+	IconTranslate,
+	IconTruck,
+	IconUpload,
+	IconUser,
+} from "@/app/_components/icon/icons";
 import { svgIcon } from "@/app/_components/icon/icon.types";
 import { OrderEndpoints } from "../_api/endpoint";
 import { Order, OrderCustomerInfo, OrderedDoc, OrderShippingAddressInfo, OrderStatus } from "../_types/order.type";
 import { guideToneClasses, orderFlowSteps, orderStatusGuide, orderStatusMeta, paymentStatusMeta } from "../_constants/orderStatus";
+import axios from "axios";
+import { API_URL } from "@/config/global";
+import { storage } from "@/types/Storage";
+import { StorageKey } from "@/types/StorageKey";
 
 const statusGuideIcon: Record<OrderStatus, React.FC<svgIcon>> = {
 	document_submission: IconInfo,
@@ -38,10 +60,7 @@ const statusGuideIcon: Record<OrderStatus, React.FC<svgIcon>> = {
 export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
 	const router = useRouter();
 	const showNotification = useNotificationStore((s) => s.showNotification);
-	const { result, resultData, fetchData, loading } = useApi(
-		async (id: string) => await OrderEndpoints.getOrder(id),
-		true,
-	);
+	const { result, resultData, fetchData, loading } = useApi(async (id: string) => await OrderEndpoints.getOrder(id), true);
 	const pay = useApi(async (id: string) => await OrderEndpoints.payOrder(id));
 	const removeCoupon = useApi(async (id: string) => await OrderEndpoints.removeCoupon(id));
 	const [removeCouponModalOpen, setRemoveCouponModalOpen] = useState<boolean>(false);
@@ -142,9 +161,9 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 			>
 				<div className="flex flex-col gap-2">
 					<div className="text-sm text-neutral-600 leading-7">
-						با حذف کد تخفیف{couponInfo ? ` «${couponInfo.code}»` : ""}، مبلغ قابل پرداخت به جمع کل سفارش
-						(<span className="font-semibold text-primary">{toCurrency(order.totalAmount)} تومان</span>) تغییر می‌کند.
-						برای استفاده‌ی مجدد از کد تخفیف باید سفارش جدیدی ثبت کنید. ادامه می‌دهید؟
+						با حذف کد تخفیف{couponInfo ? ` «${couponInfo.code}»` : ""}، مبلغ قابل پرداخت به جمع کل سفارش (
+						<span className="font-semibold text-primary">{toCurrency(order.totalAmount)} تومان</span>) تغییر می‌کند. برای
+						استفاده‌ی مجدد از کد تخفیف باید سفارش جدیدی ثبت کنید. ادامه می‌دهید؟
 					</div>
 					<div className="flex justify-end gap-3 mt-8">
 						<TabanButton variant="bordered" onClick={() => setRemoveCouponModalOpen(false)} disabled={removeCoupon.loading}>
@@ -223,7 +242,9 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 							<div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-500 mt-1">
 								<span dir="ltr">کد ملی: {customer.nationalId}</span>
 								<span dir="ltr">تماس: {customer.phoneNumber}</span>
-								<span>{customer.provinceName} - {customer.cityName}</span>
+								<span>
+									{customer.provinceName} - {customer.cityName}
+								</span>
 							</div>
 						</div>
 					)}
@@ -333,11 +354,15 @@ function StatusFlow({ order }: { order: Order }) {
 									{done ? <IconCheck className="stroke-white w-4 h-4" /> : i + 1}
 								</div>
 								{!isLast && (
-									<div className={`w-0.5 flex-1 min-h-[26px] ${i < activeIndex ? "bg-primary" : "bg-neutral-200"}`} />
+									<div
+										className={`w-0.5 flex-1 min-h-[26px] ${i < activeIndex ? "bg-primary" : "bg-neutral-200"}`}
+									/>
 								)}
 							</div>
 							<div className={isLast ? "pt-1" : "pt-1 pb-5"}>
-								<div className={`text-sm ${done || current ? "font-semibold text-primary" : "text-neutral-400"}`}>
+								<div
+									className={`text-sm ${done || current ? "font-semibold text-primary" : "text-neutral-400"}`}
+								>
 									{step.label}
 								</div>
 								{current && <div className="text-[11px] text-primary/70 mt-0.5">مرحله‌ی فعلی شما</div>}
@@ -400,151 +425,160 @@ function OrderedDocCard({ doc, editable, onEdit }: { doc: OrderedDoc; editable: 
 
 	return (
 		<>
-		<div className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col gap-4">
-			<div className="flex items-start justify-between gap-3">
-				<div className="flex items-center gap-3">
-					<div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-						<IconDocument className="fill-primary stroke-0 w-5 h-5" />
+			<div className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col gap-4">
+				<div className="flex items-start justify-between gap-3">
+					<div className="flex items-center gap-3">
+						<div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+							<IconDocument className="fill-primary stroke-0 w-5 h-5" />
+						</div>
+						<div>
+							<div className="peyda font-bold text-primary">{bd.translationItemTitle}</div>
+							<div className="text-xs text-neutral-500 mt-0.5">{bd.languageName}</div>
+						</div>
 					</div>
-					<div>
-						<div className="peyda font-bold text-primary">{bd.translationItemTitle}</div>
-						<div className="text-xs text-neutral-500 mt-0.5">{bd.languageName}</div>
-					</div>
+					{editable && (
+						<TabanButton variant="icon" className="!h-8 !min-w-8 !bg-primary/5 hover:!bg-primary/15" onClick={onEdit}>
+							<IconEdit className="stroke-primary w-4 h-4" />
+						</TabanButton>
+					)}
 				</div>
-				{editable && (
-					<TabanButton variant="icon" className="!h-8 !min-w-8 !bg-primary/5 hover:!bg-primary/15" onClick={onEdit}>
-						<IconEdit className="stroke-primary w-4 h-4" />
-					</TabanButton>
+
+				{doc.payload?.desiredDeliveryDate && (
+					<div className="flex items-center gap-2 text-sm bg-secondary/5 border border-secondary/30 text-secondary rounded-xl px-3 py-2.5">
+						<IconCalendar className="stroke-secondary w-4 h-4 shrink-0" />
+						<span>تاریخ تحویل دلخواه شما:</span>
+						<span className="font-semibold">{convertToPersianNumber(doc.payload.desiredDeliveryDate)}</span>
+					</div>
 				)}
-			</div>
 
-			{doc.payload?.desiredDeliveryDate && (
-				<div className="flex items-center gap-2 text-sm bg-secondary/5 border border-secondary/30 text-secondary rounded-xl px-3 py-2.5">
-					<IconCalendar className="stroke-secondary w-4 h-4 shrink-0" />
-					<span>تاریخ تحویل دلخواه شما:</span>
-					<span className="font-semibold">{convertToPersianNumber(doc.payload.desiredDeliveryDate)}</span>
-				</div>
-			)}
-
-			<div className="flex flex-col gap-3 border-t border-dashed border-neutral-200 pt-3">
-				{bd.documents.map((d) => {
-					const docPayload = doc.payload?.documents?.find((pd) => pd.documentKey === d.documentKey);
-					const scanAssets = docPayload?.scanAssets ?? [];
-					return (
-					<div key={d.documentKey} className="border border-neutral-200 rounded-xl p-3 flex flex-col gap-2 bg-neutral-50/30">
-						<div className="flex items-center justify-between text-sm">
-							<div className="flex items-center gap-1.5 font-semibold text-secondary">
-								<div className="w-1.5 h-1.5 rounded-sm bg-secondary rotate-45 shrink-0" />
-								{d.title}
-								{(d.copyCount ?? 1) > 1 && (
-									<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
-										× {convertToPersianNumber(String(d.copyCount))} نسخه
-									</span>
-								)}
-							</div>
-							<div className="font-bold text-primary">
-								{toCurrency(d.documentTotal)}
-								<span className="text-[11px] font-normal text-neutral-500 mr-1">تومان</span>
-							</div>
-						</div>
-						<div className="flex flex-col gap-1 text-xs text-neutral-500 pr-3">
-							<div className="flex items-center justify-between">
-								<span>هزینه ترجمه</span>
-								<span>{toCurrency(d.translationTotal ?? d.base.total + d.specialsTotal)} تومان</span>
-							</div>
-							{d.mfaCertification && (
-								<div className="flex items-center justify-between">
-									<span>مهر وزارت امور خارجه</span>
-									<span>{toCurrency(d.mfaCertification.price)} تومان</span>
-								</div>
-							)}
-							{d.justiceCertification && (
-								<div className="flex items-center justify-between">
-									<span>مهر دادگستری</span>
-									<span>{toCurrency(d.justiceCertification.price)} تومان</span>
-								</div>
-							)}
-							{d.embassyApprovals?.map((e) => (
-									<div key={e.embassyRateId} className="flex items-center justify-between">
-										<span>{e.embassyName}</span>
-										<span>{toCurrency(e.price)} تومان</span>
+				<div className="flex flex-col gap-3 border-t border-dashed border-neutral-200 pt-3">
+					{bd.documents.map((d) => {
+						const docPayload = doc.payload?.documents?.find((pd) => pd.documentKey === d.documentKey);
+						const scanAssets = docPayload?.scanAssets ?? [];
+						return (
+							<div
+								key={d.documentKey}
+								className="border border-neutral-200 rounded-xl p-3 flex flex-col gap-2 bg-neutral-50/30"
+							>
+								<div className="flex items-center justify-between text-sm">
+									<div className="flex items-center gap-1.5 font-semibold text-secondary">
+										<div className="w-1.5 h-1.5 rounded-sm bg-secondary rotate-45 shrink-0" />
+										{d.title}
+										{(d.copyCount ?? 1) > 1 && (
+											<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
+												× {convertToPersianNumber(String(d.copyCount))} نسخه
+											</span>
+										)}
 									</div>
-								))}
-								{d.justiceInquiries.map((i) => (
-								<div key={i.justiceInquiryRateId} className="flex items-center justify-between">
-									<span>{i.justiceInquiryName}</span>
-									<span>{toCurrency(i.price)} تومان</span>
+									<div className="font-bold text-primary">
+										{toCurrency(d.documentTotal)}
+										<span className="text-[11px] font-normal text-neutral-500 mr-1">تومان</span>
+									</div>
 								</div>
-							))}
-							{d.scan && (
-								<div className="flex items-center justify-between text-secondary">
-									<span>اسکن مدرک</span>
-									<span>{toCurrency(d.scan.price)} تومان</span>
-								</div>
-							)}
-						</div>
-						{scanAssets.length > 0 && (
-							<div className="pt-2 border-t border-success/20 bg-success/5 rounded-xl p-2.5">
-								<div className="text-xs font-semibold text-success mb-2 flex items-center gap-1.5">
-									<IconCopy className="stroke-success w-3.5 h-3.5" />
-									نتیجه اسکن ({scanAssets.length} فایل)
-								</div>
-								<div className="flex flex-wrap gap-2">
-									{scanAssets.map((url, idx) =>
-										isImage(url) ? (
-											<button
-												key={idx}
-												type="button"
-												onClick={() => setLightboxSrc(url)}
-												className="w-16 h-16 rounded-lg overflow-hidden border border-success/40 hover:border-success transition-colors cursor-zoom-in"
-											>
-												<img src={url} alt={`اسکن ${idx + 1}`} className="w-full h-full object-cover" />
-											</button>
-										) : (
-											<a
-												key={idx}
-												href={url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="w-16 h-16 rounded-lg border border-success/40 bg-white hover:border-success flex flex-col items-center justify-center gap-1 transition-colors"
-											>
-												<IconDocument className="fill-success/70 stroke-0 w-6 h-6" />
-												<span className="text-[10px] text-success/70">PDF</span>
-											</a>
-										)
+								<div className="flex flex-col gap-1 text-xs text-neutral-500 pr-3">
+									<div className="flex items-center justify-between">
+										<span>هزینه ترجمه</span>
+										<span>
+											{toCurrency(d.translationTotal ?? d.base.total + d.specialsTotal)} تومان
+										</span>
+									</div>
+									{d.mfaCertification && (
+										<div className="flex items-center justify-between">
+											<span>مهر وزارت امور خارجه</span>
+											<span>{toCurrency(d.mfaCertification.price)} تومان</span>
+										</div>
+									)}
+									{d.justiceCertification && (
+										<div className="flex items-center justify-between">
+											<span>مهر دادگستری</span>
+											<span>{toCurrency(d.justiceCertification.price)} تومان</span>
+										</div>
+									)}
+									{d.embassyApprovals?.map((e) => (
+										<div key={e.embassyRateId} className="flex items-center justify-between">
+											<span>{e.embassyName}</span>
+											<span>{toCurrency(e.price)} تومان</span>
+										</div>
+									))}
+									{d.justiceInquiries.map((i) => (
+										<div key={i.justiceInquiryRateId} className="flex items-center justify-between">
+											<span>{i.justiceInquiryName}</span>
+											<span>{toCurrency(i.price)} تومان</span>
+										</div>
+									))}
+									{d.scan && (
+										<div className="flex items-center justify-between text-secondary">
+											<span>اسکن مدرک</span>
+											<span>{toCurrency(d.scan.price)} تومان</span>
+										</div>
 									)}
 								</div>
+								{scanAssets.length > 0 && (
+									<div className="pt-2 border-t border-success/20 bg-success/5 rounded-xl p-2.5">
+										<div className="text-xs font-semibold text-success mb-2 flex items-center gap-1.5">
+											<IconCopy className="stroke-success w-3.5 h-3.5" />
+											نتیجه اسکن ({scanAssets.length} فایل)
+										</div>
+										<div className="flex flex-wrap gap-2">
+											{scanAssets.map((url, idx) =>
+												isImage(url) ? (
+													<button
+														key={idx}
+														type="button"
+														onClick={() => setLightboxSrc(url)}
+														className="w-16 h-16 rounded-lg overflow-hidden border border-success/40 hover:border-success transition-colors cursor-zoom-in"
+													>
+														<img
+															src={url}
+															alt={`اسکن ${idx + 1}`}
+															className="w-full h-full object-cover"
+														/>
+													</button>
+												) : (
+													<a
+														key={idx}
+														href={url}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="w-16 h-16 rounded-lg border border-success/40 bg-white hover:border-success flex flex-col items-center justify-center gap-1 transition-colors"
+													>
+														<IconDocument className="fill-success/70 stroke-0 w-6 h-6" />
+														<span className="text-[10px] text-success/70">
+															PDF
+														</span>
+													</a>
+												),
+											)}
+										</div>
+									</div>
+								)}
 							</div>
-						)}
+						);
+					})}
+				</div>
+
+				<div className="flex items-center justify-between border-t border-neutral-100 pt-3">
+					<div className="text-xs text-neutral-400">{bd.documents.length} سند</div>
+					<div className="flex items-center gap-1.5 font-bold text-primary">
+						{toCurrency(doc.itemTotal)}
+						<span className="text-xs font-normal text-neutral-500">تومان</span>
 					</div>
-				);})}
-			</div>
-
-			<div className="flex items-center justify-between border-t border-neutral-100 pt-3">
-				<div className="text-xs text-neutral-400">{bd.documents.length} سند</div>
-				<div className="flex items-center gap-1.5 font-bold text-primary">
-					{toCurrency(doc.itemTotal)}
-					<span className="text-xs font-normal text-neutral-500">تومان</span>
 				</div>
 			</div>
-		</div>
 
-		{lightboxSrc && (
-			<div
-				className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-				onClick={() => setLightboxSrc(null)}
-			>
-				<div className="relative max-w-3xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-					<img src={lightboxSrc} alt="اسکن" className="max-w-full max-h-[85vh] rounded-xl object-contain" />
-					<button
-						onClick={() => setLightboxSrc(null)}
-						className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-white text-neutral-800 text-lg flex items-center justify-center shadow-md hover:bg-neutral-100 transition-colors"
-					>
-						✕
-					</button>
+			{lightboxSrc && (
+				<div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightboxSrc(null)}>
+					<div className="relative max-w-3xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+						<img src={lightboxSrc} alt="اسکن" className="max-w-full max-h-[85vh] rounded-xl object-contain" />
+						<button
+							onClick={() => setLightboxSrc(null)}
+							className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-white text-neutral-800 text-lg flex items-center justify-center shadow-md hover:bg-neutral-100 transition-colors"
+						>
+							✕
+						</button>
+					</div>
 				</div>
-			</div>
-		)}
+			)}
 		</>
 	);
 }
