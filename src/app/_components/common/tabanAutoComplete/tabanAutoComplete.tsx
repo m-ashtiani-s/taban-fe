@@ -125,7 +125,7 @@ export default function TabanAutoComplete<Option>({
 			setInputValue("");
 			setSelectedOption(null);
 		}
-	}, [inputValue, isOpen]);
+	}, [inputValue, isOpen,selectedOption]);
 
 	useEffect(() => {
 		if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length && listRef.current) {

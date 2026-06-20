@@ -39,7 +39,8 @@ export default function EnterpriseOrdersPage() {
 	const getOrders = useApi(
 		async (p: number, st: OrderStatus | "all", customerId?: string) =>
 			await OrderEndpoints.getOrders(
-				{ ...(st === "all" ? {} : { status: st }), ...(customerId ? { customerId } : {}) },
+				// فقط سفارش‌های مربوط به مشتری‌های زیرمجموعه (نه سفارش‌های شخصیِ بدون مشتری)
+				{ withCustomer: true, ...(st === "all" ? {} : { status: st }), ...(customerId ? { customerId } : {}) },
 				p,
 				PAGE_SIZE,
 			),
@@ -106,6 +107,7 @@ export default function EnterpriseOrdersPage() {
 				<div className="w-[220px]">
 					<TabanAutocompleteWrapper
 						label="فیلتر بر اساس مشتری"
+						hasInitialValue
 						options={customerOptions}
 						selectedOption={selectedCustomer}
 						setSelectedOption={(opt: any) => setSelectedCustomer(opt?.customerId ? opt : null)}

@@ -67,6 +67,13 @@ export default function NewOrder() {
 	const handoffCount = Math.max(1, Number(searchParams.get("count")) || 1);
 	const hasHandoff = !!handoffItemId;
 
+	// ورود از پنل مشتری سازمانی: سفارش برای یک مشتری زیرمجموعه ثبت می‌شود و آی‌دی آن
+	// از طریق query منتقل و در استور سفارش نگه داشته می‌شود تا تا انتهای فلو (افزودن به سبد) همراه بماند.
+	const handoffCustomerId = searchParams.get("customerId");
+	useEffect(() => {
+		setOrder((prev) => ({ ...prev, customerId: handoffCustomerId || null }));
+	}, [handoffCustomerId]);
+
 	const [initializing, setInitializing] = useState(hasHandoff);
 	const handoffStarted = useRef(false);
 
