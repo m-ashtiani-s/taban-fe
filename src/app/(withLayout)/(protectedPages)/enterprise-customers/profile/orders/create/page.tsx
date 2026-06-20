@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useApi } from "@/hooks/useApi";
-import { useOrderStore } from "@/stores/rate.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
@@ -15,7 +14,6 @@ import { Customer } from "../../../_types/customer.type";
 
 export default function CreateOrderForCustomerPage() {
 	const router = useRouter();
-	const { setOrder } = useOrderStore();
 
 	const getCustomers = useApi(async () => await CustomerEndpoints.getCustomers({ isActive: true }, 1, 100), true);
 
@@ -26,9 +24,8 @@ export default function CreateOrderForCustomerPage() {
 	const customers = (getCustomers.resultData?.data?.elements ?? []) as Customer[];
 
 	const startOrderFor = (customer: Customer) => {
-		// همان فلوی ثبت سفارش سایت اجرا می‌شود؛ فقط آی‌دی مشتری در استور سفارش قرار می‌گیرد
-		setOrder({ customerId: customer.customerId });
-		router.push("/new-order");
+		// همان فلوی ثبت سفارش سایت اجرا می‌شود؛ آی‌دی مشتری از طریق query به فلوی سفارش منتقل می‌شود
+		router.push(`/new-order?customerId=${customer.customerId}`);
 	};
 
 	return (

@@ -79,4 +79,5 @@ export type CreateOrderPayload = {
 export type OrderFilters = {
 	status?: OrderStatus;
 	customerId?: string;
+	withCustomer?: boolean;
 };

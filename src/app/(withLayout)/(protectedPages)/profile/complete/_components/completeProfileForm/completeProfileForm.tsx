@@ -52,7 +52,6 @@ export default function CompleteProfileForm() {
 	const [selectedReferralSource, setSelectedReferralSource] = useState<ReferralSourceOption | null>(
 		null,
 	);
-	console.log(selectedReferralSource)
 	const [selectedLanguages, setSelectedLanguages] = useState<SelectedLanguage[]>([]);
 	const [languageAutoOption, setLanguageAutoOption] = useState<Language | null>(null);
 	// کد معرف فقط یک‌بار قابل ثبت است؛ اگر قبلاً ثبت شده باشد، ورودی قفل می‌شود
