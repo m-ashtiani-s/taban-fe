@@ -16,6 +16,8 @@ import { useApi } from "@/hooks/useApi";
 import { AuthEndpoints } from "./_api/endpoints";
 import { CheckUsernameFormValues } from "./_types/checkUsernameFormValues.type";
 import { mobileRegex } from "@/utils/mobileRegex";
+import { storage } from "@/utils/Storage";
+import { StorageKey } from "@/types/StorageKey";
 
 export default function Page() {
 	const router = useRouter();
@@ -24,7 +26,7 @@ export default function Page() {
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
-	const searchParams = useReadSearchParams(["username","backUrl"]);
+	const searchParams = useReadSearchParams(["username", "backUrl", "ref"]);
 
 	const {
 		result: checkUsernameResult,
@@ -41,6 +43,10 @@ export default function Page() {
 
 	useEffect(() => {
 		setFormValues({ username: searchParams?.username ?? "" });
+		// اگر کاربر با لینک معرف وارد شده (?ref=CODE)، کد را تا مرحله‌ی ثبت رمز عبور نگه می‌داریم
+		if (searchParams?.ref) {
+			storage.set(StorageKey.REFERRAL_CODE, searchParams.ref);
+		}
 	}, []);
 
 	useEffect(() => {

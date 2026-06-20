@@ -38,11 +38,11 @@ export const AuthEndpoints = {
 		});
 		return res?.data;
 	},
-	setPassword: async (username: string, password: string) => {
+	setPassword: async (username: string, password: string, referralCode?: string) => {
 		const res = await httpClient.call<Res<Login>>({
 			method: "POST",
 			url: `v1/auth/sign-up/set-password`,
-			data: { username, password },
+			data: { username, password, ...(referralCode ? { referralCode } : {}) },
 		});
 		return res?.data;
 	},

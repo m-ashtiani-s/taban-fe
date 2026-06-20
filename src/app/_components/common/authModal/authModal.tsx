@@ -41,6 +41,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 	const [password, setPassword] = useState<string>("");
 	const [confirmPassword, setConfirmPassword] = useState<string>("");
 	const [otp, setOtp] = useState<string>("");
+	const [referralCode, setReferralCode] = useState<string>("");
 	const [errors, setErrors] = useState<FormErrors[]>([]);
 	const [resendIn, setResendIn] = useState<number>(0);
 	const resendTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -49,7 +50,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 	const sendOtp = useApi(async (u: string) => await AuthEndpoints.sendOTP(u));
 	const login = useApi(async (u: string, p: string) => await AuthEndpoints.login(u, p));
 	const checkOtp = useApi(async (u: string, code: string) => await AuthEndpoints.checkOTP(u, code));
-	const setPasswordApi = useApi(async (u: string, p: string) => await AuthEndpoints.setPassword(u, p));
+	const setPasswordApi = useApi(
+		async (u: string, p: string, ref?: string) => await AuthEndpoints.setPassword(u, p, ref)
+	);
 	const getProfile = useApi(async () => await TabanEndpoints.getProfile());
 
 	const resetAll = () => {
@@ -58,13 +61,20 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		setPassword("");
 		setConfirmPassword("");
 		setOtp("");
+		setReferralCode("");
 		setErrors([]);
 		setResendIn(0);
 		if (resendTimer.current) clearInterval(resendTimer.current);
 	};
 
 	useEffect(() => {
-		if (!open) resetAll();
+		if (!open) {
+			resetAll();
+		} else {
+			// اگر کاربر قبلاً با لینک معرف (?ref=) وارد شده، کد ذخیره‌شده را پیش‌پر می‌کنیم
+			const storedReferral = typeof window !== "undefined" ? storage.get(StorageKey.REFERRAL_CODE) : null;
+			if (storedReferral) setReferralCode(storedReferral);
+		}
 		return () => {
 			if (resendTimer.current) clearInterval(resendTimer.current);
 		};
@@ -96,6 +106,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		if (profileRes.success) {
 			setProfile((profileRes.data?.data as Profile) ?? null);
 		}
+
+		// کد معرف (در صورت وجود) مصرف شد
+		storage.remove(StorageKey.REFERRAL_CODE);
 
 		showNotification({ type: "success", message: "خوش آمدید!" });
 		setOpen(false);
@@ -193,7 +206,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		else if (password && password !== confirmPassword) errs.push({ item: "confirmPassword", message: "رمز عبور و تکرار آن مطابقت ندارد" });
 		setErrors(errs);
 		if (errs.length > 0) return;
-		setPasswordApi.fetchData(username, password);
+		setPasswordApi.fetchData(username, password, referralCode.trim() || undefined);
 	};
 
 	useEffect(() => {
@@ -366,6 +379,14 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 						isHandleError
 						hasError={!!findError(errors, "confirmPassword")}
 						errorText={findError(errors, "confirmPassword")?.message}
+					/>
+					<TabanInput
+						isLtr
+						disabled={setPasswordApi.loading}
+						value={referralCode}
+						onChange={(e) => setReferralCode(e.target.value)}
+						name="referralCode"
+						label="کد معرف (اختیاری)"
 					/>
 					<TabanButton
 						type="submit"
