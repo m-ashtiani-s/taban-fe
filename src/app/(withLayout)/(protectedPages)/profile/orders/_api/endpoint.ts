@@ -28,6 +28,15 @@ export const OrderEndpoints = {
 		});
 		return res?.data;
 	},
+	// دانلود فاکتور PDF سفارش (تنها برای سفارش‌های پرداخت‌شده). خروجی به‌صورت Blob دریافت می‌شود.
+	downloadInvoice: async (orderId: string): Promise<Blob> => {
+		const res = await httpClient.call<Blob>({
+			method: "GET",
+			url: `v1/user/orders/${orderId}/invoice`,
+			responseType: "blob",
+		});
+		return res?.data as Blob;
+	},
 	// TODO: موقت — تا قبل از اتصال درگاه پرداخت واقعی. این فقط وضعیت سفارش را پرداخت‌شده می‌کند.
 	payOrder: async (orderId: string) => {
 		const res = await httpClient.call<Res<Order>>({

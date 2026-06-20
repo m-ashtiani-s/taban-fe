@@ -45,6 +45,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 	const pay = useApi(async (id: string) => await OrderEndpoints.payOrder(id));
 	const removeCoupon = useApi(async (id: string) => await OrderEndpoints.removeCoupon(id));
 	const [removeCouponModalOpen, setRemoveCouponModalOpen] = useState<boolean>(false);
+	const [invoiceLoading, setInvoiceLoading] = useState<boolean>(false);
 
 	useEffect(() => {
 		fetchData(params.orderId);
@@ -109,6 +110,27 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 	const editable = order.status === "document_submission" || order.status === "needs_editing";
 	const couponInfo = order.coupon && typeof order.coupon !== "string" ? order.coupon : null;
 	const canRemoveCoupon = !!couponInfo && (order.status === "document_submission" || order.status === "approved");
+	const isPaid = order.paymentStatus === "paid";
+
+	// دانلود فاکتور PDF — بک‌اند فایل را می‌سازد و اینجا به‌صورت Blob دانلود می‌شود
+	const downloadInvoiceHandler = async () => {
+		try {
+			setInvoiceLoading(true);
+			const blob = await OrderEndpoints.downloadInvoice(order.orderId);
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `invoice-${order.orderNumber}.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			window.URL.revokeObjectURL(url);
+		} catch {
+			showNotification({ type: "error", message: "دانلود فاکتور با خطا مواجه شد" });
+		} finally {
+			setInvoiceLoading(false);
+		}
+	};
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -262,6 +284,19 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 								<span className="text-xs font-normal text-neutral-500 mr-1">تومان</span>
 							</span>
 						</div>
+
+						{isPaid && (
+							<TabanButton
+								variant="bordered"
+								className="!w-full justify-center mt-1"
+								onClick={downloadInvoiceHandler}
+								isLoading={invoiceLoading}
+								loadingText="در حال آماده‌سازی فاکتور..."
+							>
+								<IconDocument className="fill-primary stroke-0 w-4 h-4 ml-2" />
+								دانلود فاکتور
+							</TabanButton>
+						)}
 					</div>
 				</div>
 			</div>
