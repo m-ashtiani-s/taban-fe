@@ -5,4 +5,5 @@ export enum StorageKey {
 	ROLES = 'role',
 	STATE_STRING = 'stateStr',
 	IS_COLLAPSED = 'is-collapsed',
+	REFERRAL_CODE = 'referralCode',
 }

@@ -27,17 +27,27 @@ export default function Page() {
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
-	const searchParams = useReadSearchParams(["username", "backUrl"]);
+	const searchParams = useReadSearchParams(["username", "backUrl", "ref"]);
 
 	const {
 		result: setPasswordResult,
 		resultData: setPasswordResultData,
 		fetchData: setPassword,
 		loading: setPasswordLoading,
-	} = useApi(async (username: string, password: string) => await AuthEndpoints.setPassword(username, password));
+	} = useApi(
+		async (username: string, password: string, referralCode?: string) =>
+			await AuthEndpoints.setPassword(username, password, referralCode)
+	);
 
 	useEffect(() => {
-		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
+		// کد معرف از پارامتر لینک (?ref=) یا از مقداری که هنگام ورود ذخیره شده، پیش‌پر می‌شود
+		const storedReferral = typeof window !== "undefined" ? storage.get(StorageKey.REFERRAL_CODE) : null;
+		const referralCode = searchParams?.ref || storedReferral || undefined;
+		setFormValues((prev) => ({
+			...prev,
+			username: !!searchParams?.username ? searchParams?.username : undefined,
+			referralCode: referralCode ?? undefined,
+		}));
 	}, []);
 
 	useEffect(() => {
@@ -51,7 +61,7 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			setPassword(formValues?.username!, formValues?.password!);
+			setPassword(formValues?.username!, formValues?.password!, formValues?.referralCode?.trim() || undefined);
 		}
 	};
 
@@ -60,6 +70,8 @@ export default function Page() {
 			if (setPasswordResult?.success) {
 				const now = new Date();
 				const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+				// کد معرف مصرف شد؛ از استوریج پاک می‌شود
+				storage.remove(StorageKey.REFERRAL_CODE);
 				storage.set(StorageKey?.TOKEN, `${setPasswordResultData?.data?.acceeToken}`);
 				storage.set(StorageKey?.USERNAME, JSON.stringify(setPasswordResultData?.data?.username));
 				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
@@ -146,6 +158,23 @@ export default function Page() {
 							hasError={!!findError(formErrors, "confirmPassword")}
 							errorText={findError(formErrors, "confirmPassword")?.message}
 						/>
+					</div>
+					<div className="mt-2">
+						<TabanInput
+							isLtr
+							disabled={setPasswordLoading}
+							value={formValues?.referralCode}
+							groupMode
+							setValue={setFormValues}
+							name="referralCode"
+							label="کد معرف (اختیاری)"
+							isHandleError
+							hasError={!!findError(formErrors, "referralCode")}
+							errorText={findError(formErrors, "referralCode")?.message}
+						/>
+						<div className="text-xs text-neutral-500 mt-1">
+							اگر با معرفی دوستتان آمده‌اید، کد معرف او را اینجا وارد کنید.
+						</div>
 					</div>
 				</div>
 				<div className="mt-2 flex flex-col items-center gap-2 w-full">

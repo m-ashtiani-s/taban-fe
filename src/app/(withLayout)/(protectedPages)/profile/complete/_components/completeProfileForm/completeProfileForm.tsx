@@ -55,6 +55,12 @@ export default function CompleteProfileForm() {
 	console.log(selectedReferralSource)
 	const [selectedLanguages, setSelectedLanguages] = useState<SelectedLanguage[]>([]);
 	const [languageAutoOption, setLanguageAutoOption] = useState<Language | null>(null);
+	// کد معرف فقط یک‌بار قابل ثبت است؛ اگر قبلاً ثبت شده باشد، ورودی قفل می‌شود
+	const [referralLocked, setReferralLocked] = useState<boolean>(false);
+	// کد ملی فقط یک‌بار گرفته می‌شود؛ اگر مقدار داشته باشد قفل و فقط نمایش داده می‌شود
+	const [nationalIdLocked, setNationalIdLocked] = useState<boolean>(false);
+	// قانون جدید: فیلدی که هنگام بارگذاری مقدار داشته اجباری می‌ماند؛ فیلد خالی اختیاری است
+	const [initiallyFilled, setInitiallyFilled] = useState<Record<string, boolean>>({});
 
 	const [profilePicFiles, setProfilePicFiles] = useState<File[]>([]);
 	const [uploadedProfilePic, setUploadedProfilePic] = useState<string>("");
@@ -75,6 +81,9 @@ export default function CompleteProfileForm() {
 		loading: updateLoading,
 	} = useApi(async (payload: UpdateUserPayload) => await ProfileEndpoints.updateUser(payload));
 
+	// پس از تکمیل پروفایل، پروفایل را دوباره از سرور می‌گیریم تا استور و درصد تکمیل تازه شوند
+	const refreshProfileApi = useApi(async () => await TabanEndpoints.getProfile());
+
 	useEffect(() => {
 		executeProfile();
 		executeLanguages();
@@ -89,9 +98,23 @@ export default function CompleteProfileForm() {
 			firstName: data.firstName ?? "",
 			lastName: data.lastName ?? "",
 			nationalId: data.nationalId ?? "",
-			phoneNumber: data.phoneNumber ?? "",
 			specialtyField: data.specialtyField ?? "",
 			referralCode: data.referralCode ?? "",
+		});
+
+		// اگر کد معرف از قبل ثبت شده باشد، دیگر قابل ویرایش نیست
+		setReferralLocked(!!data.referralCode);
+		// کد ملی در صورت داشتن مقدار، قفل می‌شود
+		setNationalIdLocked(!!data.nationalId);
+		// فیلدهایی که هنگام بارگذاری مقدار داشته‌اند، اجباری باقی می‌مانند (تصویر پروفایل استثناست)
+		setInitiallyFilled({
+			firstName: !!data.firstName,
+			lastName: !!data.lastName,
+			nationalId: !!data.nationalId,
+			userType: !!data.userType,
+			requiredLanguages: !!data.requiredLanguages?.length,
+			specialtyField: !!data.specialtyField,
+			referralSource: !!data.referralSource,
 		});
 
 		if (data.userType) {
@@ -129,31 +152,26 @@ export default function CompleteProfileForm() {
 	}, [formValues, selectedUserType, selectedReferralSource, selectedLanguages, uploadedProfilePic]);
 
 	useEffect(() => {
-		if (updateResult) {
-			if (updateResult.success) {
-				showNotification({
-					type: "success",
-					message: updateResult.data?.message ?? "پروفایل با موفقیت ذخیره شد",
-				});
-				if (profileResultData?.data) {
-					setProfile({
-						...(profileResultData.data as Profile),
-						...formValues,
-						userType: selectedUserType?.value ?? null,
-						referralSource: selectedReferralSource?.value ?? "",
-						requiredLanguages: selectedLanguages
-							.map((sel) => languages.find((l) => l.languageId === sel.languageId))
-							.filter((l): l is Language => !!l),
-						profilePic: uploadedProfilePic,
-					});
+		if (!updateResult) return;
+		if (updateResult.success) {
+			showNotification({
+				type: "success",
+				message: updateResult.data?.message ?? "پروفایل با موفقیت ذخیره شد",
+			});
+			// پروفایل را تازه از سرور می‌خوانیم و در استور می‌نشانیم تا درصد تکمیل (که به تغییر
+			// پروفایل واکنش نشان می‌دهد، مثل منوی هدر) بدون نیاز به رفرش دستی به‌روز شود.
+			(async () => {
+				const refreshed = await refreshProfileApi.fetchDataResult();
+				if (refreshed.success) {
+					setProfile((refreshed.data?.data as Profile) ?? null);
 				}
 				router.push(backUrl || "/profile/info");
-			} else {
-				showNotification({
-					type: "error",
-					message: updateResult.description ?? "به‌روزرسانی پروفایل با خطا مواجه شد",
-				});
-			}
+			})();
+		} else {
+			showNotification({
+				type: "error",
+				message: updateResult.description ?? "به‌روزرسانی پروفایل با خطا مواجه شد",
+			});
 		}
 	}, [updateResult]);
 
@@ -180,36 +198,32 @@ export default function CompleteProfileForm() {
 
 	const formValidator = (): FormErrors[] => {
 		const errors: FormErrors[] = [];
-		if (!formValues.firstName?.trim()) {
-			errors.push({ item: "firstName", message: "وارد کردن نام الزامی است" });
+		// فیلدی فقط در صورتی اجباری است که هنگام بارگذاری مقدار داشته باشد؛ یعنی نباید خالی شود
+		const required = (key: string) => !!initiallyFilled[key];
+
+		if (required("firstName") && !formValues.firstName?.trim()) {
+			errors.push({ item: "firstName", message: "نام نمی‌تواند خالی بماند" });
 		}
-		if (!formValues.lastName?.trim()) {
-			errors.push({ item: "lastName", message: "وارد کردن نام خانوادگی الزامی است" });
+		if (required("lastName") && !formValues.lastName?.trim()) {
+			errors.push({ item: "lastName", message: "نام خانوادگی نمی‌تواند خالی بماند" });
 		}
-		if (!uploadedProfilePic) {
-			errors.push({ item: "profilePic", message: "بارگذاری تصویر پروفایل الزامی است" });
-		}
-		if (!formValues.nationalId?.trim()) {
-			errors.push({ item: "nationalId", message: "وارد کردن کد ملی الزامی است" });
-		} else if (!/^\d{10}$/.test(formValues.nationalId.trim())) {
+		// کد ملی: در صورت قفل بودن قابل تغییر نیست؛ اگر مقدار وارد شده باشد باید ۱۰ رقم باشد
+		if (formValues.nationalId?.trim() && !/^\d{10}$/.test(formValues.nationalId.trim())) {
 			errors.push({ item: "nationalId", message: "کد ملی باید ۱۰ رقم عددی باشد" });
+		} else if (required("nationalId") && !formValues.nationalId?.trim()) {
+			errors.push({ item: "nationalId", message: "کد ملی نمی‌تواند خالی بماند" });
 		}
-		if (!formValues.phoneNumber?.trim()) {
-			errors.push({ item: "phoneNumber", message: "وارد کردن شماره تماس الزامی است" });
-		} else if (!/^09\d{9}$/.test(formValues.phoneNumber.trim())) {
-			errors.push({ item: "phoneNumber", message: "شماره تماس باید با ۰۹ شروع شده و ۱۱ رقم باشد" });
+		if (required("userType") && !selectedUserType) {
+			errors.push({ item: "userType", message: "نوع کاربری نمی‌تواند خالی بماند" });
 		}
-		if (!selectedUserType) {
-			errors.push({ item: "userType", message: "انتخاب نوع کاربری الزامی است" });
-		}
-		if (selectedLanguages.length === 0) {
+		if (required("requiredLanguages") && selectedLanguages.length === 0) {
 			errors.push({ item: "requiredLanguages", message: "حداقل یک زبان مورد نیاز را انتخاب کنید" });
 		}
-		if (!formValues.specialtyField?.trim()) {
-			errors.push({ item: "specialtyField", message: "وارد کردن حوزه تخصصی الزامی است" });
+		if (required("specialtyField") && !formValues.specialtyField?.trim()) {
+			errors.push({ item: "specialtyField", message: "حوزه تخصصی نمی‌تواند خالی بماند" });
 		}
-		if (!selectedReferralSource) {
-			errors.push({ item: "referralSource", message: "انتخاب نحوه آشنایی با ما الزامی است" });
+		if (required("referralSource") && !selectedReferralSource) {
+			errors.push({ item: "referralSource", message: "نحوه آشنایی با ما نمی‌تواند خالی بماند" });
 		}
 		setFormErrors(errors);
 		return errors;
@@ -250,18 +264,19 @@ export default function CompleteProfileForm() {
 			return;
 		}
 
+		// فقط مقادیر موجود ارسال می‌شوند؛ فیلدهای اختیاریِ خالی دست‌نخورده باقی می‌مانند.
+		// شماره تماس دیگر در این فرم گرفته نمی‌شود. تصویر پروفایل همیشه ارسال می‌شود تا افزودن/حذف اعمال شود.
 		const payload: UpdateUserPayload = {
-			firstName: formValues.firstName!.trim(),
-			lastName: formValues.lastName!.trim(),
-			nationalId: formValues.nationalId!.trim(),
-			phoneNumber: formValues.phoneNumber!.trim(),
-			userType: selectedUserType!.value,
-			requiredLanguages: selectedLanguages.map((l) => l.languageId),
-			specialtyField: formValues.specialtyField!.trim(),
-			referralSource: selectedReferralSource!.value,
 			referralCode: formValues.referralCode?.trim() || "",
+			requiredLanguages: selectedLanguages.map((l) => l.languageId),
 			profilePic: uploadedProfilePic,
 		};
+		if (formValues.firstName?.trim()) payload.firstName = formValues.firstName.trim();
+		if (formValues.lastName?.trim()) payload.lastName = formValues.lastName.trim();
+		if (formValues.nationalId?.trim()) payload.nationalId = formValues.nationalId.trim();
+		if (selectedUserType) payload.userType = selectedUserType.value;
+		if (formValues.specialtyField?.trim()) payload.specialtyField = formValues.specialtyField.trim();
+		if (selectedReferralSource) payload.referralSource = selectedReferralSource.value;
 
 		executeUpdate(payload);
 	};
@@ -306,30 +321,23 @@ export default function CompleteProfileForm() {
 						hasError={!!findError(formErrors, "lastName")}
 						errorText={findError(formErrors, "lastName")?.message}
 					/>
-					<TabanInput
-						label="کد ملی"
-						name="nationalId"
-						groupMode
-						setValue={setFormValues}
-						value={formValues.nationalId}
-						isLtr
-						disabled={updateLoading}
-						isHandleError
-						hasError={!!findError(formErrors, "nationalId")}
-						errorText={findError(formErrors, "nationalId")?.message}
-					/>
-					<TabanInput
-						label="شماره تماس"
-						name="phoneNumber"
-						groupMode
-						setValue={setFormValues}
-						value={formValues.phoneNumber}
-						isLtr
-						disabled={updateLoading}
-						isHandleError
-						hasError={!!findError(formErrors, "phoneNumber")}
-						errorText={findError(formErrors, "phoneNumber")?.message}
-					/>
+					<div>
+						<TabanInput
+							label="کد ملی"
+							name="nationalId"
+							groupMode
+							setValue={setFormValues}
+							value={formValues.nationalId}
+							isLtr
+							disabled={updateLoading || nationalIdLocked}
+							isHandleError
+							hasError={!!findError(formErrors, "nationalId")}
+							errorText={findError(formErrors, "nationalId")?.message}
+						/>
+						{nationalIdLocked && (
+							<div className="text-xs text-neutral-500 mt-1">کد ملی ثبت شده و قابل تغییر نیست.</div>
+						)}
+					</div>
 				</div>
 			</section>
 
@@ -512,15 +520,22 @@ export default function CompleteProfileForm() {
 							errorText={findError(formErrors, "referralSource")?.message}
 						/>
 					</div>
-					<TabanInput
-						label="کد معرف (اختیاری)"
-						name="referralCode"
-						groupMode
-						setValue={setFormValues}
-						value={formValues.referralCode}
-						isLtr
-						disabled={updateLoading}
-					/>
+					<div>
+						<TabanInput
+							label="کد معرف (اختیاری)"
+							name="referralCode"
+							groupMode
+							setValue={setFormValues}
+							value={formValues.referralCode}
+							isLtr
+							disabled={updateLoading || referralLocked}
+						/>
+						{referralLocked && (
+							<div className="text-xs text-neutral-500 mt-1">
+								کد معرف ثبت شده و قابل تغییر نیست.
+							</div>
+						)}
+					</div>
 				</div>
 
 				{/* Referral incentive */}
@@ -535,9 +550,10 @@ export default function CompleteProfileForm() {
 								با کد معرف دوستانت رو خوشحال کن
 							</div>
 							<p className="text-xs text-neutral-700 mt-1 leading-7">
-								اگه با معرفی یکی از دوستانت اینجا اومدی، کد معرف اون عزیز رو وارد کن. به ازای
-								هر سفارشی که ثبت کنی، <span className="font-bold text-secondary">۱۰٪ از مبلغ
-								سفارش</span> به‌عنوان تخفیف به شخصی که تو رو معرفی کرده، هدیه داده می‌شه.
+								اگه با معرفی یکی از دوستانت اینجا اومدی، کد معرف اون عزیز رو وارد کن. با{" "}
+								<span className="font-bold text-secondary">اولین خریدت</span>، یک کد تخفیف{" "}
+								<span className="font-bold text-secondary">۱۰٪ روی ترجمه پایه</span> به‌عنوان
+								هدیه برای شخصی که تو رو معرفی کرده ارسال می‌شه.
 							</p>
 						</div>
 					</div>

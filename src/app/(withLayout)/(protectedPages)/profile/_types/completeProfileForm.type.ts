@@ -4,7 +4,6 @@ export type CompleteProfileFormValues = {
 	firstName?: string;
 	lastName?: string;
 	nationalId?: string;
-	phoneNumber?: string;
 	specialtyField?: string;
 	referralCode?: string;
 };

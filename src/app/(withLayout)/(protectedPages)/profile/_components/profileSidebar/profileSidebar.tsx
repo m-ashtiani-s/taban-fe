@@ -73,8 +73,12 @@ export default function ProfileSidebar() {
 
 	useEffect(() => {
 		executeProfile();
-		executeCompletion();
 	}, []);
+
+	// درصد تکمیل با هر تغییر پروفایل (مثلاً پس از تکمیل فرم) دوباره از سرور گرفته می‌شود
+	useEffect(() => {
+		executeCompletion();
+	}, [profile]);
 
 	useEffect(() => {
 		if (profileResult?.success) {
