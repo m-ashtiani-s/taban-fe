@@ -46,6 +46,48 @@ export const AuthEndpoints = {
 		});
 		return res?.data;
 	},
+	// --- ورود با رمز یکبارمصرف ---
+	sendLoginOTP: async (username: string) => {
+		const res = await httpClient.call<Res<null>>({
+			method: "POST",
+			url: `v1/auth/login/otp/send`,
+			data: { username },
+		});
+		return res?.data;
+	},
+	loginWithOTP: async (username: string, otp: string) => {
+		const res = await httpClient.call<Res<Login>>({
+			method: "POST",
+			url: `v1/auth/login/otp/check`,
+			data: { username, otp },
+		});
+		return res?.data;
+	},
+	// --- فراموشی رمز عبور ---
+	sendForgetPasswordOTP: async (username: string) => {
+		const res = await httpClient.call<Res<null>>({
+			method: "POST",
+			url: `v1/auth/forget-password/otp/send`,
+			data: { username },
+		});
+		return res?.data;
+	},
+	checkForgetPasswordOTP: async (username: string, otp: string) => {
+		const res = await httpClient.call<Res<boolean>>({
+			method: "POST",
+			url: `v1/auth/forget-password/otp/check`,
+			data: { username, otp },
+		});
+		return res?.data;
+	},
+	changePassword: async (username: string, password: string) => {
+		const res = await httpClient.call<Res<null>>({
+			method: "POST",
+			url: `v1/auth/forget-password/set-password`,
+			data: { username, password },
+		});
+		return res?.data;
+	},
 	getProvinces: async (term: string) => {
 		const res = await httpClient.call<Res<Paginate<Province>>>({
 			method: "GET",

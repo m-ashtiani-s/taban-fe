@@ -35,6 +35,18 @@ export default function Page() {
 		loading: loginLoading,
 	} = useApi(async (username: string, password: string) => await AuthEndpoints.login(username, password));
 
+	const {
+		result: sendLoginOTPResult,
+		fetchData: sendLoginOTP,
+		loading: sendLoginOTPLoading,
+	} = useApi(async (username: string) => await AuthEndpoints.sendLoginOTP(username));
+
+	const {
+		result: sendForgetOTPResult,
+		fetchData: sendForgetOTP,
+		loading: sendForgetOTPLoading,
+	} = useApi(async (username: string) => await AuthEndpoints.sendForgetPasswordOTP(username));
+
 	useEffect(() => {
 		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
 	}, []);
@@ -51,6 +63,31 @@ export default function Page() {
 		const errors = formValidator();
 		if (errors?.length === 0) {
 			executeLogin(formValues?.username!, formValues?.password!);
+		}
+	};
+
+	// اعتبارسنجیِ فقط شماره موبایل برای فلوهای OTP (که نیازی به رمز عبور ندارند)
+	const validateUsernameOnly = () => {
+		const newErrors: FormErrors[] = [];
+		!formValues?.username && newErrors.push({ item: "username", message: "وارد کردن شماره موبایل الزامی است" });
+		formValues?.username &&
+			!mobileRegex.test(formValues?.username) &&
+			newErrors.push({ item: "username", message: "شماره موبایل وارد شده صحیح نیست" });
+		setFormErrors(newErrors);
+		return newErrors;
+	};
+
+	const forgetPasswordHandler = () => {
+		const errors = validateUsernameOnly();
+		if (errors?.length === 0) {
+			sendForgetOTP(formValues?.username!);
+		}
+	};
+
+	const loginWithOTPHandler = () => {
+		const errors = validateUsernameOnly();
+		if (errors?.length === 0) {
+			sendLoginOTP(formValues?.username!);
 		}
 	};
 
@@ -75,6 +112,32 @@ export default function Page() {
 			}
 		}
 	}, [loginResult]);
+
+	useEffect(() => {
+		if (sendForgetOTPResult) {
+			if (sendForgetOTPResult?.success) {
+				router.push(`/auth/change-password/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+			} else {
+				showNotification({
+					type: "error",
+					message: sendForgetOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
+				});
+			}
+		}
+	}, [sendForgetOTPResult]);
+
+	useEffect(() => {
+		if (sendLoginOTPResult) {
+			if (sendLoginOTPResult?.success) {
+				router.push(`/auth/login/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+			} else {
+				showNotification({
+					type: "error",
+					message: sendLoginOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
+				});
+			}
+		}
+	}, [sendLoginOTPResult]);
 
 	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
@@ -116,15 +179,15 @@ export default function Page() {
 							errorText={findError(formErrors, "password")?.message}
 						/>
 					</div>
-					{formValues?.username && (
-						<Link
-							href={`/auth/change-password/otp?username=${formValues?.username}`}
-							className="lg:!hidden text-sm font-medium cursor-pointer leading-4 py-2.5 px-3 text-center w-fit text-[#4C8EB0] flex gap-1 items-center hover:gap-1.5 duration-200"
-						>
-							فراموشی رمز عبور
-							<IconArrowLine />
-						</Link>
-					)}
+					<button
+						type="button"
+						onClick={forgetPasswordHandler}
+						disabled={sendForgetOTPLoading}
+						className="text-sm font-medium cursor-pointer leading-4 py-2.5 px-3 text-center w-fit text-[#4C8EB0] flex gap-1 items-center hover:gap-1.5 duration-200 disabled:opacity-60"
+					>
+						{sendForgetOTPLoading ? "در حال ارسال کد..." : "فراموشی رمز عبور"}
+						<IconArrowLine />
+					</button>
 				</div>
 				<div className="mt-1 flex flex-col items-center gap-2 w-full">
 					<TabanButton
@@ -136,8 +199,16 @@ export default function Page() {
 					>
 						ورود به حساب
 					</TabanButton>
-					<TabanButton variant="text" isLink href="/register" className="!w-full max-lg:!hidden">
-						فراموشی رمز عبور
+					<TabanButton
+						variant="bordered"
+						type="button"
+						onClick={loginWithOTPHandler}
+						isLoading={sendLoginOTPLoading}
+						loadingText="در حال ارسال کد..."
+						className="!w-full"
+						disabled={sendLoginOTPLoading}
+					>
+						ورود با رمز یکبار مصرف
 					</TabanButton>
 				</div>
 			</form>
