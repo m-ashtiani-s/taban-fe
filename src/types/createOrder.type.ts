@@ -43,6 +43,8 @@ export type CreateOrder = {
 	scanRateIdByDoc?: Record<string, string | null>;
 	/** مدارکی که کاربر استعلام‌هایشان را خودش تهیه می‌کند (کلید: documentKey همان مدرک) */
 	selfInquiryByDoc?: Record<string, boolean>;
+	/** توضیحاتِ نوشته‌شده توسط کاربر برای هر مدرک (کلید: documentKey همان مدرک) */
+	descriptionByDoc?: Record<string, string>;
 	/** تاریخ تحویل دلخواهِ کاربر برای کل این آیتم (اختیاری) */
 	desiredDeliveryDate?: string | null;
 	// در صورت ثبت سفارش توسط مشتری سازمانی برای یک مشتری زیرمجموعه، آی‌دی آن مشتری اینجا نگه داشته می‌شود

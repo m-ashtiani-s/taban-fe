@@ -29,7 +29,13 @@ function pickerValueToJalali(value: Value | undefined | null): string | null {
 	return moment(jsDate).format("jYYYY/jMM/jDD");
 }
 
-export default function TabanDatePicker({ placeholder = "انتخاب تاریخ", selectedDate, setSelectedDate }: TabanDatePickerProps) {
+export default function TabanDatePicker({
+	placeholder = "انتخاب تاریخ",
+	selectedDate,
+	setSelectedDate,
+	disablePast,
+	disableHolidays,
+}: TabanDatePickerProps) {
 	const [date, setDate] = useState<Value>(() => {
 		if (!selectedDate) return null;
 		const m = moment(selectedDate, "jYYYY/jMM/jDD");
@@ -65,6 +71,19 @@ export default function TabanDatePicker({ placeholder = "انتخاب تاریخ
 		setSelectedDate(jalali);
 	};
 
+	// کمینه‌ی تاریخِ قابل‌انتخاب: امروز (برای جلوگیری از انتخاب روزهای گذشته)
+	const minDate = disablePast ? new Date() : undefined;
+
+	// غیرفعال‌کردن روزهای تعطیل روی تقویم؛ فعلاً تعطیلیِ هفتگیِ جمعه (در تقویم فارسی index=6)
+	const mapDays = disableHolidays
+		? ({ date }: { date: { weekDay: { index: number } } }) => {
+				if (date.weekDay.index === 6) {
+					return { disabled: true, style: { color: "#ccc" } };
+				}
+				return {};
+			}
+		: undefined;
+
 	return (
 		<div className="flex [&_svg]:!left-3 w-full [&>div]:!w-full">
 			<DatePicker
@@ -83,6 +102,8 @@ export default function TabanDatePicker({ placeholder = "انتخاب تاریخ
 				value={date}
 				onChange={handlePickerChange}
 				locale={persian_fa}
+				minDate={minDate}
+				mapDays={mapDays}
 				calendarPosition="bottom-center"
 				inputClass="py-2 h-12 !w-full px-4 !outline-none focus:!border-secondary rounded-lg rounded-xl pl-[48px]  border-1 text-base !outline-0 text-[#08090C] border-[#34426680] hover:border-[#34426680]  focus:border-[#08090C]"
 			/>

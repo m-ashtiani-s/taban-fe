@@ -12,7 +12,6 @@ import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import FileUploader from "@/app/_components/common/fileUploader/fileUploader";
-import { IconUpload } from "@/app/_components/icon/icons";
 
 type PassportModalProps = {
 	open: boolean;
@@ -43,6 +42,12 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 		setFiles([]);
 		setImage("");
 		setTitleError("");
+	};
+
+	// با انتخاب تصویر، بلافاصله آپلود انجام می‌شود (بدون دکمه‌ی جداگانه)
+	const handleSelect = (selected: File[]) => {
+		setFiles(selected);
+		if (selected.length > 0) upload.fetchData([selected[0]]);
 	};
 
 	useEffect(() => {
@@ -104,7 +109,7 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 
 				<FileUploader
 					files={files}
-					onChange={setFiles}
+					onChange={handleSelect}
 					uploadedUrls={image ? [image] : []}
 					onRemoveUploaded={() => setImage("")}
 					multiple={false}
@@ -113,19 +118,6 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 					isLoading={upload.loading}
 					hint="تصویر پاسپورت را اینجا رها کنید یا انتخاب نمایید"
 				/>
-
-				{files.length > 0 && !image && (
-					<div className="flex justify-end">
-						<TabanButton
-							onClick={() => upload.fetchData(files)}
-							isLoading={upload.loading}
-							disabled={upload.loading}
-							icon={<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-white" />}
-						>
-							آپلود تصویر
-						</TabanButton>
-					</div>
-				)}
 
 				<div className="flex justify-end gap-3 mt-4">
 					<TabanButton variant="bordered" onClick={() => setOpen(false)} disabled={create.loading}>

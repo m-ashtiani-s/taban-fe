@@ -8,10 +8,12 @@ import { useApi } from "@/hooks/useApi";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { TranslationItem } from "@/types/translationItem.type";
 import { Language } from "@/types/language.type";
+import { RateFilters } from "@/types/rateFilters.type";
 import { IconArrow, IconArrowLine, IconDocument, IconTranslate } from "@/app/_components/icon/icons";
 import TabanAutoComplete from "@/app/_components/common/tabanAutoComplete/tabanAutoComplete";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
+import { useNotificationStore } from "@/stores/notification.store";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 
 /**
@@ -24,12 +26,17 @@ import { convertToPersianNumber } from "@/utils/enNumberToPersian";
  */
 export default function HeroOrderStart() {
 	const router = useRouter();
+	const showNotification = useNotificationStore((s) => s.showNotification);
 	const [selectedItem, setSelectedItem] = useState<TranslationItem | null>(null);
 	const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
 	const [count, setCount] = useState(1);
+	// در حال بررسیِ وجودِ نرخ برای ترکیبِ مدرک و زبانِ انتخابی پیش از هدایت به فلوی سفارش
+	const [checkingRate, setCheckingRate] = useState(false);
 
 	const items = useApi(async () => await TranslationEndpoints.getTranslationItems(), true);
 	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
+	// بررسیِ وجودِ نرخ پایه برای ترکیبِ انتخابی (همان‌جا در هوم‌پیج)
+	const baseRate = useApi(async (filters: RateFilters) => await TranslationEndpoints.getBaseRate(filters));
 
 	useEffect(() => {
 		items.fetchData();
@@ -43,13 +50,40 @@ export default function HeroOrderStart() {
 		setSelectedLanguage((prev) => (prev?.languageId === lang.languageId ? null : lang));
 	};
 
-	const handleContinue = () => {
+	const goToOrder = () => {
 		if (!selectedItem) return;
 		const params = new URLSearchParams({ item: selectedItem.translationItemId });
 		if (selectedLanguage) params.set("lang", selectedLanguage.languageId);
 		if (count > 1) params.set("count", String(count));
 		router.push(`/new-order?${params.toString()}`);
 	};
+
+	const handleContinue = () => {
+		if (!selectedItem) return;
+		// اگر زبان هم انتخاب شده، ابتدا وجودِ نرخ برای این ترکیب را همین‌جا بررسی می‌کنیم؛
+		// تنها در صورت وجود نرخ به فلوی سفارش می‌رویم و آنجا مرحله‌ی زبان رد می‌شود.
+		if (selectedLanguage) {
+			setCheckingRate(true);
+			baseRate.fetchData({ translationItemId: selectedItem.translationItemId, languageId: selectedLanguage.languageId });
+		} else {
+			goToOrder();
+		}
+	};
+
+	// نتیجه‌ی بررسیِ نرخ: در صورت وجود نرخ هدایت می‌کنیم، وگرنه از کاربر می‌خواهیم زبان دیگری انتخاب کند
+	useEffect(() => {
+		if (!checkingRate || !baseRate.result) return;
+		setCheckingRate(false);
+		const hasRate = baseRate.result.success && !!baseRate.result.data?.data?.[0];
+		if (hasRate) {
+			goToOrder();
+		} else {
+			showNotification({
+				type: "error",
+				message: "برای این مدرک و زبان نرخی تعریف نشده است؛ لطفاً زبان دیگری انتخاب کنید.",
+			});
+		}
+	}, [baseRate.result, checkingRate]);
 
 	return (
 		<div className="bg-white shadow-xl shadow-primary/5 border border-suppliment rounded-3xl p-6 lg:p-9 -mt-20 ">
@@ -95,9 +129,9 @@ export default function HeroOrderStart() {
 							initial={{ opacity: 0, y: -6 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.25, ease: "easeOut" }}
-							className="flex items-center gap-3"
+							className="flex items-center gap-3 flex-wrap"
 						>
-							<span className="text-sm text-neutral-600 peyda">تعداد نسخه:</span>
+							<span className="text-sm text-neutral-600 peyda">تعداد {selectedItem.title} برای ترجمه:</span>
 							<div className="flex items-center gap-1.5 rounded-xl border border-neutral-200 p-1">
 								<TabanButton
 									variant="icon"
@@ -172,13 +206,14 @@ export default function HeroOrderStart() {
 					<IconTranslate strokeWidth={0} className="fill-secondary w-4 h-4 shrink-0" />
 					{selectedItem
 						? selectedLanguage
-							? `${selectedItem.title} · ${selectedLanguage.languageName} · ${convertToPersianNumber(count)} نسخه`
+							? `${selectedItem.title} · ${selectedLanguage.languageName} · ${convertToPersianNumber(count)} عدد`
 							: "زبان ترجمه را می‌توانید در مرحله‌ی بعد هم انتخاب کنید"
 						: "ابتدا مدرک مورد نظر خود را انتخاب کنید"}
 				</div>
 				<TabanButton
 					onClick={handleContinue}
-					disabled={!selectedItem}
+					disabled={!selectedItem || checkingRate}
+					isLoading={checkingRate}
 					icon={<IconArrowLine />}
 					className="max-lg:!w-full max-lg:!justify-center"
 				>

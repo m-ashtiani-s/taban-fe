@@ -2,6 +2,7 @@
 
 import { IconRequired, IconUpload } from "@/app/_components/icon/icons";
 import UploadBox from "@/app/_components/common/uploadBox/uploadBox";
+import DocumentDescriptionField from "@/app/_components/common/documentDescriptionField/documentDescriptionField";
 import { assetFolderName } from "@/utils/string";
 import { useProfiletore } from "@/stores/profile";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
@@ -22,6 +23,13 @@ export default function UploadStep() {
 		setOrder((prev) => ({
 			...prev,
 			assetsByDoc: { ...(prev?.assetsByDoc ?? {}), [docKey]: urls },
+		}));
+	};
+
+	const setDocDescription = (docKey: string, description: string) => {
+		setOrder((prev) => ({
+			...prev,
+			descriptionByDoc: { ...(prev?.descriptionByDoc ?? {}), [docKey]: description },
 		}));
 	};
 
@@ -63,6 +71,11 @@ export default function UploadStep() {
 								onChange={(urls) => setDocAssets(key, urls)}
 								folder={assetFolderName(scope, names[key] ?? "")}
 								hint="فایل‌های این مدرک را اینجا رها کنید یا انتخاب نمایید"
+							/>
+							<DocumentDescriptionField
+								docTitle={names[key] ?? "مدرک"}
+								value={order?.descriptionByDoc?.[key] ?? ""}
+								onChange={(desc) => setDocDescription(key, desc)}
 							/>
 						</DocumentSection>
 					))}

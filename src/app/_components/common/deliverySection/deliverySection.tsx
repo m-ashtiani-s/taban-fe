@@ -59,6 +59,8 @@ export default function DeliverySection({ hasJustice, hasMfa, desiredDate, onDat
 							<TabanDatePicker
 								placeholder="تاریخ تحویل دلخواه (اختیاری)"
 								selectedDate={desiredDate}
+								disablePast
+								disableHolidays
 								setSelectedDate={(v) =>
 									onDateChange(typeof v === "function" ? (v as (p: string | null) => string | null)(desiredDate) : v)
 								}

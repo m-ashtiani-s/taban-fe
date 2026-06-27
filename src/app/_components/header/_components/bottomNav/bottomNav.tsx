@@ -36,7 +36,7 @@ export default function BottomNav() {
 		},
 		{
 			key: "profile",
-			label: "پروفایل",
+			label: "پروفایل من",
 			href: profile ? "/profile" : "/auth",
 			icon: IconCircleUser,
 			isActive: pathname.startsWith("/profile") || pathname.startsWith("/auth"),

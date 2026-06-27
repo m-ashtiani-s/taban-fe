@@ -16,6 +16,8 @@ export type RateCalculationDocumentInput = {
 	scanAssets?: string[];
 	/** کاربر استعلام‌های این مدرک را خودش تهیه می‌کند (استعلام پولیِ ما انتخاب نمی‌شود). */
 	selfInquiry?: boolean;
+	/** توضیحاتِ نوشته‌شده توسط کاربر برای این مدرک (در فلوهای ثبت/ویرایش سفارش). */
+	description?: string;
 };
 
 export type RateCalculationRequest = {
