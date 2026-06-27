@@ -13,8 +13,8 @@ import HeroOrderStart from "./_homeAssets/_components/heroOrderStart/heroOrderSt
 import Reveal from "./_components/common/reveal/reveal";
 import { steps } from "./_homeAssets/_constants/steps";
 import { services } from "./_homeAssets/_constants/services";
-import BlogPreview from "./_homeAssets/_components/BlogPreview/blogPreview";
 import { Metadata } from "next";
+import BlogPreview from "./_homeAssets/_components/blogPreview/blogPreview";
 
 export const metadata: Metadata = {
 	// عنوان خالی می‌ماند تا از default لِی‌اوت استفاده شود (بدون تکرار برند با template)
