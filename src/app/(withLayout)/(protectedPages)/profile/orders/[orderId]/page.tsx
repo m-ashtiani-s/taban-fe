@@ -131,15 +131,21 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 	const canRemoveCoupon = !!couponInfo && (order.status === "document_submission" || order.status === "approved");
 	const isPaid = order.paymentStatus === "paid";
 
-	// دانلود فاکتور PDF — بک‌اند فایل را می‌سازد و اینجا به‌صورت Blob دانلود می‌شود
+	// دانلود فاکتور PDF — بک‌اند فایل را به‌صورت base64 می‌فرستد و اینجا به Blob تبدیل و دانلود می‌شود.
+	// ارسال به‌صورت base64 باعث می‌شود دانلودرهای خارجی مثل IDM پاسخ را شنود نکنند (وگرنه بدون توکن دوباره صدا می‌زنند و ۴۰۱ می‌گیرند).
 	const downloadInvoiceHandler = async () => {
 		try {
 			setInvoiceLoading(true);
-			const blob = await OrderEndpoints.downloadInvoice(order.orderId);
+			const file = await OrderEndpoints.downloadInvoice(order.orderId);
+			if (!file?.base64) throw new Error("invalid invoice response");
+			const byteChars = window.atob(file.base64);
+			const bytes = new Uint8Array(byteChars.length);
+			for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i);
+			const blob = new Blob([bytes], { type: file.mimeType || "application/pdf" });
 			const url = window.URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
-			a.download = `invoice-${order.orderNumber}.pdf`;
+			a.download = file.fileName || `invoice-${order.orderNumber}.pdf`;
 			document.body.appendChild(a);
 			a.click();
 			a.remove();
