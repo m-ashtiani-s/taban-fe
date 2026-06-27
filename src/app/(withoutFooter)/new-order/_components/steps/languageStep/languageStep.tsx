@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useApi } from "@/hooks/useApi";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
-import { IconCheck, IconTranslate } from "@/app/_components/icon/icons";
+import { IconTranslate } from "@/app/_components/icon/icons";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
@@ -21,21 +21,8 @@ type LanguageStepProps = {
 	onSelectLanguage: (language: Language) => void;
 };
 
-const officialOptions = [
-	{
-		value: true,
-		label: "ترجمه رسمی",
-		desc: "شامل سنام، مهر مترجم و تمام هزینه‌های رسمی",
-	},
-	{
-		value: false,
-		label: "ترجمه غیررسمی",
-		desc: "بدون سنام و مهر مترجم — مناسب ترجمه‌های غیررسمی",
-	},
-];
-
 export default function LanguageStep({ rates, onSelectLanguage }: LanguageStepProps) {
-	const { order, setOrder } = useNewOrderStore();
+	const { order } = useNewOrderStore();
 	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
 
 	useEffect(() => {
@@ -43,7 +30,6 @@ export default function LanguageStep({ rates, onSelectLanguage }: LanguageStepPr
 	}, []);
 
 	const list = languages.result?.success ? languages.result.data?.data ?? [] : [];
-	const isOfficial = order?.isOfficial !== false;
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -87,41 +73,7 @@ export default function LanguageStep({ rates, onSelectLanguage }: LanguageStepPr
 				<div className="text-center text-sm text-neutral-400 py-10">داده‌ای موجود نیست</div>
 			)}
 
-			{/* نوع ترجمه: رسمی یا غیررسمی */}
-			<div className="flex flex-col gap-3">
-				<div className="text-sm font-semibold text-primary">نوع ترجمه</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-					{officialOptions.map((opt) => {
-						const selected = isOfficial === opt.value;
-						return (
-							<button
-								key={String(opt.value)}
-								type="button"
-								onClick={() => setOrder((prev) => ({ ...prev, isOfficial: opt.value }))}
-								className={`flex items-start gap-3 text-right rounded-2xl border px-4 py-4 duration-150 ${
-									selected
-										? "border-secondary bg-secondary/5"
-										: "border-neutral-200 hover:border-secondary/40"
-								}`}
-							>
-								<span
-									className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-										selected ? "border-secondary bg-secondary" : "border-neutral-300"
-									}`}
-								>
-									{selected && <IconCheck className="stroke-white w-3 h-3" />}
-								</span>
-								<div className="flex flex-col gap-0.5">
-									<span className={`text-sm font-semibold ${selected ? "text-secondary" : "text-primary"}`}>
-										{opt.label}
-									</span>
-									<span className="text-xs text-neutral-500 leading-5">{opt.desc}</span>
-								</div>
-							</button>
-						);
-					})}
-				</div>
-			</div>
+			{/* نوع ترجمه به‌صورت پیش‌فرض «رسمی» است و فعلاً از کاربر پرسیده نمی‌شود (مخفی) */}
 
 			{/* وضعیت آماده‌سازی گزینه‌های وابسته به زبان */}
 			{order?.language && rates.loading && (

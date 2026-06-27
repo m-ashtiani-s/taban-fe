@@ -76,6 +76,9 @@ export default function NewOrder() {
 
 	const [initializing, setInitializing] = useState(hasHandoff);
 	const handoffStarted = useRef(false);
+	const handoffApplied = useRef(false);
+	// وقتی زبان از هوم‌پیج آمده، پس از آماده‌شدن نرخ‌ها یک‌بار از مرحله‌ی زبان عبور می‌کنیم
+	const pendingLanguageSkip = useRef(false);
 
 	const handoffItems = useApi(async () => await TranslationEndpoints.getTranslationItems());
 	const handoffLanguages = useApi(async () => await TranslationEndpoints.getLanguages());
@@ -90,7 +93,7 @@ export default function NewOrder() {
 
 	// پس از آماده‌شدن داده‌ها: ست‌کردن سفارش و پرش به مرحله‌ی نام‌گذاری
 	useEffect(() => {
-		if (!hasHandoff || !initializing) return;
+		if (!hasHandoff || !initializing || handoffApplied.current) return;
 		const itemsReady = !!handoffItems.result;
 		const languagesReady = handoffLanguageId ? !!handoffLanguages.result : true;
 		if (!itemsReady || !languagesReady) return;
@@ -104,6 +107,7 @@ export default function NewOrder() {
 				: null;
 
 		if (item) {
+			handoffApplied.current = true;
 			rates.reset();
 			setOrder((prev) => ({
 				...prev,
@@ -118,20 +122,41 @@ export default function NewOrder() {
 				embassyItems: [],
 				copyCount: {},
 				assetsByDoc: {},
+				descriptionByDoc: {},
 				...(language ? { language } : {}),
 			}));
-			// تک‌مدرک نیازی به نام‌گذاری ندارد؛ مستقیم به انتخاب زبان می‌رویم
-			setCurrentStep(handoffCount > 1 ? "naming" : "language");
 			// اگر زبان از URL پیش‌انتخاب شده، مستقیم نرخ‌ها رو فچ می‌کنیم.
 			// نمی‌توان فقط به effect نرخ‌ها (itemId/languageId) تکیه کرد چون اگر
 			// store قبلاً همین مقادیر رو داشته باشه، dep تغییر نمی‌کنه و effect
 			// بعد از reset() دوباره فایر نمی‌شه (race condition روی اتصال کُند).
 			if (language) {
 				rates.fetchAll(item.translationItemId, language.languageId);
+				// زبان از هوم‌پیج آمده: هنگام آماده‌شدن نرخ‌ها، در صورت وجود نرخ از مرحله‌ی زبان عبور می‌کنیم
+				pendingLanguageSkip.current = true;
 			}
+			// تک‌مدرک نیازی به نام‌گذاری ندارد؛ مستقیم به انتخاب زبان می‌رویم
+			setCurrentStep(handoffCount > 1 ? "naming" : "language");
 		}
 		setInitializing(false);
 	}, [hasHandoff, initializing, handoffItemId, handoffLanguageId, handoffCount, handoffItems.result, handoffLanguages.result]);
+
+	// عبور خودکار از مرحله‌ی زبان وقتی زبان از هوم‌پیج آمده و برای آن ترکیب نرخ وجود دارد.
+	// اگر نرخی برای ترکیب نباشد، روی مرحله‌ی زبان می‌مانیم تا کاربر زبان دیگری انتخاب کند.
+	useEffect(() => {
+		if (!pendingLanguageSkip.current) return;
+		if (currentStep !== "language") return;
+		if (!rates.attempted || rates.loading) return;
+		pendingLanguageSkip.current = false;
+		// همان معیارِ بررسیِ نرخ در هوم‌پیج: کافی است نرخ پایه‌ای برای این ترکیب وجود داشته باشد
+		const baseRateExists = !!(
+			rates.baseRate.result?.success && (rates.baseRate.result.data?.data?.length ?? 0) > 0
+		);
+		if (baseRateExists) {
+			const idx = steps.indexOf("language");
+			if (idx >= 0 && idx + 1 < steps.length) setCurrentStep(steps[idx + 1]);
+		}
+		setInitializing(false);
+	}, [currentStep, rates.attempted, rates.loading, rates.baseRate.result, steps]);
 
 	// فچ مرکزی نرخ‌ها پس از مشخص‌شدن مدرک و زبان (با dedup داخلی useOrderRates)
 	useEffect(() => {
@@ -183,6 +208,7 @@ export default function NewOrder() {
 			embassyItems: [],
 			copyCount: {},
 			assetsByDoc: {},
+			descriptionByDoc: {},
 		}));
 	};
 

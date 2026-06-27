@@ -16,6 +16,7 @@ import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import UploadBox from "@/app/_components/common/uploadBox/uploadBox";
+import DocumentDescriptionField from "@/app/_components/common/documentDescriptionField/documentDescriptionField";
 import PassportPicker from "@/app/_components/common/passportPicker/passportPicker";
 import DeliverySection from "@/app/_components/common/deliverySection/deliverySection";
 import { useNotificationStore } from "@/stores/notification.store";
@@ -56,6 +57,7 @@ type EditState = {
 	scanRateIdByDoc: Record<string, string | null>;
 	passports: string[];
 	assetsByDoc: Record<string, string[]>;
+	descriptionByDoc: Record<string, string>;
 	desiredDeliveryDate: string | null;
 	isOfficial: boolean;
 };
@@ -73,6 +75,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 	const copyCount: Record<string, string> = {};
 	const scanRateIdByDoc: Record<string, string | null> = {};
 	const assetsByDoc: Record<string, string[]> = {};
+	const descriptionByDoc: Record<string, string> = {};
 
 	payload.documents.forEach((d) => {
 		translationItemNames[d.documentKey] = d.title;
@@ -89,6 +92,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		copyCount[d.documentKey] = (d.copyCount ?? 1).toString();
 		scanRateIdByDoc[d.documentKey] = d.scanRateId ?? null;
 		assetsByDoc[d.documentKey] = d.assets ?? [];
+		descriptionByDoc[d.documentKey] = d.description ?? "";
 	});
 
 	// انتقال فایل‌های قدیمیِ سطح‌بالا به اولین مدرک (سفارش‌های پیش از جداسازی per-document)
@@ -118,6 +122,7 @@ function buildInitialState(doc: OrderedDoc): EditState {
 		scanRateIdByDoc,
 		passports: payload.passports ?? [],
 		assetsByDoc,
+		descriptionByDoc,
 		desiredDeliveryDate: payload.desiredDeliveryDate ?? null,
 		isOfficial: payload.isOfficial !== false,
 	};
@@ -138,6 +143,8 @@ export default function OrderItemEditPage() {
 	const [step, setStep] = useState(1);
 	const [editState, setEditState] = useState<EditState | null>(null);
 	const [notFound, setNotFound] = useState(false);
+	// آیا کاربر می‌خواهد این مدرک به تایید سفارت برسد؟ (تیکِ نمایشیِ مرحله‌ی تایید سفارت)
+	const [wantEmbassyByDoc, setWantEmbassyByDoc] = useState<Record<string, boolean>>({});
 
 	const getOrder = useApi(async () => await OrderEndpoints.getOrder(orderId), true);
 	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
@@ -172,6 +179,27 @@ export default function OrderItemEditPage() {
 	useEffect(() => {
 		if (editState?.translationItemId) translationItem.fetchData(editState.translationItemId);
 	}, [editState?.translationItemId]);
+
+	// مقداردهی اولیه‌ی تیکِ «تایید سفارت»: مدارکی که از قبل سفارت انتخاب‌شده دارند، باز نمایش داده می‌شوند
+	useEffect(() => {
+		if (!editState) return;
+		setWantEmbassyByDoc((prev) => {
+			const next = { ...prev };
+			Object.keys(editState.embassies).forEach((key) => {
+				if (next[key] === undefined) next[key] = (editState.embassies[key]?.length ?? 0) > 0;
+			});
+			return next;
+		});
+	}, [editState]);
+
+	// تغییر تمایل به تایید سفارت برای یک مدرک؛ با خاموش‌کردن، انتخاب‌های سفارتِ آن مدرک پاک می‌شود
+	const toggleWantEmbassy = (docKey: string) => {
+		const next = !wantEmbassyByDoc[docKey];
+		setWantEmbassyByDoc((prev) => ({ ...prev, [docKey]: next }));
+		if (!next) {
+			setEditState((s) => (s ? { ...s, embassies: { ...s.embassies, [docKey]: [] } } : s));
+		}
+	};
 
 	const fetchRates = (state: EditState) => {
 		const filters: RateFilters = { translationItemId: state.translationItemId, languageId: state.languageId };
@@ -214,6 +242,7 @@ export default function OrderItemEditPage() {
 			assets: editState.assetsByDoc[key] ?? [],
 			selfInquiry: !!editState.selfInquiry[key],
 			scanRateId: editState.scanRateIdByDoc[key] ?? null,
+			description: editState.descriptionByDoc[key]?.trim() || undefined,
 		}));
 		return { translationItemId: editState.translationItemId, languageId: editState.languageId, documents, isOfficial: editState.isOfficial };
 	}, [editState]);
@@ -349,36 +378,7 @@ export default function OrderItemEditPage() {
 							<ErrorComponent executeFunction={() => languages.fetchData()} callAble errorText="دریافت لیست زبان‌ها با خطا مواجه شد" />
 						) : null}
 
-						{/* نوع ترجمه */}
-						<div className="flex flex-col gap-2 pt-2 border-t border-neutral-100">
-							<div className="text-sm font-semibold text-primary">نوع ترجمه</div>
-							<div className="flex flex-wrap gap-3">
-								{[
-									{ value: true, label: "ترجمه رسمی", desc: "شامل سنام و مهر مترجم" },
-									{ value: false, label: "ترجمه غیررسمی", desc: "بدون سنام و مهر مترجم" },
-								].map((opt) => {
-									const selected = editState.isOfficial === opt.value;
-									return (
-										<button
-											key={String(opt.value)}
-											type="button"
-											onClick={() => setEditState((prev) => prev ? { ...prev, isOfficial: opt.value } : prev)}
-											className={`flex items-start gap-3 text-right rounded-xl border px-4 py-3 duration-150 flex-1 min-w-48 ${
-												selected ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
-											}`}
-										>
-											<span className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? "border-secondary bg-secondary" : "border-neutral-300"}`}>
-												{selected && <IconCheck className="stroke-white w-3 h-3" />}
-											</span>
-											<div className="flex flex-col gap-0.5">
-												<span className={`text-sm font-semibold ${selected ? "text-secondary" : "text-primary"}`}>{opt.label}</span>
-												<span className="text-xs text-neutral-500">{opt.desc}</span>
-											</div>
-										</button>
-									);
-								})}
-							</div>
-						</div>
+						{/* نوع ترجمه به‌صورت پیش‌فرض «رسمی» است و فعلاً از کاربر پرسیده نمی‌شود (مخفی) */}
 					</div>
 				)}
 
@@ -495,14 +495,21 @@ export default function OrderItemEditPage() {
 															setEditState((prev) => {
 																if (!prev) return prev;
 																const current = prev.justiceCertification[key];
-																// تا وقتی مهر امور خارجه فعال است، مهر دادگستری اجباری و غیرقابل‌حذف است
-																if (current && prev.mfaCertification[key]) return prev;
-																return { ...prev, justiceCertification: { ...prev.justiceCertification, [key]: current ? null : rateId } };
+																if (current) {
+																	// حذف دادگستری: امور خارجه هم برداشته می‌شود و استعلام/سفارتِ این مدرک پاک می‌گردد
+																	return {
+																		...prev,
+																		justiceCertification: { ...prev.justiceCertification, [key]: null },
+																		mfaCertification: { ...prev.mfaCertification, [key]: null },
+																		justiceInquiries: { ...prev.justiceInquiries, [key]: [] },
+																		selfInquiry: { ...prev.selfInquiry, [key]: false },
+																		embassies: { ...prev.embassies, [key]: [] },
+																	};
+																}
+																return { ...prev, justiceCertification: { ...prev.justiceCertification, [key]: rateId } };
 															});
 														}}
-														className={`flex items-center gap-3 p-4 border rounded-lg duration-200 ${
-															editState.mfaCertification[key] ? "cursor-not-allowed" : "cursor-pointer"
-														} ${
+														className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
 															editState.justiceCertification[key] ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"
 														}`}
 													>
@@ -514,11 +521,6 @@ export default function OrderItemEditPage() {
 														/>
 														<div className="flex items-center gap-2">
 															<span className={`peyda font-semibold ${editState.justiceCertification[key] ? "text-white" : ""}`}>مهر دادگستری</span>
-															{editState.mfaCertification[key] && (
-																<span className={`text-[10px] leading-none whitespace-nowrap rounded-md px-1.5 py-1 ${editState.justiceCertification[key] ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-500"}`}>
-																	الزامی
-																</span>
-															)}
 														</div>
 													</div>
 												</motion.div>
@@ -530,7 +532,8 @@ export default function OrderItemEditPage() {
 																if (!prev) return prev;
 																const current = prev.mfaCertification[key];
 																if (current) {
-																	return { ...prev, mfaCertification: { ...prev.mfaCertification, [key]: null } };
+																	// حذف امور خارجه: تایید سفارتِ این مدرک هم پاک می‌شود
+																	return { ...prev, mfaCertification: { ...prev.mfaCertification, [key]: null }, embassies: { ...prev.embassies, [key]: [] } };
 																}
 																// انتخاب مهر امور خارجه، مهر دادگستری را هم اجباراً فعال می‌کند
 																return {
@@ -574,25 +577,31 @@ export default function OrderItemEditPage() {
 								<TabanLoading size={24} />
 							</div>
 						) : justiceInquiryRates.result?.success && (justiceInquiryRates.result.data?.data?.length ?? 0) > 0 ? (
-							<div className="flex flex-col gap-6">
-								{documentKeys.map((key) => {
-									const inqAllowed = !!editState.justiceCertification[key];
-									const selfInq = !!editState.selfInquiry[key];
-									return (
-										<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-											<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-												<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-												استعلام برای {editState.translationItemNames[key]}
-											</div>
-											<div className="relative">
-												<div className={`flex flex-wrap gap-4 ${inqAllowed && !selfInq ? "" : "opacity-40 pointer-events-none select-none"}`}>
+							documentKeys.filter((key) => !!editState.justiceCertification[key]).length === 0 ? (
+								<div className="flex items-center gap-2.5 bg-secondary/5 border border-secondary/30 rounded-2xl px-4 py-4">
+									<IconJustice width={26} height={26} viewBox="0 0 48 48" className="fill-secondary stroke-0 shrink-0" />
+									<span className="text-sm leading-7 text-primary peyda font-semibold">
+										استعلام تنها برای مدارکی قابل انتخاب است که «مهر دادگستری» دارند. در صورت نیاز، در مرحله‌ی تاییدات مهر دادگستری را فعال کنید.
+									</span>
+								</div>
+							) : (
+								<div className="flex flex-col gap-6">
+									{documentKeys.filter((key) => !!editState.justiceCertification[key]).map((key) => {
+										const selfInq = !!editState.selfInquiry[key];
+										return (
+											<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
+												<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
+													<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+													استعلام برای {editState.translationItemNames[key]}
+												</div>
+												<div className={`flex flex-wrap gap-4 ${selfInq ? "opacity-40 pointer-events-none select-none" : ""}`}>
 													{justiceInquiryRates.result?.data?.data?.map((inquiry, index) => {
-														const isSelected = inqAllowed && !selfInq && (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
+														const isSelected = !selfInq && (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
 														return (
 															<motion.div key={inquiry.justiceInquiryRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
 																<div
 																	onClick={() => {
-																		if (!inqAllowed || selfInq) return;
+																		if (selfInq) return;
 																		setEditState((prev) => {
 																			if (!prev) return prev;
 																			const current = prev.justiceInquiries[key] ?? [];
@@ -611,17 +620,7 @@ export default function OrderItemEditPage() {
 														);
 													})}
 												</div>
-												{!inqAllowed && (
-													<div className="absolute inset-0 flex items-center justify-center p-2">
-														<div className="flex items-center gap-2.5 bg-white/90 backdrop-blur-[2px] border border-secondary/40 shadow-sm rounded-2xl px-4 py-3 max-w-sm">
-															<IconJustice width={26} height={26} viewBox="0 0 48 48" className="fill-secondary stroke-0 shrink-0" />
-															<span className="text-xs leading-6 text-primary peyda font-semibold">برای انتخاب استعلام‌های این مدرک، ابتدا «مهر دادگستری» را در مرحله‌ی تاییدات فعال کنید</span>
-														</div>
-													</div>
-												)}
-											</div>
 
-											{inqAllowed && (
 												<div className="mt-4">
 													<button
 														type="button"
@@ -657,11 +656,11 @@ export default function OrderItemEditPage() {
 														</div>
 													)}
 												</div>
-											)}
-										</div>
-									);
-								})}
-							</div>
+											</div>
+										);
+									})}
+								</div>
+							)
 						) : (
 							<div className="text-sm text-neutral-400 py-4 text-center">استعلامی برای این ترکیب تعریف نشده است</div>
 						)}
@@ -677,56 +676,71 @@ export default function OrderItemEditPage() {
 								</div>
 							) : embassyRates.result?.success && (embassyRates.result.data?.data?.length ?? 0) > 0 ? (
 								<div className="flex flex-col gap-6">
-									{documentKeys.map((key) => (
-										<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-											<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-												<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-												تایید سفارت برای {editState.translationItemNames[key]}
-											</div>
-											{!(editState.justiceCertification[key] && editState.mfaCertification[key]) && (
-												<div className="flex items-center gap-2.5 mb-3 bg-secondary/5 border border-secondary/30 rounded-xl px-3 py-2.5">
-													<IconEmbassy viewBox="0 0 50 64" width={22} height={22} className="stroke-secondary stroke-2 shrink-0" />
-													<span className="text-xs leading-6 text-primary peyda font-semibold">
-														برای انتخاب تایید سفارت این مدرک، ابتدا «مهر دادگستری» و «مهر وزارت امور خارجه» را در مرحله‌ی تاییدات فعال کنید
-													</span>
+									{documentKeys.map((key) => {
+										const allowed = !!editState.justiceCertification[key] && !!editState.mfaCertification[key];
+										const want = !!wantEmbassyByDoc[key];
+										return (
+											<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
+												<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
+													<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
+													تایید سفارت برای {editState.translationItemNames[key]}
 												</div>
-											)}
-											<div
-												className={`flex flex-wrap gap-4 ${
-													editState.justiceCertification[key] && editState.mfaCertification[key]
-														? ""
-														: "opacity-40 pointer-events-none select-none"
-												}`}
-											>
-												{embassyRates.result?.data?.data?.map((embassy, index) => {
-													const isSelected = !!editState.justiceCertification[key] && !!editState.mfaCertification[key] && (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
-													return (
-														<motion.div key={embassy.embassyRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
-															<div
-																onClick={() => {
-																	setEditState((prev) => {
-																		if (!prev) return prev;
-																		const current = prev.embassies[key] ?? [];
-																		const updated = isSelected
-																			? current.filter((id) => id !== embassy.embassyRateId)
-																			: [...current, embassy.embassyRateId];
-																		return { ...prev, embassies: { ...prev.embassies, [key]: updated } };
-																	});
-																}}
-																className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
-																	isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"
-																}`}
-															>
-																
-																<IconEmbassy viewBox="0 0 50 64"  width={32} height={32} className={`shrink-0 ${isSelected ? "stroke-white stroke-2" : "stroke-primary stroke-2"}`} />
-																<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{embassy.embassyName}</span>
+												{!allowed ? (
+													<div className="flex items-center gap-2.5 bg-secondary/5 border border-secondary/30 rounded-xl px-3 py-2.5">
+														<IconEmbassy viewBox="0 0 50 64" width={22} height={22} className="stroke-secondary stroke-2 shrink-0" />
+														<span className="text-xs leading-6 text-primary peyda font-semibold">
+															برای تایید سفارت این مدرک، ابتدا «مهر دادگستری» و «مهر وزارت امور خارجه» را در مرحله‌ی تاییدات فعال کنید
+														</span>
+													</div>
+												) : (
+													<div className="flex flex-col gap-4">
+														{/* تیکِ تمایل: تا انتخاب نشود، سفارت‌ها نمایش داده نمی‌شوند */}
+														<button
+															type="button"
+															onClick={() => toggleWantEmbassy(key)}
+															className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
+																want ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+															}`}
+														>
+															<span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${want ? "bg-secondary border-secondary" : "border-neutral-300"}`}>
+																{want && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+															</span>
+															<span className="text-sm font-medium text-primary">می‌خواهم این مدرک به تایید سفارت برسد</span>
+														</button>
+														{want && (
+															<div className="flex flex-wrap gap-4">
+																{embassyRates.result?.data?.data?.map((embassy, index) => {
+																	const isSelected = (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
+																	return (
+																		<motion.div key={embassy.embassyRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+																			<div
+																				onClick={() => {
+																					setEditState((prev) => {
+																						if (!prev) return prev;
+																						const current = prev.embassies[key] ?? [];
+																						const updated = isSelected
+																							? current.filter((id) => id !== embassy.embassyRateId)
+																							: [...current, embassy.embassyRateId];
+																						return { ...prev, embassies: { ...prev.embassies, [key]: updated } };
+																					});
+																				}}
+																				className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
+																					isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"
+																				}`}
+																			>
+																				<IconEmbassy viewBox="0 0 50 64"  width={32} height={32} className={`shrink-0 ${isSelected ? "stroke-white stroke-2" : "stroke-primary stroke-2"}`} />
+																				<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{embassy.embassyName}</span>
+																			</div>
+																		</motion.div>
+																	);
+																})}
 															</div>
-														</motion.div>
-													);
-												})}
+														)}
+													</div>
+												)}
 											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							) : (
 								<div className="text-sm text-neutral-400 py-4 text-center">تایید سفارتی برای این ترکیب تعریف نشده است</div>
@@ -764,6 +778,11 @@ export default function OrderItemEditPage() {
 											onChange={(urls) => setEditState((prev) => (prev ? { ...prev, assetsByDoc: { ...prev.assetsByDoc, [key]: urls } } : prev))}
 											folder={assetFolderName(uploadScope, editState.translationItemNames[key] ?? "")}
 											hint="فایل‌های این مدرک را اینجا رها کنید یا انتخاب نمایید"
+										/>
+										<DocumentDescriptionField
+											docTitle={editState.translationItemNames[key] ?? "مدرک"}
+											value={editState.descriptionByDoc[key] ?? ""}
+											onChange={(desc) => setEditState((prev) => (prev ? { ...prev, descriptionByDoc: { ...prev.descriptionByDoc, [key]: desc } } : prev))}
 										/>
 									</div>
 								))}
@@ -806,7 +825,7 @@ export default function OrderItemEditPage() {
 							<div className="flex items-start gap-2 text-xs text-neutral-500 bg-neutral-100/60 border border-neutral-200 rounded-xl p-3.5">
 								<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
 								<span className="leading-6">
-									در نسخه‌های اضافه، هزینه‌ی ترجمه تغییری نمی‌کند؛ فقط هزینه‌ی تاییدات، استعلام‌ها و تایید سفارت به ازای هر نسخه دریافت می‌شود.
+									برای نسخه‌های اضافه، هزینه‌ انجام ترجمه دریافت نمی‌گردد؛ ولی سایر هزینه‌ها مانند: خدمات، تاییدات و ... به ازای هر نسخه دریافت می‌گردد.
 								</span>
 							</div>
 						</div>

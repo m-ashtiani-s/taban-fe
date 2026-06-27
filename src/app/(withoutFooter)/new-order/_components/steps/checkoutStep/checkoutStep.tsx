@@ -79,6 +79,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 					scanRateId: order?.scanRateIdByDoc?.[key] ?? null,
 					assets: order?.assetsByDoc?.[key] ?? [],
 					selfInquiry,
+					description: order?.descriptionByDoc?.[key]?.trim() || undefined,
 			};
 		});
 

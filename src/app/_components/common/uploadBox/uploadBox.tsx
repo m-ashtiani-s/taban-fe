@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import FileUploader from "@/app/_components/common/fileUploader/fileUploader";
-import { IconUpload } from "@/app/_components/icon/icons";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useApi } from "@/hooks/useApi";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
@@ -23,16 +21,25 @@ type UploadBoxProps = {
  * باکس آپلود کنترل‌شده و قابل‌استفاده‌ی مجدد برای مدارک و پاسپورت. منطق آپلود و
  * نمایش فایل‌ها یکسان است و state از بیرون (value/onChange) مدیریت می‌شود تا بتوان
  * برای هر مدرک یک باکس مجزا با پوشه‌ی جداگانه داشت.
+ *
+ * آپلود به‌صورت خودکار انجام می‌شود: کاربر کافی است فایل را انتخاب کند و خودِ
+ * باکس بلافاصله آن را بارگذاری می‌کند — دیگر دکمه‌ی جداگانه‌ی «آپلود» وجود ندارد.
  */
 export default function UploadBox({ value, onChange, folder, hint, emptyHint }: UploadBoxProps) {
 	const showNotification = useNotificationStore((state) => state.showNotification);
+	// فایل‌های در حال آپلود (پس از انتخاب، بلافاصله آپلود و سپس از این لیست خالی می‌شوند)
 	const [files, setFiles] = useState<File[]>([]);
 
 	const uploaded = value ?? [];
 	const hasUploaded = uploaded.length > 0;
-	const hasPendingFiles = files.length > 0;
 
 	const uploadApi = useApi(async (filesToUpload: File[]) => await TranslationEndpoints.uploadStorageFiles(filesToUpload, folder));
+
+	// با انتخاب فایل‌های جدید، بلافاصله آپلود را شروع کن (در حین آپلود انتخاب جدید قفل است)
+	const handleSelect = (selected: File[]) => {
+		setFiles(selected);
+		if (selected.length > 0) uploadApi.fetchData(selected);
+	};
 
 	useEffect(() => {
 		if (!uploadApi.result) return;
@@ -42,6 +49,7 @@ export default function UploadBox({ value, onChange, folder, hint, emptyHint }: 
 			setFiles([]);
 			showNotification({ type: "success", message: "آپلود با موفقیت انجام شد" });
 		} else {
+			setFiles([]);
 			showNotification({
 				type: "error",
 				message: uploadApi.result.description || "آپلود با خطا مواجه شد، لطفا مجددا تلاش کنید",
@@ -49,20 +57,15 @@ export default function UploadBox({ value, onChange, folder, hint, emptyHint }: 
 		}
 	}, [uploadApi.result]);
 
-	const triggerUpload = () => {
-		if (files.length === 0) return;
-		uploadApi.fetchData(files);
-	};
-
 	const removeUploaded = (url: string) => {
 		onChange((value ?? []).filter((u) => u !== url));
 	};
 
 	return (
-		<div className="w-full flex flex-col gap-4">
+		<div className="w-full flex flex-col gap-3">
 			<FileUploader
 				files={files}
-				onChange={setFiles}
+				onChange={handleSelect}
 				uploadedUrls={uploaded}
 				onRemoveUploaded={removeUploaded}
 				isLoading={uploadApi.loading}
@@ -72,25 +75,14 @@ export default function UploadBox({ value, onChange, folder, hint, emptyHint }: 
 				hint={hint}
 			/>
 
-			<div className="flex items-center justify-between gap-3 flex-wrap">
-				<div className="text-xs">
-					{hasPendingFiles ? (
-						<span className="text-warning">{files.length} فایل انتخاب شده — برای ادامه روی «آپلود» کلیک کنید</span>
-					) : hasUploaded ? (
-						<span className="text-success">{uploaded.length} فایل با موفقیت آپلود شده — می‌توانید ادامه دهید</span>
-					) : (
-						<span className="text-neutral-500">{emptyHint ?? "ابتدا فایل‌های خود را انتخاب کرده، سپس آپلود کنید"}</span>
-					)}
-				</div>
-
-				<TabanButton
-					onClick={triggerUpload}
-					isLoading={uploadApi.loading}
-					disabled={!hasPendingFiles}
-					icon={<IconUpload viewBox="0 0 32 32" className="stroke-0 fill-white" />}
-				>
-					آپلود
-				</TabanButton>
+			<div className="text-xs">
+				{uploadApi.loading ? (
+					<span className="text-warning">در حال آپلود فایل‌های انتخاب‌شده...</span>
+				) : hasUploaded ? (
+					<span className="text-success">{uploaded.length} فایل با موفقیت آپلود شده — می‌توانید ادامه دهید</span>
+				) : (
+					<span className="text-neutral-500">{emptyHint ?? "برای بارگذاری، فایل خود را انتخاب کنید؛ آپلود خودکار انجام می‌شود"}</span>
+				)}
 			</div>
 		</div>
 	);

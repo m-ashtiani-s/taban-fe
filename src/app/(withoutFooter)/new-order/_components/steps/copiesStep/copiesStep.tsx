@@ -69,7 +69,7 @@ export default function CopiesStep() {
 				<div className="flex items-start gap-2 text-xs text-neutral-500 bg-neutral-100/60 border border-neutral-200 rounded-xl p-3.5 mt-1">
 					<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
 					<span className="leading-6">
-						در نسخه‌های اضافه، هزینه‌ی ترجمه تغییری نمی‌کند؛ فقط هزینه‌ی تاییدات، استعلام‌ها و تایید سفارت به ازای هر نسخه دریافت می‌شود.
+						برای نسخه‌های اضافه، هزینه‌ انجام ترجمه دریافت نمی‌گردد؛ ولی سایر هزینه‌ها مانند: خدمات، تاییدات و ... به ازای هر نسخه دریافت می‌گردد.
 					</span>
 				</div>
 			</div>

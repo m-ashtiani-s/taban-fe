@@ -55,7 +55,7 @@ export default async function Home() {
 								</div>
 							</Reveal>
 							<Reveal y={16} delay={0.12}>
-								<div className="text-neutral-200 text-5xl font-semibold max-lg:!text-3xl">دارالترجمــــه آنلاین رســــــمی یــــاب</div>
+								<div className="text-neutral-200 text-5xl font-semibold max-lg:!text-2xl">دارالترجمــــه آنلاین رســــــمی‌یــــاب</div>
 							</Reveal>
 							<Reveal y={16} delay={0.24}>
 								<TabanButton

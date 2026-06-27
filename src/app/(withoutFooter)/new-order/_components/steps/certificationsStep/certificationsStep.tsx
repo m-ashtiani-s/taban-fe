@@ -41,18 +41,35 @@ export default function CertificationsStep({ rates }: CertificationsStepProps) {
 			const justiceOthers = justiceList.filter((it) => it?.translationItemId !== docKey);
 			const mfaOthers = mfaList.filter((it) => it?.translationItemId !== docKey);
 
+			// با حذف مهر دادگستری، استعلام‌ها و «خودم می‌گیرم» این مدرک هم باید پاک شوند
+			const inquiriesWithoutDoc = (prev?.justiceInquiriesItems ?? []).filter((it) => it?.translationItemId !== docKey);
+			const selfInquiryWithoutDoc = { ...(prev?.selfInquiryByDoc ?? {}) };
+			delete selfInquiryWithoutDoc[docKey];
+			// تایید سفارت وابسته به (دادگستری + امور خارجه) است؛ با حذف هرکدام باید پاک شود
+			const embassyWithoutDoc = (prev?.embassyItems ?? []).filter((it) => it?.translationItemId !== docKey);
+
 			if (type === "justice") {
-				// تا وقتی مهر وزارت امور خارجه فعال است، مهر دادگستری اجباری و غیرقابل‌حذف است
-				if (justiceSelected && mfaSelected) return prev;
+				if (justiceSelected) {
+					// حذف دادگستری: امور خارجه را هم برمی‌داریم و استعلام/سفارت این مدرک پاک می‌شود
+					return {
+						...prev,
+						justiceCertification: justiceOthers,
+						mfaCertification: mfaOthers,
+						justiceInquiriesItems: inquiriesWithoutDoc,
+						selfInquiryByDoc: selfInquiryWithoutDoc,
+						embassyItems: embassyWithoutDoc,
+					};
+				}
+				// انتخاب دادگستری
 				return {
 					...prev,
-					justiceCertification: justiceSelected ? justiceOthers : [...justiceOthers, justiceEntry],
+					justiceCertification: [...justiceOthers, justiceEntry],
 				};
 			}
 
-			// برداشتن مهر وزارت امور خارجه؛ مهر دادگستری دست‌نخورده می‌ماند
+			// برداشتن مهر وزارت امور خارجه؛ مهر دادگستری دست‌نخورده می‌ماند ولی تایید سفارت پاک می‌شود
 			if (mfaSelected) {
-				return { ...prev, mfaCertification: mfaOthers };
+				return { ...prev, mfaCertification: mfaOthers, embassyItems: embassyWithoutDoc };
 			}
 			// انتخاب مهر وزارت امور خارجه، مهر دادگستری را هم اجباراً فعال می‌کند
 			return {
@@ -78,10 +95,9 @@ export default function CertificationsStep({ rates }: CertificationsStepProps) {
 								title="مهر دادگستری"
 								description={
 									isSelected("mfa", docKey)
-										? "همراه مهر وزارت امور خارجه الزامی است و قابل حذف نیست"
+										? "پیش‌نیاز مهر وزارت امور خارجه است؛ با برداشتن آن، مهر امور خارجه نیز برداشته می‌شود"
 										: "تایید رسمی ترجمه توسط قوه قضاییه"
 								}
-								className={isSelected("mfa", docKey) ? "cursor-not-allowed" : ""}
 							/>
 							<SelectCard
 								selected={isSelected("mfa", docKey)}

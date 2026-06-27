@@ -18,6 +18,7 @@ export const createEmptyOrder = (): CreateOrder => ({
 	passports: [],
 	assets: [],
 	assetsByDoc: {},
+	descriptionByDoc: {},
 	uploadScope: generateUUID(),
 	isOfficial: true,
 });
