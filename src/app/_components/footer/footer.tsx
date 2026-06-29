@@ -14,16 +14,11 @@ export const Footer = () => {
 						<div className="flex flex-col gap-6 w-full items-center">
 							<img src="/images/logo2White.svg" alt="" className="w-24 max-lg:!w-16" />
 							<div className="flex flex-col w-full items-center gap-3">
-								<div className="peyda text-neutral-200 font-medium text-2xl">
-									درباره دارالترجمه رسمی‌یاب بخوانید
-								</div>
+								<div className="peyda text-neutral-200 font-medium text-2xl">درباره دارالترجمه رسمی‌یاب بخوانید</div>
 								<div className="w-full lg:!px-16 max-lg:!px-4 text-neutral-200 text-center leading-8">
-									لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک
-									است. چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف بهبود ابزارهای
-									کاربردی می‌باشد.لورم ایپسوم متن ساختگی با تولید سادگی نامفه وم از صنعت چاپ و با استفاده
-									از طراحان گرافیک است. چاپگرهایی و متونوم از صنعت چاپ و با استفاده از طراحان گرافیک است.
-									چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف بهبود ابزارهای
-									کاربردی می‌باشد.
+									لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است. چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف
+									بهبود ابزارهای کاربردی می‌باشد.لورم ایپسوم متن ساختگی با تولید سادگی نامفه وم از صنعت چاپ و با استفاده از طراحان گرافیک است. چاپگرهایی و متونوم از صنعت چاپ و با
+									استفاده از طراحان گرافیک است. چاپگرهایی و متون بلکه روزنامه و مجله در ستون و سطر آنچنان که با هدف بهبود ابزارهای کاربردی می‌باشد.
 								</div>
 							</div>
 						</div>
@@ -32,35 +27,26 @@ export const Footer = () => {
 								<Link href="/" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
 									خانه
 								</Link>
-								<Link
-									href="/rules"
-									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
-								>
+								<Link href="/rules" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
 									قوانین و مقررات رسمی‌یاب
 								</Link>
-								<Link
-									href="/new-order"
-									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
-								>
+								<Link href="/new-order" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
 									ثبت سفارش ترجمه
 								</Link>
-								<Link
-									href="/contact-us"
-									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
-								>
+								<Link href="/contact-us" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
 									تماس با ما
 								</Link>
-								<Link
-									href="/profile"
-									className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6"
-								>
+								<Link href="/profile" className="border-b border-b-secondary/0 hover:!border-b-secondary pb-1 px-6">
 									حساب کاربری
 								</Link>
 							</div>
 							<div className="flex items-center gap-4">
 								<div className="h-24 w-24 bg-white rounded-2xl p-2 flex items-center justify-center">
-									<img src="/images/footer/etemad.png" alt="" className="h-full" />
+									<a referrerPolicy="origin" className="h-full w-full" target="_blank" href="https://trustseal.enamad.ir/?id=749842&code=6Vpxo1WdF3PnHM1xu4PfyTJFmPhYZpuU">
+										<img referrerPolicy="origin"  className="h-full w-full" src="https://trustseal.enamad.ir/logo.aspx?id=749842&Code=6Vpxo1WdF3PnHM1xu4PfyTJFmPhYZpuU" alt="" style={{ cursor: "pointer" }} />
+									</a>
 								</div>
+
 								<div className="h-24 w-24 bg-white rounded-2xl p-2 flex items-center justify-center">
 									<img src="/images/footer/zarin.png" alt="" className="h-full" />
 								</div>
@@ -69,27 +55,16 @@ export const Footer = () => {
 					</div>
 					<div className="container border-t border-t-suppliment-full">
 						<div className=" bg-primary rounded-t-3xl py-4 flex items-center justify-between text-neutral-200 max-lg:!px-4 max-lg:!flex-col max-lg:!items-center max-lg:!gap-2">
-							<div className="w-full text-right text-sm max-lg:!text-center">
-								تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی رسمی‌یاب میباشد.
-							</div>
+							<div className="w-full text-right text-sm max-lg:!text-center">تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی رسمی‌یاب میباشد.</div>
 							<div className="w-full flex items-center gap-2 justify-end max-lg:!justify-center">
-								<Link
-									href="/"
-									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"
-								>
-									<IconInstagram viewBox="0 0 32 32" className="stroke-neutral-200 fill-neutral-200" strokeWidth={1} width={28} height={28}/>
+								<Link href="/" className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center">
+									<IconInstagram viewBox="0 0 32 32" className="stroke-neutral-200 fill-neutral-200" strokeWidth={1} width={28} height={28} />
 								</Link>
-								<Link
-									href="/"
-									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"
-								>
-									<IconTelegram viewBox="0 0 192 192" className="stroke-neutral-200" strokeWidth={18} width={28} height={28}/>
+								<Link href="/" className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center">
+									<IconTelegram viewBox="0 0 192 192" className="stroke-neutral-200" strokeWidth={18} width={28} height={28} />
 								</Link>
-								<Link
-									href="/"
-									className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center"
-								>
-									<IconWhatsapp className="fill-neutral-200" strokeWidth={0.8} width={24} height={24}/>
+								<Link href="/" className="bg-secondary h-10 w-10 rounded-tl-[8px] rounded-tr-[16px] rounded-br-[8px] rounded-bl-[16px] flex items-center justify-center">
+									<IconWhatsapp className="fill-neutral-200" strokeWidth={0.8} width={24} height={24} />
 								</Link>
 							</div>
 						</div>
