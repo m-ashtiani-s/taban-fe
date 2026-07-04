@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -201,15 +201,24 @@ export default function OrderItemEditPage() {
 		}
 	};
 
-	const fetchRates = (state: EditState) => {
-		const filters: RateFilters = { translationItemId: state.translationItemId, languageId: state.languageId };
+	// واکشیِ نرخ‌ها به‌محض مشخص‌شدن مدرک و زبان (و با هر تغییر زبان) تا نتیجه‌ی نرخ پایه
+	// پیش از رسیدن کاربر به مرحله‌ی نرخ پایه آماده باشد و بتوان در صورت نبودِ نرخ، آن مرحله را حذف کرد.
+	const lastRatesKey = useRef<string>("");
+	useEffect(() => {
+		if (!editState) return;
+		const { translationItemId, languageId } = editState;
+		if (!translationItemId || !languageId) return;
+		const key = `${translationItemId}-${languageId}`;
+		if (key === lastRatesKey.current) return;
+		lastRatesKey.current = key;
+		const filters: RateFilters = { translationItemId, languageId };
 		baseRate.fetchData(filters);
 		dynamicRates.fetchData(filters);
 		certificationRates.fetchData(filters);
 		justiceInquiryRates.fetchData(filters);
 		embassyRates.fetchData(filters);
-		scanRates.fetchData({ translationItemId: state.translationItemId });
-	};
+		scanRates.fetchData({ translationItemId });
+	}, [editState?.translationItemId, editState?.languageId]);
 
 	useEffect(() => {
 		if (!updateItem.result) return;
@@ -251,11 +260,27 @@ export default function OrderItemEditPage() {
 		if (step === 12 && calcPayload) calculation.fetchData(calcPayload);
 	}, [step]);
 
-	const goNext = () => {
-		if (step === 2 && editState) fetchRates(editState);
-		setStep((s) => Math.min(s + 1, TOTAL_STEPS));
-	};
-	const goPrev = () => setStep((s) => Math.max(s - 1, 1));
+	// مرحله‌ی نرخ پایه (مرحله ۳) فقط وقتی نمایش داده می‌شود که برای این ترکیب مدرک/زبان نرخ پایه‌ای
+	// تعریف شده باشد؛ در غیر این صورت مثل فلوی ثبت سفارش این مرحله از فلو حذف می‌شود.
+	// معیار نمایش دقیقاً مثل فلوی ثبت سفارش: وجودِ «تایتل» نرخ پایه (نه صرفِ وجود ردیف نرخ)
+	const hasBaseRate = !!(baseRate.result?.success && baseRate.result.data?.data?.[0]?.title);
+	const skipBaseStep = !baseRate.loading && !!baseRate.result && !hasBaseRate;
+
+	// اگر با وجود آماده‌شدنِ نرخ‌ها همچنان روی مرحله‌ی نرخ پایه بمانیم ولی نرخی نباشد، رد شو
+	useEffect(() => {
+		if (step === 3 && skipBaseStep) setStep(4);
+	}, [step, skipBaseStep]);
+
+	const goNext = () =>
+		setStep((s) => {
+			const next = Math.min(s + 1, TOTAL_STEPS);
+			return next === 3 && skipBaseStep ? 4 : next;
+		});
+	const goPrev = () =>
+		setStep((s) => {
+			const prev = Math.max(s - 1, 1);
+			return prev === 3 && skipBaseStep ? 2 : prev;
+		});
 
 	const submitUpdate = () => {
 		if (!calcPayload || !editState) return;
@@ -292,6 +317,19 @@ export default function OrderItemEditPage() {
 
 	const documentKeys = Object.keys(editState.translationItemNames);
 	const uploadDescription = (translationItem.result?.success ? translationItem.result.data?.data?.uploadDescription ?? "" : "").trim();
+	// پلیس‌هولدرِ نام مدرک که ادمین برای این مدرک تعریف کرده است
+	const namePlaceholder = (translationItem.result?.success ? translationItem.result.data?.data?.namePlaceholder ?? "" : "").trim() || undefined;
+
+	// اگر بیش از یک مدرک باشد، وارد کردن نام هر مدرک اجباری است (تک‌مدرک با مقدار پیش‌فرض قابل‌ویرایش است)
+	const namingValid = documentKeys.length <= 1 || documentKeys.every((key) => (editState.translationItemNames[key] ?? "").trim().length > 0);
+
+	// اگر برای مدرکی تیک «می‌خواهم به تایید سفارت برسد» فعال است، انتخابِ حداقل یک سفارت اجباری است
+	const embassyStepValid = documentKeys.every((key) => {
+		const allowed = !!editState.justiceCertification[key] && !!editState.mfaCertification[key];
+		if (allowed && wantEmbassyByDoc[key]) return (editState.embassies[key]?.length ?? 0) > 0;
+		return true;
+	});
+	const canProceed = (step !== 1 || namingValid) && (step !== 7 || embassyStepValid);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -321,15 +359,34 @@ export default function OrderItemEditPage() {
 				{step === 1 && (
 					<div className="flex flex-col gap-4">
 						<div className="peyda font-bold text-xl text-primary">اطلاعات مدارک</div>
-						<div className="flex flex-col gap-3">
-							{documentKeys.map((key) => (
-								<div key={key} className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg bg-neutral-50">
-									<div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-										<IconDocument className="fill-primary stroke-0 w-4 h-4" />
+						<div className="flex flex-col gap-5">
+							{documentKeys.map((key, index) => {
+								const nameValue = editState.translationItemNames[key] ?? "";
+								const nameError = documentKeys.length > 1 && !nameValue.trim();
+								return (
+									<div key={key} className="flex items-center gap-3">
+										<div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+											<IconDocument className="fill-primary stroke-0 w-4 h-4" />
+										</div>
+										<div className="flex-1">
+											<TabanInput
+												value={nameValue}
+												name={key}
+												placeholder={namePlaceholder}
+												label={`نام مدرک شماره ${index + 1}`}
+												setValue={(val: string) =>
+													setEditState((prev) =>
+														prev ? { ...prev, translationItemNames: { ...prev.translationItemNames, [key]: val ?? "" } } : prev
+													)
+												}
+												isHandleError
+												hasError={nameError}
+												errorText={nameError ? "وارد کردن نام مدرک الزامی است" : ""}
+											/>
+										</div>
 									</div>
-									<div className="flex-1 text-sm font-medium text-primary">{editState.translationItemNames[key]}</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 						<div className="text-sm bg-secondary/10 border border-secondary/20 text-primary p-3 rounded-lg flex items-center gap-2">
 							<IconTranslate stroke="#1a3047" strokeWidth={0} className="fill-primary w-4 h-4 shrink-0" />
@@ -422,7 +479,7 @@ export default function OrderItemEditPage() {
 
 				{step === 4 && (
 					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">خدمات اضافی</div>
+						<div className="peyda font-bold text-xl text-primary">موارد خاص ترجمه</div>
 						{dynamicRates.loading && !dynamicRates.result ? (
 							<div className="flex justify-center py-8">
 								<TabanLoading size={24} />
@@ -433,7 +490,7 @@ export default function OrderItemEditPage() {
 									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
 										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
 											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											خدمات اضافی برای {editState.translationItemNames[key]}
+											موارد خاص برای {editState.translationItemNames[key]}
 										</div>
 										<div className="flex flex-wrap gap-6">
 											{dynamicRates.result?.data?.data?.map((rate, index) => (
@@ -466,7 +523,7 @@ export default function OrderItemEditPage() {
 								))}
 							</div>
 						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">خدمات اضافی برای این ترکیب تعریف نشده است</div>
+							<div className="text-sm text-neutral-400 py-4 text-center">موارد خاصی برای این ترکیب تعریف نشده است</div>
 						)}
 					</div>
 				)}
@@ -670,6 +727,11 @@ export default function OrderItemEditPage() {
 				{step === 7 && (
 						<div className="flex flex-col gap-4">
 							<div className="peyda font-bold text-xl text-primary">تایید سفارت</div>
+							{!embassyStepValid && (
+								<span className="text-xs text-red-500">
+									برای مدارکی که تیک «تایید سفارت» را زده‌اید، انتخابِ حداقل یک سفارت الزامی است
+								</span>
+							)}
 							{embassyRates.loading && !embassyRates.result ? (
 								<div className="flex justify-center py-8">
 									<TabanLoading size={24} />
@@ -1006,7 +1068,7 @@ export default function OrderItemEditPage() {
 					)}
 				</div>
 				{step < TOTAL_STEPS ? (
-					<TabanButton onClick={goNext} icon={<IconArrowLine />}>
+					<TabanButton onClick={goNext} icon={<IconArrowLine />} disabled={!canProceed}>
 						مرحله بعدی
 					</TabanButton>
 				) : (

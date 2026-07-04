@@ -60,7 +60,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<html lang="fa" dir="rtl">
 			<head>
-				<script src="https://cdn.kavenegar.com/sdk/page.js?appId=9b1a1b2a-6850-4d29-9f7b-0397abd2e6fc" defer charSet="utf-8"></script>
 			</head>
 			<body className="content-center bg-white text-primary">
 				<script

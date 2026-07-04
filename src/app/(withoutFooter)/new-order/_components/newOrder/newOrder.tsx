@@ -34,7 +34,8 @@ import CheckoutStep from "../steps/checkoutStep/checkoutStep";
 function buildDefaultNames(title: string, count: number): Record<string, string> {
 	const names: Record<string, string> = {};
 	for (let i = 0; i < count; i++) {
-		names[generateUUID()] = `${title} شماره ${i + 1}`;
+		// تک‌مدرک با نام پیش‌فرض پر می‌شود؛ چندمدرک خالی می‌ماند تا کاربر خودش وارد کند (اجباری)
+		names[generateUUID()] = count === 1 ? `${title} شماره ${i + 1}` : "";
 	}
 	return names;
 }
@@ -52,11 +53,8 @@ export default function NewOrder() {
 	const [currentStep, setCurrentStep] = useState<StepKey>("selectItem");
 
 	const count = order?.translationItemCount ?? 1;
-	// مرحله‌ی نام‌گذاری فقط وقتی لازم است که بیش از یک نسخه باشد؛ تک‌مدرک خودکار نام‌گذاری می‌شود
-	const steps = useMemo(
-		() => (count > 1 ? rates.steps : rates.steps.filter((s) => s !== "naming")),
-		[rates.steps, count]
-	);
+	// مرحله‌ی نام‌گذاری همیشه نمایش داده می‌شود؛ تک‌مدرک با نام پیش‌فرض و قابل‌ویرایش، چندمدرک اجباری و بدون پیش‌فرض
+	const steps = rates.steps;
 	const itemId = order?.translationItem?.translationItemId;
 	const languageId = order?.language?.languageId;
 
@@ -134,8 +132,8 @@ export default function NewOrder() {
 				// زبان از هوم‌پیج آمده: هنگام آماده‌شدن نرخ‌ها، در صورت وجود نرخ از مرحله‌ی زبان عبور می‌کنیم
 				pendingLanguageSkip.current = true;
 			}
-			// تک‌مدرک نیازی به نام‌گذاری ندارد؛ مستقیم به انتخاب زبان می‌رویم
-			setCurrentStep(handoffCount > 1 ? "naming" : "language");
+			// مرحله‌ی نام‌گذاری همیشه نمایش داده می‌شود؛ کاربر می‌تواند نامِ پیش‌فرضِ تک‌مدرک را هم ویرایش کند
+			setCurrentStep("naming");
 		}
 		setInitializing(false);
 	}, [hasHandoff, initializing, handoffItemId, handoffLanguageId, handoffCount, handoffItems.result, handoffLanguages.result]);
@@ -174,7 +172,13 @@ export default function NewOrder() {
 		const next: Record<string, string> = {};
 		for (let i = 0; i < count; i++) {
 			const key = existingKeys[i] ?? generateUUID();
-			next[key] = existing[key] ?? `${title} شماره ${i + 1}`;
+			if (count === 1) {
+				next[key] = existing[key] ?? `${title} شماره ${i + 1}`;
+			} else {
+				// چندمدرک: نام پیش‌فرض نمایش داده نمی‌شود؛ فقط نام‌های واقعیِ واردشده حفظ می‌شوند.
+				// هنگام گذار از تک‌مدرک به چندمدرک، نامِ پیش‌فرضِ تک‌مدرک هم پاک می‌شود.
+				next[key] = existingKeys.length > 1 ? existing[key] ?? "" : "";
+			}
 		}
 		setOrder((prev) => ({ ...prev, translationItemNames: next }));
 	}, [count, order?.translationItem?.translationItemId]);
@@ -240,6 +244,9 @@ export default function NewOrder() {
 				return !!order?.language && rates.attempted && !rates.loading;
 			case "base":
 				return docKeys.every((k) => Number(order?.baseRateCount?.[k]) > 0);
+			case "embassy":
+				// اگر برای مدرکی تمایل به تایید سفارت ابراز شده (ورودی وجود دارد)، حداقل یک سفارت باید انتخاب شود
+				return (order?.embassyItems ?? []).every((it) => (it?.embassies?.length ?? 0) > 0);
 			case "upload":
 				return docKeys.length > 0 && docKeys.every((k) => (order?.assetsByDoc?.[k]?.length ?? 0) > 0);
 			case "passport":

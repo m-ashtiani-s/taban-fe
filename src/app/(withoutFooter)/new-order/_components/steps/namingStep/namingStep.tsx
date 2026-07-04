@@ -11,6 +11,8 @@ export default function NamingStep() {
 	const count = order?.translationItemCount ?? 1;
 	const names = order?.translationItemNames ?? {};
 	const keys = Object.keys(names);
+	// پلیس‌هولدرِ نام مدرک که ادمین برای این مدرک تعریف کرده است
+	const namePlaceholder = order?.translationItem?.namePlaceholder?.trim() || undefined;
 
 	const setNames = (updater: any) => {
 		setOrder((prev) => {
@@ -29,20 +31,22 @@ export default function NamingStep() {
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7 max-w-3xl mx-auto w-full">
 				{keys.map((key, index) => {
 					const value = names[key] ?? "";
-					const hasError = count > 1 && !value.trim();
+					const hasError = !value.trim();
 					return (
 						<motion.div
 							key={key}
 							initial={{ opacity: 0, y: 12 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.05 }}
+							className="flex flex-col gap-1"
 						>
+							<div className="">{`نام مدرک شماره ${index + 1}`}</div>
 							<TabanInput
 								value={value}
 								name={key}
 								setValue={setNames}
 								groupMode
-								label={`نام مدرک شماره ${index + 1}`}
+								placeholder={namePlaceholder}
 								leadingIcon={<IconDocument width={20} height={20} className="fill-secondary stroke-0" />}
 								isHandleError
 								hasError={hasError}

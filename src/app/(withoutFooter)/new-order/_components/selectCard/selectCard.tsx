@@ -49,7 +49,7 @@ export default function SelectCard({
 				)}
 				<div className="flex flex-col min-w-0">
 					<div className={`peyda font-semibold truncate ${selected ? "text-primary" : "text-neutral-600"}`}>{title}</div>
-					{description && <div className="text-xs text-neutral-400 mt-0.5 line-clamp-2">{description}</div>}
+					{description && <div className="text-xs text-neutral-400 mt-0.5">{description}</div>}
 				</div>
 			</div>
 

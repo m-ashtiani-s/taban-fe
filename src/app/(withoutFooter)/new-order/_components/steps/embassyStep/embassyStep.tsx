@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { IconCheck, IconEmbassy } from "@/app/_components/icon/icons";
 import { EmbassyRate } from "@/types/embassyRate.type";
 import { EmbassySelection } from "@/types/createOrder.type";
@@ -30,26 +29,20 @@ export default function EmbassyStep({ rates }: EmbassyStepProps) {
 		!!order?.mfaCertification?.find((it) => it?.translationItemId === docKey)?.mfaCertification;
 	const embassyAllowed = (docKey: string): boolean => hasJusticeCert(docKey) && hasMfaCert(docKey);
 
-	// آیا کاربر می‌خواهد این مدرک به تایید سفارت برسد؟ پیش‌فرض: خیر (سفارت‌ها از ابتدا نمایش داده نمی‌شوند)
-	// مدارکی که از قبل سفارت انتخاب‌شده دارند، باز هم باز نمایش داده می‌شوند.
-	const [wantEmbassyByDoc, setWantEmbassyByDoc] = useState<Record<string, boolean>>(() => {
-		const initial: Record<string, boolean> = {};
-		(order?.embassyItems ?? []).forEach((it) => {
-			if (it?.translationItemId && (it.embassies?.length ?? 0) > 0) initial[it.translationItemId] = true;
-		});
-		return initial;
-	});
+	// آیا کاربر می‌خواهد این مدرک به تایید سفارت برسد؟ این تمایل با وجودِ یک ورودی در embassyItems نگهداری
+	// می‌شود (حتی بدون انتخابِ سفارت) تا بتوان در مرحله‌ی بعد، انتخابِ حداقل یک سفارت را اجباری کرد.
+	const wantEmbassy = (docKey: string): boolean => !!order?.embassyItems?.some((it) => it?.translationItemId === docKey);
 
-	const toggleWantEmbassy = (docKey: string) => {
-		const next = !wantEmbassyByDoc[docKey];
-		setWantEmbassyByDoc((prev) => ({ ...prev, [docKey]: next }));
-		// با غیرفعال‌کردنِ تمایل به تایید سفارت، انتخاب‌های سفارتِ این مدرک پاک می‌شوند
-		if (!next) {
-			setOrder((o) => ({
-				...o,
-				embassyItems: (o?.embassyItems ?? []).filter((it) => it?.translationItemId !== docKey),
-			}));
-		}
+	const toggleWantEmbassy = (docKey: string, docTitle: string) => {
+		setOrder((o) => {
+			const others = (o?.embassyItems ?? []).filter((it) => it?.translationItemId !== docKey);
+			// برداشتن تمایل: انتخاب‌های سفارتِ این مدرک هم پاک می‌شوند
+			if ((o?.embassyItems ?? []).some((it) => it?.translationItemId === docKey)) {
+				return { ...o, embassyItems: others };
+			}
+			// ابراز تمایل: یک ورودیِ خالی ایجاد می‌شود تا انتخابِ حداقل یک سفارت الزامی شود
+			return { ...o, embassyItems: [...others, { translationItemId: docKey, translationItemTitle: docTitle, embassies: [] }] };
+		});
 	};
 
 	const isSelected = (rateId: string, docKey: string): boolean => {
@@ -82,7 +75,8 @@ export default function EmbassyStep({ rates }: EmbassyStepProps) {
 			<div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
 				{keys.map((docKey, index) => {
 					const allowed = embassyAllowed(docKey);
-					const want = !!wantEmbassyByDoc[docKey];
+					const want = wantEmbassy(docKey);
+					const hasSelection = (order?.embassyItems?.find((it) => it?.translationItemId === docKey)?.embassies?.length ?? 0) > 0;
 					return (
 						<DocumentSection key={docKey} index={index} title={names[docKey] ?? "مدرک"}>
 							{!allowed ? (
@@ -97,7 +91,7 @@ export default function EmbassyStep({ rates }: EmbassyStepProps) {
 									{/* تیکِ تمایل: تا انتخاب نشود، سفارت‌ها نمایش داده نمی‌شوند */}
 									<button
 										type="button"
-										onClick={() => toggleWantEmbassy(docKey)}
+										onClick={() => toggleWantEmbassy(docKey, names[docKey] ?? "-")}
 										className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
 											want ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
 										}`}
@@ -113,16 +107,21 @@ export default function EmbassyStep({ rates }: EmbassyStepProps) {
 									</button>
 
 									{want && (
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-											{embassyRates.map((rate) => (
-												<SelectCard
-													key={rate.embassyRateId}
-													selected={isSelected(rate.embassyRateId, docKey)}
-													onClick={() => toggle(rate, docKey, names[docKey] ?? "-")}
-													icon={<IconEmbassy viewBox="0 0 50 64" width={32} height={32} className="stroke-current stroke-2" />}
-													title={rate.embassyName}
-												/>
-											))}
+										<div className="flex flex-col gap-2">
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+												{embassyRates.map((rate) => (
+													<SelectCard
+														key={rate.embassyRateId}
+														selected={isSelected(rate.embassyRateId, docKey)}
+														onClick={() => toggle(rate, docKey, names[docKey] ?? "-")}
+														icon={<IconEmbassy viewBox="0 0 50 64" width={32} height={32} className="stroke-current stroke-2" />}
+														title={rate.embassyName}
+													/>
+												))}
+											</div>
+											{!hasSelection && (
+												<span className="text-xs text-red-500">برای ادامه، حداقل یک سفارت را انتخاب کنید</span>
+											)}
 										</div>
 									)}
 								</div>
