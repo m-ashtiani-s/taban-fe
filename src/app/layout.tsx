@@ -30,9 +30,14 @@ export const metadata: Metadata = {
 		title: SITE_TITLE,
 		description: SITE_DESCRIPTION,
 	},
+	// نوایندکسِ سراسری: هیچ صفحه‌ای نباید ایندکس یا دنبال شود
 	robots: {
-		index: true,
-		follow: true,
+		index: false,
+		follow: false,
+		googleBot: {
+			index: false,
+			follow: false,
+		},
 	},
 };
 
