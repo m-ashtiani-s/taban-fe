@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: false,
+	// بیس استوریج مینیو: تصاویر با بیس داخلی ذخیره می‌شوند و در فرانت با بیس عمومی نمایش داده می‌شوند
+	env: {
+		MINIO_SOURCE_URL: process.env.NEXT_PUBLIC_MINIO_ENDPOINT || "http://localhost:9000",
+		MINIO_PUBLIC_URL: "https://media.rasmiyab.com",
+	},
 	images: {
 		remotePatterns: [
 			{

@@ -3,6 +3,7 @@ import { StorageKey } from "@/types/StorageKey";
 import { storage } from "@/types/Storage";
 import { Response } from "./utils/Response";
 import { API_URL } from "@/config/global";
+import { rewriteImageUrlsToPublic } from "@/utils/imageUrl";
 
 const axiosClient = axios.create({
 	baseURL: API_URL,
@@ -17,6 +18,7 @@ axiosClient.interceptors.request.use((config: any) => {
 
 axiosClient.interceptors.response.use(
 	(response) => {
+		if (response?.data) response.data = rewriteImageUrlsToPublic(response.data);
 		return response;
 	},
 	(error) => {
