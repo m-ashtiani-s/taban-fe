@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconDocument } from "@/app/_components/icon/icons";
+import { IconCheck, IconDocument, IconTick } from "@/app/_components/icon/icons";
 import { toCurrency } from "@/utils/string";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
 import StepHeader from "../../stepHeader/stepHeader";
@@ -63,7 +63,7 @@ export default function ScanStep({ rates }: ScanStepProps) {
 											isSelected ? "bg-secondary border-secondary" : "border-neutral-300"
 										}`}
 									>
-										{isSelected && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+										{isSelected && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 									</span>
 									<div className="flex flex-1 items-center justify-between">
 										<span className="text-sm font-medium text-primary">

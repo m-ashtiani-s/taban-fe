@@ -17,7 +17,7 @@ import { toCurrency } from "@/utils/string";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanTextarea from "@/app/_components/common/tabanTextarea/tabanTextarea";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
-import { IconCart, IconCheck, IconDocument, IconRequired, IconTruck } from "@/app/_components/icon/icons";
+import { IconCart, IconCheck, IconDocument, IconRequired, IconTick, IconTruck } from "@/app/_components/icon/icons";
 
 const PAGE_SIZE = 10;
 
@@ -220,7 +220,7 @@ export default function CheckoutPage() {
 														}`}
 													>
 														{active && (
-															<IconCheck className="stroke-white w-3 h-3" />
+															<IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />
 														)}
 													</div>
 												</div>

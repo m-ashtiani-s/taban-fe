@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconEmbassy } from "@/app/_components/icon/icons";
+import { IconCheck, IconEmbassy, IconTick } from "@/app/_components/icon/icons";
 import { EmbassyRate } from "@/types/embassyRate.type";
 import { EmbassySelection } from "@/types/createOrder.type";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
@@ -101,7 +101,7 @@ export default function EmbassyStep({ rates }: EmbassyStepProps) {
 												want ? "bg-secondary border-secondary" : "border-neutral-300"
 											}`}
 										>
-											{want && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+											{want && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 										</span>
 										<span className="text-sm font-medium text-primary">می‌خواهم این مدرک به تایید سفارت برسد</span>
 									</button>

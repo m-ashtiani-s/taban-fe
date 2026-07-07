@@ -33,6 +33,7 @@ import {
 	IconJustice,
 	IconMfa,
 	IconRequired,
+	IconTick,
 	IconTranslate,
 } from "@/app/_components/icon/icons";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
@@ -839,7 +840,7 @@ export default function CartEditPage() {
 																selfInq ? "bg-secondary border-secondary" : "border-neutral-300"
 															}`}
 														>
-															{selfInq && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+															{selfInq && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 														</span>
 														<span className="text-sm font-medium text-primary">استعلام‌های این مدرک را خودم تهیه می‌کنم</span>
 													</button>
@@ -905,7 +906,7 @@ export default function CartEditPage() {
 															}`}
 														>
 															<span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${want ? "bg-secondary border-secondary" : "border-neutral-300"}`}>
-																{want && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+																{want && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 															</span>
 															<span className="text-sm font-medium text-primary">می‌خواهم این مدرک به تایید سفارت برسد</span>
 														</button>
@@ -1080,7 +1081,7 @@ export default function CartEditPage() {
 													isSelected ? "bg-secondary border-secondary" : "border-neutral-300"
 												}`}
 											>
-												{isSelected && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+												{isSelected && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 											</span>
 											<div className="flex flex-1 items-center justify-between">
 												<span className="text-sm font-medium text-primary">اسکن این مدرک</span>

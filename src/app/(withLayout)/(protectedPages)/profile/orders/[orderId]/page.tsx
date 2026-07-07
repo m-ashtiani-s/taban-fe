@@ -27,6 +27,7 @@ import {
 	IconInfo,
 	IconMoney,
 	IconOrder,
+	IconTick,
 	IconTranslate,
 	IconTruck,
 	IconUpload,
@@ -357,7 +358,7 @@ function StatusFlow({ order }: { order: Order }) {
 												: "bg-neutral-100 text-neutral-400"
 									}`}
 								>
-									{done ? <IconCheck className="stroke-white w-4 h-4" /> : i + 1}
+									{done ? <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} /> : i + 1}
 								</div>
 								{!isLast && (
 									<div

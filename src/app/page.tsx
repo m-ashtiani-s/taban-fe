@@ -14,7 +14,7 @@ import Reveal from "./_components/common/reveal/reveal";
 import { steps } from "./_homeAssets/_constants/steps";
 import { services } from "./_homeAssets/_constants/services";
 import { Metadata } from "next";
-import BlogPreview from "./_homeAssets/_components/blogPreview/blogPreview";
+import BlogPreview from "./_homeAssets/_components/BlogPreview/blogPreview";
 
 export const metadata: Metadata = {
 	// عنوان خالی می‌ماند تا از default لِی‌اوت استفاده شود (بدون تکرار برند با template)
@@ -55,7 +55,9 @@ export default async function Home() {
 								</div>
 							</Reveal>
 							<Reveal y={16} delay={0.12}>
-								<div className="text-neutral-200 text-5xl font-semibold max-lg:!text-2xl">دارالترجمــــه آنلاین رســــــمی‌یــــاب</div>
+								<div className="text-neutral-200 text-5xl font-semibold max-lg:!text-2xl">
+									دارالترجمــــه آنلاین رســــــمی‌یــــاب
+								</div>
 							</Reveal>
 							<Reveal y={16} delay={0.24}>
 								<TabanButton
@@ -248,42 +250,46 @@ export default async function Home() {
 				</section>
 				<div className="h-24"></div>
 				<section className="bg-white border-y border-neutral-100 py-16">
-									<div className="container max-lg:!px-4">
-										<Reveal className="flex flex-col items-center text-center gap-3 mb-12">
-											<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">
-												ثبت سفارش تنها در <span className="text-secondary">۴ گام</span>
-											</h2>
-											<p className="text-neutral-500 text-sm">از انتخاب مدرک تا تحویل، همه‌چیز ساده و آنلاین</p>
-										</Reveal>
-				
-										<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-											{steps.map((step, i) => (
-												<Reveal key={step.title} delay={i * 0.1} className="relative flex flex-col items-center text-center gap-3">
-													{i < steps.length - 1 && (
-														<div className="hidden lg:block absolute top-7 left-[-50%] w-full h-px border-t-2 border-dashed border-neutral-200" />
-													)}
-													<div className="relative z-[2] w-14 h-14 rounded-full bg-gradient-to-bl from-primary to-primary/80 text-white flex items-center justify-center text-xl font-bold peyda shadow-lg">
-														{i + 1}
-													</div>
-													<div className="font-semibold peyda text-neutral-800">{step.title}</div>
-													<div className="text-sm text-neutral-500 leading-7 max-w-[200px]">{step.desc}</div>
-												</Reveal>
-											))}
-										</div>
-				
-										<div className="flex justify-center mt-12">
-											<TabanButton
-												variant="contained"
-												isLink
-												href="/new-order"
-												className="font-semibold !border-none rounded-xl flex items-center gap-2 !bg-secondary"
-											>
-												<IconTranslate stroke="black" strokeWidth={0} className="fill-white" />
-												همین حالا سفارش بده
-											</TabanButton>
-										</div>
+					<div className="container max-lg:!px-4">
+						<Reveal className="flex flex-col items-center text-center gap-3 mb-12">
+							<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">
+								ثبت سفارش تنها در <span className="text-secondary">۴ گام</span>
+							</h2>
+							<p className="text-neutral-500 text-sm">از انتخاب مدرک تا تحویل، همه‌چیز ساده و آنلاین</p>
+						</Reveal>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+							{steps.map((step, i) => (
+								<Reveal
+									key={step.title}
+									delay={i * 0.1}
+									className="relative flex flex-col items-center text-center gap-3"
+								>
+									{i < steps.length - 1 && (
+										<div className="hidden lg:block absolute top-7 left-[-50%] w-full h-px border-t-2 border-dashed border-neutral-200" />
+									)}
+									<div className="relative z-[2] w-14 h-14 rounded-full bg-gradient-to-bl from-primary to-primary/80 text-white flex items-center justify-center text-xl font-bold peyda shadow-lg">
+										{i + 1}
 									</div>
-								</section>
+									<div className="font-semibold peyda text-neutral-800">{step.title}</div>
+									<div className="text-sm text-neutral-500 leading-7 max-w-[200px]">{step.desc}</div>
+								</Reveal>
+							))}
+						</div>
+
+						<div className="flex justify-center mt-12">
+							<TabanButton
+								variant="contained"
+								isLink
+								href="/new-order"
+								className="font-semibold !border-none rounded-xl flex items-center gap-2 !bg-secondary"
+							>
+								<IconTranslate stroke="black" strokeWidth={0} className="fill-white" />
+								همین حالا سفارش بده
+							</TabanButton>
+						</div>
+					</div>
+				</section>
 				<div className="h-24"></div>
 				<section>
 					<div className="bg-[url('/images/home/countrybg.webp')] !bg-cover !bg-center py-10 w-full relative bg-fixed">
@@ -367,9 +373,7 @@ export default async function Home() {
 							چرا رسمی‌یاب؟
 							<span className="h-px w-8 bg-secondary" />
 						</div>
-						<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">
-							یک تجربه‌ی متفاوت از ترجمه رسمی
-						</h2>
+						<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">یک تجربه‌ی متفاوت از ترجمه رسمی</h2>
 					</Reveal>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

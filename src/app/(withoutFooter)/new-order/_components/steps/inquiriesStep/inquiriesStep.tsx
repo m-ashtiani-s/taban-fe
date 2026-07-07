@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconInfo, IconInquiry, IconJustice } from "@/app/_components/icon/icons";
+import { IconCheck, IconInfo, IconInquiry, IconJustice, IconTick } from "@/app/_components/icon/icons";
 import { JusticeInquiryRate } from "@/types/justiceInquiry.type";
 import { JusticeInquirySelection } from "@/types/createOrder.type";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
@@ -116,7 +116,7 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 												selfInq ? "bg-secondary border-secondary" : "border-neutral-300"
 											}`}
 										>
-											{selfInq && <IconCheck className="stroke-white w-3.5 h-3.5" />}
+											{selfInq && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
 										</span>
 										<span className="text-sm font-medium text-primary">استعلام‌های این مدرک را خودم تهیه می‌کنم</span>
 									</button>
