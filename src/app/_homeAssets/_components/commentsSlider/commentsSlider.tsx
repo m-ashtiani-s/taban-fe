@@ -45,7 +45,7 @@ export default function CommentsSlider({ comments }: { comments: Comment[] }) {
 						<div className="relative pt-10 w-full">
 							<div
 								style={{ background: `url('${slide?.imageUrl}')` }}
-								className="h-[37px] w-[37px] border border-secondary rounded-full !bg-cover !bg-center absolute right-11 top-5"
+								className="h-[37px] w-[37px] border border-secondary rounded-full !bg-cover !bg-center absolute right-11 max-md:!right-[calc(12.4%_-_18px)] top-5"
 							></div>
 							<div className="bg-[url('/images/home/commentCartbg.svg')] h-[193px] !bg-contain bg-no-repeat relative w-full">
 								<div className="p-8">

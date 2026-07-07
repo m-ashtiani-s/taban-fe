@@ -31,6 +31,35 @@ export type Phase = {
 	steps: StepKey[];
 };
 
+/**
+ * نگاشت هر مرحله به سِگمنتِ URL آن. توالی مراحل داینامیک است ولی نامِ روتِ هر
+ * مرحله ثابت می‌ماند تا Back/Forward مرورگر روی روت‌های واقعی کار کند.
+ */
+export const STEP_SLUGS: Record<StepKey, string> = {
+	selectItem: "select-item",
+	naming: "naming",
+	language: "language",
+	base: "base",
+	specials: "specials",
+	certifications: "certifications",
+	inquiries: "inquiries",
+	embassy: "embassy",
+	upload: "upload",
+	passport: "passport",
+	copies: "copies",
+	scan: "scan",
+	checkout: "checkout",
+};
+
+const SLUG_TO_STEP: Record<string, StepKey> = Object.fromEntries(
+	Object.entries(STEP_SLUGS).map(([key, slug]) => [slug, key as StepKey])
+) as Record<string, StepKey>;
+
+export const stepToSlug = (key: StepKey): string => STEP_SLUGS[key];
+
+export const slugToStep = (slug: string | null | undefined): StepKey | null =>
+	slug ? SLUG_TO_STEP[slug] ?? null : null;
+
 /** فازهای استپر به ترتیب نمایش (مرحله‌های اختیاری در صورت نیاز فیلتر می‌شوند) */
 export const PHASES: Phase[] = [
 	{ title: "انتخاب مدرک", steps: ["selectItem", "naming"] },

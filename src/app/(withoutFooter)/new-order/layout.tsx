@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { IconArrowLine } from "@/app/_components/icon/icons";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -11,24 +11,12 @@ import { useApi } from "@/hooks/useApi";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { Language } from "@/types/language.type";
 import { TranslationItem } from "@/types/translationItem.type";
-import { useNewOrderStore } from "../../_store/newOrder.store";
-import { useOrderRates } from "../../_hooks/useOrderRates";
 import { generateUUID } from "@/utils/string";
-import { StepKey } from "../../_config/steps";
-import OrderStepper from "../orderStepper/orderStepper";
-import SelectItemStep from "../steps/selectItemStep/selectItemStep";
-import NamingStep from "../steps/namingStep/namingStep";
-import LanguageStep from "../steps/languageStep/languageStep";
-import BaseStep from "../steps/baseStep/baseStep";
-import SpecialsStep from "../steps/specialsStep/specialsStep";
-import CertificationsStep from "../steps/certificationsStep/certificationsStep";
-import InquiriesStep from "../steps/inquiriesStep/inquiriesStep";
-import EmbassyStep from "../steps/embassyStep/embassyStep";
-import UploadStep from "../steps/uploadStep/uploadStep";
-import PassportStep from "../steps/passportStep/passportStep";
-import CopiesStep from "../steps/copiesStep/copiesStep";
-import ScanStep from "../steps/scanStep/scanStep";
-import CheckoutStep from "../steps/checkoutStep/checkoutStep";
+import { useNewOrderStore } from "./_store/newOrder.store";
+import { useOrderRates } from "./_hooks/useOrderRates";
+import { StepKey, slugToStep, stepToSlug } from "./_config/steps";
+import { OrderFlowProvider } from "./_context/orderFlow.context";
+import OrderStepper from "./_components/orderStepper/orderStepper";
 
 /** ساخت نام‌های پیش‌فرض مدارک (وقتی کاربر خودش نام نمی‌گذارد، مثلا تک‌مدرک) */
 function buildDefaultNames(title: string, count: number): Record<string, string> {
@@ -40,23 +28,48 @@ function buildDefaultNames(title: string, count: number): Record<string, string>
 	return names;
 }
 
+/** overlay لودینگ مشترک (آماده‌سازی سفارش / ریدایرکت اولیه) */
+function FlowLoading() {
+	return (
+		<div className="min-h-[100dvh] w-full flex items-center justify-center gap-2 text-sm text-neutral-500">
+			<TabanLoading size={24} />
+			در حال آماده‌سازی سفارش شما...
+		</div>
+	);
+}
+
 /**
- * ارکستریتور فلوی ثبت سفارش جدید.
+ * لایوت فلوی ثبت سفارش جدید.
  *
- * برخلاف فلوی صفحه‌ایِ قبلی، مراحل اینجا با state مدیریت می‌شوند و توالی آن‌ها
- * به صورت داینامیک از روی نرخ‌های دریافت‌شده (useOrderRates) محاسبه می‌شود؛
- * منطق و شکل دیتای سفارش دقیقا مطابق فلوی قبلی باقی مانده است.
+ * برخلاف فلوی قبلی که کل مراحل در یک صفحه با state مدیریت می‌شد، اینجا هر مرحله یک
+ * روتِ واقعی زیر همین لایوت است تا Back/Forward مرورگر بین مراحل کار کند. کل
+ * orchestration (نرخ‌ها، handoff، توالی داینامیک، canGoNext و ...) اینجا زندگی می‌کند و
+ * چون لایوت بین ناوبریِ مراحل remount نمی‌شود، هیچ داده‌ای موقع عقب/جلو رفتن از بین نمی‌رود.
+ * مرحله‌ی جاری از روی URL مشتق می‌شود و ناوبری با router انجام می‌شود.
  */
-export default function NewOrder() {
-	const { order, setOrder } = useNewOrderStore();
+function NewOrderFlow({ children }: { children: React.ReactNode }) {
+	const { order, setOrder, resetOrder } = useNewOrderStore();
 	const rates = useOrderRates();
-	const [currentStep, setCurrentStep] = useState<StepKey>("selectItem");
+	const router = useRouter();
+	const pathname = usePathname();
+
+	// مرحله‌ی جاری از آخرین سِگمنت URL؛ روی /new-order (بدون سگمنت) = null
+	const currentStep = useMemo<StepKey | null>(() => slugToStep(pathname.split("/").pop()), [pathname]);
 
 	const count = order?.translationItemCount ?? 1;
-	// مرحله‌ی نام‌گذاری همیشه نمایش داده می‌شود؛ تک‌مدرک با نام پیش‌فرض و قابل‌ویرایش، چندمدرک اجباری و بدون پیش‌فرض
 	const steps = rates.steps;
 	const itemId = order?.translationItem?.translationItemId;
 	const languageId = order?.language?.languageId;
+
+	// ناوبری بین مراحل (جایگزین setCurrentStep قبلی)
+	const goToStep = useCallback(
+		(key: StepKey, opts?: { replace?: boolean }) => {
+			const url = `/new-order/${stepToSlug(key)}`;
+			if (opts?.replace) router.replace(url);
+			else router.push(url);
+		},
+		[router]
+	);
 
 	// ورود از ویجت صفحه‌ی اصلی: مدرک/زبان از query خوانده و سفارش پیش‌پر می‌شود
 	const searchParams = useSearchParams();
@@ -68,11 +81,10 @@ export default function NewOrder() {
 	// ورود از پنل مشتری سازمانی: سفارش برای یک مشتری زیرمجموعه ثبت می‌شود و آی‌دی آن
 	// از طریق query منتقل و در استور سفارش نگه داشته می‌شود تا تا انتهای فلو (افزودن به سبد) همراه بماند.
 	const handoffCustomerId = searchParams.get("customerId");
-	useEffect(() => {
-		setOrder((prev) => ({ ...prev, customerId: handoffCustomerId || null }));
-	}, [handoffCustomerId]);
 
 	const [initializing, setInitializing] = useState(hasHandoff);
+	const bootstrapped = useRef(false);
+	const validityArmed = useRef(false);
 	const handoffStarted = useRef(false);
 	const handoffApplied = useRef(false);
 	// وقتی زبان از هوم‌پیج آمده، پس از آماده‌شدن نرخ‌ها یک‌بار از مرحله‌ی زبان عبور می‌کنیم
@@ -80,6 +92,34 @@ export default function NewOrder() {
 
 	const handoffItems = useApi(async () => await TranslationEndpoints.getTranslationItems());
 	const handoffLanguages = useApi(async () => await TranslationEndpoints.getLanguages());
+
+	// اولین مونتِ لایوت: اگر مستقیم روی یک روتِ مرحله فرود آمدیم (رفرش/دیپ‌لینک) و handoff نیست،
+	// استور in-memory خالی است؛ استیت‌ها را ریست و فلو را از اول شروع می‌کنیم.
+	useEffect(() => {
+		if (bootstrapped.current) return;
+		bootstrapped.current = true;
+		if (hasHandoff) return; // مسیر handoff خودش ناوبری/ریست را مدیریت می‌کند
+		if (currentStep !== null) {
+			resetOrder();
+			rates.reset();
+			goToStep("selectItem", { replace: true });
+		}
+	}, []);
+
+	// هر وقت روی /new-order (index) هستیم (ورود اولیه یا بازگشت درون‌برنامه‌ای مثل «ثبت ترجمه جدید»):
+	// فلو تازه شروع شود.
+	useEffect(() => {
+		if (hasHandoff) return;
+		if (currentStep !== null) return;
+		resetOrder();
+		rates.reset();
+		goToStep("selectItem", { replace: true });
+	}, [currentStep, hasHandoff]);
+
+	// customerId را روی استور نگه می‌داریم (پس از ریست‌های بالا اعمال می‌شود چون این effect بعد از آن‌ها اعلان شده)
+	useEffect(() => {
+		setOrder((prev) => ({ ...prev, customerId: handoffCustomerId || null }));
+	}, [handoffCustomerId]);
 
 	// شروع واکشیِ داده‌های لازم برای بازسازی مدرک/زبان از روی آی‌دی‌های URL
 	useEffect(() => {
@@ -133,7 +173,12 @@ export default function NewOrder() {
 				pendingLanguageSkip.current = true;
 			}
 			// مرحله‌ی نام‌گذاری همیشه نمایش داده می‌شود؛ کاربر می‌تواند نامِ پیش‌فرضِ تک‌مدرک را هم ویرایش کند
-			setCurrentStep("naming");
+			goToStep("naming", { replace: true });
+		} else {
+			// مدرکِ handoff پیدا/واکشی نشد: به‌جای گیرکردن روی /new-order، فلو را از اول شروع می‌کنیم
+			resetOrder();
+			rates.reset();
+			goToStep("selectItem", { replace: true });
 		}
 		setInitializing(false);
 	}, [hasHandoff, initializing, handoffItemId, handoffLanguageId, handoffCount, handoffItems.result, handoffLanguages.result]);
@@ -146,15 +191,13 @@ export default function NewOrder() {
 		if (!rates.attempted || rates.loading) return;
 		pendingLanguageSkip.current = false;
 		// همان معیارِ بررسیِ نرخ در هوم‌پیج: کافی است نرخ پایه‌ای برای این ترکیب وجود داشته باشد
-		const baseRateExists = !!(
-			rates.baseRate.result?.success && (rates.baseRate.result.data?.data?.length ?? 0) > 0
-		);
+		const baseRateExists = !!(rates.baseRate.result?.success && (rates.baseRate.result.data?.data?.length ?? 0) > 0);
 		if (baseRateExists) {
 			const idx = steps.indexOf("language");
-			if (idx >= 0 && idx + 1 < steps.length) setCurrentStep(steps[idx + 1]);
+			if (idx >= 0 && idx + 1 < steps.length) goToStep(steps[idx + 1], { replace: true });
 		}
 		setInitializing(false);
-	}, [currentStep, rates.attempted, rates.loading, rates.baseRate.result, steps]);
+	}, [currentStep, rates.attempted, rates.loading, rates.baseRate.result, steps, goToStep]);
 
 	// فچ مرکزی نرخ‌ها پس از مشخص‌شدن مدرک و زبان (با dedup داخلی useOrderRates)
 	useEffect(() => {
@@ -183,12 +226,18 @@ export default function NewOrder() {
 		setOrder((prev) => ({ ...prev, translationItemNames: next }));
 	}, [count, order?.translationItem?.translationItemId]);
 
-	// اگر مرحله‌ی جاری بر اثر تغییر توالی حذف شد، به نزدیک‌ترین مرحله‌ی معتبر برگرد
+	// اگر مرحله‌ی جاری بر اثر تغییر توالی حذف شد، به نزدیک‌ترین مرحله‌ی معتبر برگرد.
+	// اولین اجرای این effect (کامیت مونت) نادیده گرفته می‌شود تا با ریدایرکتِ اولیه رقابت نکند.
 	useEffect(() => {
-		if (!steps.includes(currentStep)) setCurrentStep("language");
-	}, [steps, currentStep]);
+		if (!validityArmed.current) {
+			validityArmed.current = true;
+			return;
+		}
+		if (initializing || currentStep === null) return;
+		if (!steps.includes(currentStep)) goToStep("language", { replace: true });
+	}, [steps, currentStep, initializing, goToStep]);
 
-	const currentIndex = Math.max(0, steps.indexOf(currentStep));
+	const currentIndex = currentStep ? Math.max(0, steps.indexOf(currentStep)) : 0;
 	const isFirst = currentIndex === 0;
 	const isLast = currentStep === "checkout";
 
@@ -234,7 +283,14 @@ export default function NewOrder() {
 		}));
 	};
 
+	/** بازگشت به ابتدای فلو (پس از ثبت موفق سفارش) بدون افزودن history اضافه */
+	const resetSteps = () => {
+		rates.reset();
+		goToStep("selectItem", { replace: true });
+	};
+
 	const canGoNext = useMemo(() => {
+		if (!currentStep) return false;
 		switch (currentStep) {
 			case "selectItem":
 				return !!order?.translationItem;
@@ -257,16 +313,15 @@ export default function NewOrder() {
 	}, [currentStep, order, names, docKeys, rates.attempted, rates.loading]);
 
 	const goNext = () => {
-		if (!canGoNext || isLast) return;
-		setCurrentStep(steps[currentIndex + 1]);
+		if (!canGoNext || isLast || !currentStep) return;
+		const next = steps[currentIndex + 1];
+		if (next) goToStep(next);
 	};
 
 	const goPrev = () => {
-		if (isFirst) return;
-		setCurrentStep(steps[currentIndex - 1]);
-	};
-	const resetSteps = () => {
-		setCurrentStep("selectItem");
+		if (isFirst || !currentStep) return;
+		const prev = steps[currentIndex - 1];
+		if (prev) goToStep(prev);
 	};
 
 	const ratesFailed =
@@ -277,91 +332,64 @@ export default function NewOrder() {
 		!rates.certifications.result?.success &&
 		!rates.justiceInquiries.result?.success;
 
-	const renderStep = () => {
-		switch (currentStep) {
-			case "selectItem":
-				return <SelectItemStep onSelectItem={onSelectItem} />;
-			case "naming":
-				return <NamingStep />;
-			case "language":
-				return <LanguageStep rates={rates} onSelectLanguage={onSelectLanguage} />;
-			case "base":
-				return <BaseStep rates={rates} />;
-			case "specials":
-				return <SpecialsStep rates={rates} />;
-			case "certifications":
-				return <CertificationsStep rates={rates} />;
-			case "inquiries":
-				return <InquiriesStep rates={rates} />;
-			case "embassy":
-				return <EmbassyStep rates={rates} />;
-			case "upload":
-				return <UploadStep />;
-			case "passport":
-				return <PassportStep />;
-			case "copies":
-				return <CopiesStep />;
-			case "scan":
-				return <ScanStep rates={rates} />;
-			case "checkout":
-				return <CheckoutStep resetSteps={resetSteps} />;
-			default:
-				return null;
-		}
-	};
-
-	if (initializing) {
-		return (
-			<div className="min-h-[100dvh] w-full flex items-center justify-center gap-2 text-sm text-neutral-500">
-				<TabanLoading size={24} />
-				در حال آماده‌سازی سفارش شما...
-			</div>
-		);
+	if (initializing || currentStep === null) {
+		return <FlowLoading />;
 	}
 
 	return (
-		<div className="min-h-[100dvh] w-full bg-gradient-to-b from-secondary/[0.04] to-transparent py-8 lg:py-12 max-lg:px-4">
-			<div className="container">
-				<div className="max-w-5xl mx-auto flex flex-col gap-8">
-					<div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur px-5 py-5 lg:px-8">
-						<OrderStepper steps={steps} currentStep={currentStep} />
-					</div>
-					<div className="rounded-3xl border border-neutral-200 bg-white shadow-sm p-5 lg:p-10 min-h-[420px]">
-						{currentStep === "language" && ratesFailed ? (
-							<div className="flex flex-col gap-6">
-								{renderStep()}
-								<div className="flex justify-center">
-									<ErrorComponent
-										executeFunction={() => rates.retryAll()}
-										ticketAble
-										errorText="آماده‌سازی گزینه‌های این زبان با خطا مواجه شد."
-									/>
+		<OrderFlowProvider value={{ rates, onSelectItem, onSelectLanguage, resetSteps }}>
+			<div className="min-h-[100dvh] w-full bg-gradient-to-b from-secondary/[0.04] to-transparent py-8 lg:py-12 max-lg:px-4">
+				<div className="container">
+					<div className="max-w-5xl mx-auto flex flex-col gap-8">
+						<div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur px-5 py-5 lg:px-8">
+							<OrderStepper steps={steps} currentStep={currentStep} />
+						</div>
+						<div className="rounded-3xl border border-neutral-200 bg-white shadow-sm p-5 lg:p-10 min-h-[420px]">
+							{currentStep === "language" && ratesFailed ? (
+								<div className="flex flex-col gap-6">
+									{children}
+									<div className="flex justify-center">
+										<ErrorComponent
+											executeFunction={() => rates.retryAll()}
+											ticketAble
+											errorText="آماده‌سازی گزینه‌های این زبان با خطا مواجه شد."
+										/>
+									</div>
 								</div>
-							</div>
-						) : (
-							<motion.div
-								key={currentStep}
-								initial={{ opacity: 0, x: 16 }}
-								animate={{ opacity: 1, x: 0 }}
-								transition={{ duration: 0.25, ease: "easeOut" }}
-							>
-								{renderStep()}
-							</motion.div>
-						)}
-					</div>
-					<div className="flex items-center justify-between gap-3">
-						<TabanButton variant="text" onClick={goPrev} disabled={isFirst}>
-							مرحله قبلی
-						</TabanButton>
-
-						{!isLast && (
-							<TabanButton onClick={goNext} disabled={!canGoNext} icon={<IconArrowLine />}>
-								مرحله بعدی
+							) : (
+								<motion.div
+									key={currentStep}
+									initial={{ opacity: 0, x: 16 }}
+									animate={{ opacity: 1, x: 0 }}
+									transition={{ duration: 0.25, ease: "easeOut" }}
+								>
+									{children}
+								</motion.div>
+							)}
+						</div>
+						<div className="flex items-center justify-between gap-3">
+							<TabanButton variant="text" onClick={goPrev} disabled={isFirst}>
+								مرحله قبلی
 							</TabanButton>
-						)}
+
+							{!isLast && (
+								<TabanButton onClick={goNext} disabled={!canGoNext} icon={<IconArrowLine />}>
+									مرحله بعدی
+								</TabanButton>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		</OrderFlowProvider>
+	);
+}
+
+export default function NewOrderLayout({ children }: { children: React.ReactNode }) {
+	// useSearchParams داخل NewOrderFlow نیازمند مرز Suspense است
+	return (
+		<Suspense fallback={<FlowLoading />}>
+			<NewOrderFlow>{children}</NewOrderFlow>
+		</Suspense>
 	);
 }
