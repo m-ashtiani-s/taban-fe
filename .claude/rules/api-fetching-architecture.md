@@ -1,0 +1,209 @@
+# قانون معماری فچ / ارتباط با بک‌اند (سه‌لایه‌ای)
+
+این قانون **عمومی** است و به هیچ پروژه‌ی خاصی وابسته نیست. هدفش این است که هر بار
+که قرار است کدی نوشته شود که با یک API ارتباط برقرار می‌کند (چه در این پروژه، چه
+در هر پروژه‌ی دیگری که همین الگو در آن پیاده شده)، دقیقاً همان سه لایه‌ی زیر
+رعایت شود و هیچ کامپوننتی مستقیماً سراغ شبکه نرود.
+
+## چرا این قانون مهم است
+
+وقتی هر کامپوننت آزاد باشد که هرجور دلش خواست فچ کند (یکی `axios` مستقیم صدا کند،
+یکی `fetch` خام بزند، یکی خودش try/catch بنویسد)، نتیجه‌اش این می‌شود:
+
+- هندل کردن خطا (پیام‌ها، کد‌های وضعیت، ۴۰۱/۴۰۴/۵۰۲ و...) در ده جای مختلف با
+  رفتار متفاوت پیاده می‌شود.
+- تغییر یک چیز مشترک (مثلاً هدر Authorization، base URL، timeout، رفتار retry،
+  یا حتی افزودن یک قانون امنیتی جدید) یعنی گشتن در کل کدبیس.
+- تست‌نویسی و mock کردن شبکه عملاً غیرممکن می‌شود چون هیچ نقطه‌ی ورودی واحدی
+  برای mock کردن وجود ندارد.
+- کامپوننت‌ها با state مربوط به loading/error/data شلوغ می‌شوند و منطق UI با
+  منطق شبکه قاطی می‌شود.
+
+راه‌حل: **سه لایه‌ی مجزا با مسئولیت مشخص**، که هرکدام فقط کار خودشان را انجام
+می‌دهند و هیچ‌کدام وارد حریم لایه‌ی دیگر نمی‌شوند.
+
+---
+
+## معماری کلی (بالا به پایین)
+
+```
+Component  →  useApi/useQuery-like hook  →  Endpoint module  →  HTTP client (transport)
+   |                    |                          |                      |
+  فقط UI          state: loading/error/data   فقط تعریف request     فقط ارسال درخواست
+                                                (url/method/params)   (auth header, base url,
+                                                                       error normalization)
+```
+
+### لایه‌ی ۱ — Transport Client (پایین‌ترین لایه)
+
+یک و فقط یک wrapper سراسری روی ابزار HTTP (axios، fetch، یا هرچی) که:
+
+- یک‌بار برای همیشه `baseURL`، `timeout`، و هدرهای پیش‌فرض را تنظیم می‌کند.
+- با یک **interceptor** توکن/session را به‌صورت خودکار به هر درخواست تزریق
+  می‌کند — کامپوننت‌ها و endpoint‌ها هرگز خودشان authorization header
+  نمی‌سازند.
+- یک تابع عمومی خیلی نازک بیرون می‌دهد (مثلاً `httpClient.call<T>(config)`)
+  که ورودی‌اش `{ method, url, params, data, headers, ... }` است و خروجی‌اش یک
+  نوع `Response<T>` یکدست است.
+- **هیچ منطق مربوط به یک feature خاص اینجا نباید باشد.** این لایه چیزی درباره‌ی
+  "کارت خرید" یا "پروفایل کاربر" نمی‌داند و نباید بداند.
+
+```ts
+// httpClient.ts — تنها نقطه‌ای که مستقیم axios/fetch صدا زده می‌شود
+const axiosClient = axios.create({ baseURL: API_URL, timeout: 30000 });
+
+axiosClient.interceptors.request.use((config) => {
+  config.headers.authorization = getStoredToken();
+  return config;
+});
+
+export const httpClient = {
+  call: async <T>(config: RequestConfig): Promise<Response<T>> => {
+    const res = await axiosClient.request(config);
+    return new Response(res.data, res.status);
+  },
+};
+```
+
+### لایه‌ی ۲ — Endpoint Modules (تعریف هر request)
+
+هر گروه از عملیات مرتبط با یک دامنه/feature (کاربر، کارت خرید، پاسپورت، سفارش،
+...) در یک آبجکت جمع می‌شود. هر تابع در این آبجکت:
+
+- فقط `httpClient.call(...)` را با `method` و `url` و `params`/`data` مناسب
+  صدا می‌زند.
+- **هیچ state ندارد** — نه `loading`، نه `try/catch` برای نمایش خطا به کاربر،
+  نه هیچ چیز UI-محور.
+- امضای ورودی/خروجی تایپ‌شده دارد (اگر TypeScript است) تا کامپوننت بالادستی
+  بداند دقیقاً چه چیزی می‌فرستد و چه چیزی پس می‌گیرد.
+- نامش با الگوی `XxxEndpoints` (یا معادل آن در زبان پروژه) و اکشن‌هایش فعل+اسم
+  هستند: `getCart`, `addToCart`, `removeCartItem`, `uploadFile`.
+
+```ts
+export const CartEndpoints = {
+  getCart: async () => {
+    const res = await httpClient.call<Res<Cart>>({ method: "GET", url: "v1/user/cart" });
+    return res?.data;
+  },
+  addToCart: async (payload: AddItemPayload) => {
+    const res = await httpClient.call<Res<Cart>>({ method: "POST", url: "v1/user/cart", data: payload });
+    return res?.data;
+  },
+};
+```
+
+**کجا این فایل‌ها را بگذاریم؟**
+
+- اگر یک endpoint در چند feature/صفحه استفاده می‌شود → در یک ماژول مشترک و
+  سراسری (مثلاً `api/` یا `services/` در ریشه‌ی سورس).
+- اگر یک endpoint فقط مخصوص یک صفحه/feature خاص است → کنار همان feature،
+  colocate شده (مثلاً `features/cart/api.ts` یا `routes/cart/_api/endpoint.ts`،
+  بسته به ساختار پوشه‌بندی پروژه).
+- **هیچ‌وقت یک endpoint را در دو جای مختلف دوباره تعریف نکن.** اگر می‌بینی
+  داری چیزی را کپی می‌کنی، یعنی جایش اشتباه انتخاب شده — آن را به یک ماژول
+  مشترک ببر.
+
+### لایه‌ی ۳ — Data-fetching Hook (پل بین UI و Endpoint)
+
+یک هوک عمومی (مثل `useApi`, `useQuery`, `useMutation` — نامش مهم نیست، نقشش
+مهم است) که یک تابع از لایه‌ی Endpoint می‌گیرد و مدیریت می‌کند:
+
+- `loading` — وضعیت در حال انجام بودن درخواست.
+- `result`/`data` — نتیجه‌ی موفق.
+- خطا — به‌صورت **نرمال‌شده و یکدست**، نه خطای خام axios/fetch.
+- (اختیاری) توابع کمکی برای الگوهای مختلف: نسخه‌ای که throw می‌کند (برای
+  کدی که می‌خواهد با try/catch کار کند)، نسخه‌ای که فقط result برمی‌گرداند
+  (برای کدی که می‌خواهد UI را بر اساس success/failure شاخه‌بندی کند).
+
+نکته‌ی کلیدی: **نرمال‌سازی خطا (error mapping) باید در یک تابع مرکزی واحد
+باشد**، نه در خود هوک به‌صورت پراکنده. این تابع مرکزی مسئول چیزهایی مثل:
+
+- تشخیص ۴۰۱ → پاک‌کردن session/توکن → ریدایرکت به صفحه‌ی لاگین.
+- تبدیل کدهای HTTP (۴۰۴, ۵۰۲, ۵۰۳, timeout, network error) به پیام‌های
+  قابل‌فهم برای کاربر.
+- استخراج پیام خطای اعتبارسنجی (validation) از پاسخ سرور به یک شکل یکدست.
+
+```ts
+function useApi<T, A extends any[]>(apiCall: (...args: A) => Promise<T>) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<Result<T> | null>(null);
+
+  const fetchData = useCallback(async (...args: A) => {
+    setLoading(true);
+    try {
+      const data = await apiCall(...args);
+      setResult({ success: true, data });
+    } catch (err) {
+      setResult(mapError<T>(err)); // ← نرمال‌سازی مرکزی خطا، نه اینجا پراکنده
+    } finally {
+      setLoading(false);
+    }
+  }, [apiCall]);
+
+  return { loading, result, fetchData };
+}
+```
+
+### لایه‌ی ۴ (کامپوننت) — فقط مصرف‌کننده
+
+کامپوننت فقط این را می‌نویسد:
+
+```ts
+const { loading, result, fetchData } = useApi(CartEndpoints.addToCart);
+```
+
+و بر اساس `loading`/`result` رندر می‌کند. کامپوننت هرگز:
+- مستقیم `httpClient` یا `axios`/`fetch` را import نمی‌کند.
+- هرگز خودش try/catch برای خطای شبکه نمی‌نویسد.
+- هرگز هدر Authorization یا base URL را نمی‌داند.
+
+---
+
+## قوانین سخت‌گیرانه (چک‌لیست)
+
+هنگام نوشتن یا ریویو کردن کدی که با بک‌اند حرف می‌زند، این‌ها را چک کن:
+
+1. **هیچ کامپوننتی مستقیماً `axios`/`fetch`/`XMLHttpRequest` صدا نمی‌زند.**
+   همیشه از پشت لایه‌ی هوک (لایه‌ی ۳) که از پشت لایه‌ی Endpoint (لایه‌ی ۲) رد
+   می‌شود.
+2. **هر endpoint دقیقاً یک‌بار تعریف می‌شود.** قبل از نوشتن یک تابع جدید در
+   لایه‌ی Endpoint، جست‌وجو کن که آیا از قبل چیزی مشابه (همان url/method) وجود
+   دارد یا نه.
+3. **منطق نرمال‌سازی خطا فقط در یک جا زندگی می‌کند** (مثلاً `mapError`). هیچ
+   کامپوننت یا endpoint دیگری نباید دوباره منطق تشخیص ۴۰۱/۵۰۲/timeout را از
+   نو بنویسد.
+4. **توکن/session فقط در لایه‌ی transport تزریق می‌شود** (interceptor)، نه در
+   endpoint و نه در کامپوننت.
+5. **آپلود فایل هم از همین مسیر رد می‌شود** — یعنی حتی برای `multipart/form-data`
+   باز هم از همان `httpClient.call` و از پشت همان هوک عبور می‌کند، نه یک مسیر
+   جداگانه‌ی دستی.
+6. **نام‌گذاری یکدست:** `XxxEndpoints.actionName` برای لایه‌ی ۲، فعل+اسم برای
+   نام اکشن‌ها (`getX`, `createX`, `updateX`, `deleteX`, `activateX`).
+7. اگر یک endpoint در حال تکرار در چند فایل است، این یک **بوی بد کد** است —
+   باید به لایه‌ی مشترک منتقل شود، نه اینکه هرجا دوباره نوشته شود.
+
+---
+
+## استثناهای مجاز (این‌ها نقض قانون نیستند)
+
+- **Server-side rendering / Server Components** که مستقیم به یک منبع داده‌ی
+  جدا و بدون‌نیاز-به-auth (مثلاً یک CMS عمومی، یک API عمومی سوم‌شخص) با
+  `fetch` خام و کش‌گذاری native فریم‌ورک (مثل `next: { revalidate }`) وصل
+  می‌شوند — به شرطی که این منبع داده کاملاً از بک‌اند اصلی و احراز-هویت‌شده‌ی
+  اپ جدا باشد.
+- **Route Handlers / API Routes خودِ فرانت‌اند** (مثلاً یک پروکسی سمت سرور که
+  فقط برای مخفی‌کردن یک کلید API یا دور زدن CORS نوشته شده) — این‌ها خودشان
+  در واقع بخشی از "بک‌اند" محسوب می‌شوند، نه کامپوننت UI، پس مجازند مستقیم
+  فچ کنند.
+
+اگر شک داری که یک مورد استثناست یا نه، سؤال کلیدی این است: *"آیا این کد به
+بک‌اند اصلی و احراز-هویت‌شده‌ی خودِ اپلیکیشن وصل می‌شود؟"* اگر بله → باید از
+هر سه لایه رد شود. اگر نه (منبع داده‌ی عمومی/جدا) → استثناست.
+
+---
+
+## خلاصه‌ی یک‌خطی برای یادآوری سریع
+
+> **کامپوننت → هوک (state) → Endpoint (request) → httpClient (transport+auth+error).**
+> هر کدی که این زنجیره را دور بزند یا لایه‌ای را قاطی لایه‌ی دیگر کند، باید در
+> کد ریویو رد شود.
