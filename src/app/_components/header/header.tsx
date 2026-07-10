@@ -132,17 +132,12 @@ function HeaderMenu({ children, number }: { children: MenuItem[]; number: number
 }
 
 export const Header = () => {
+	const [open, setOpen] = useState<boolean>(false);
+	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
+
 	const { profile, setProfile } = useProfiletore();
 	const { setCart } = useCartStore();
 	const pathname = usePathname();
-
-	const isItemActive = (href: string) => {
-		const clean = href.replace(/\/$/, "");
-		if (clean === "" || clean === "/") return pathname === "/";
-		return pathname === clean || pathname.startsWith(`${clean}/`);
-	};
-	const [open, setOpen] = useState<boolean>(false);
-	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (profile) {
@@ -151,6 +146,12 @@ export const Header = () => {
 			}).catch(() => {});
 		}
 	}, [profile]);
+
+	const isItemActive = (href: string) => {
+		const clean = href.replace(/\/$/, "");
+		if (clean === "" || clean === "/") return pathname === "/";
+		return pathname === clean || pathname.startsWith(`${clean}/`);
+	};
 
 	const menuHandler = () => {
 		setOpen(true);
@@ -179,7 +180,7 @@ export const Header = () => {
 			</TabanModal>
 			<header
 				style={{ background: "#1a3047" }}
-				className={`header bg-primary flex flex-col max-lg:!hidden w-full top-0 right-0 rounded-none  fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm h-[72px]`}
+				className={`header bg-primary flex flex-col max-lg:!hidden w-full top-[var(--top-banner-height)] right-0 rounded-none  fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm h-[72px]`}
 			>
 				<div className="container mx-auto flex justify-between items-center py-2">
 					<div className="flex gap-8 items-center">
@@ -300,7 +301,7 @@ export const Header = () => {
 				</div>
 			</header>
 			<header
-				className={`lg:!hidden w-full top-0 right-0 rounded-none border-white border-b-neutral-200 fixed duration-300  z-[111] bg-white shadow-sm border py-1`}
+				className={`lg:!hidden w-full top-[var(--top-banner-height)] right-0 rounded-none border-white border-b-neutral-200 fixed duration-300  z-[111] bg-white shadow-sm border py-1`}
 			>
 				<MenuPopup open={open} setOpen={setOpen} />
 				<div className="w-full ">

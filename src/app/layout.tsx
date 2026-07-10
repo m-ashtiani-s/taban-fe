@@ -5,6 +5,7 @@ import "../styles/globals.css";
 import "./globals.css";
 import { Notifications } from "./_components/notification/notification";
 import AppBootstrap from "./_components/appBootstrap/appBootstrap";
+import TopBanner from "./_components/topBanner/topBanner";
 import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					/>
 					<AppBootstrap />
 					<Notifications />
+					<TopBanner />
 					{children}
 				</Providers>
 			</body>
