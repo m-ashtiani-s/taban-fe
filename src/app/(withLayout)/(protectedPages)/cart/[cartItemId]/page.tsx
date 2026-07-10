@@ -25,7 +25,7 @@ import DeliverySection from "@/app/_components/common/deliverySection/deliverySe
 import { useNotificationStore } from "@/stores/notification.store";
 import {
 	IconArrowLine,
-	IconCheck,
+	IconCopy,
 	IconDocument,
 	IconEmbassy,
 	IconInfo,
@@ -33,13 +33,47 @@ import {
 	IconJustice,
 	IconMfa,
 	IconRequired,
+	IconStar,
 	IconTick,
 	IconTranslate,
+	IconUpload,
 } from "@/app/_components/icon/icons";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
+import { StepKey } from "@/app/(withoutFooter)/new-order/_config/steps";
+import OrderStepper from "@/app/(withoutFooter)/new-order/_components/orderStepper/orderStepper";
+import StepHeader from "@/app/(withoutFooter)/new-order/_components/stepHeader/stepHeader";
+import SelectCard from "@/app/(withoutFooter)/new-order/_components/selectCard/selectCard";
+import DocumentSection from "@/app/(withoutFooter)/new-order/_components/documentSection/documentSection";
+import CardsSkeleton from "@/app/(withoutFooter)/new-order/_components/cardsSkeleton/cardsSkeleton";
 
 const TOTAL_STEPS = 12;
+
+// نگاشت هر مرحله‌ی عددیِ فلوی ویرایش به StepKey استپرِ فلوی ثبت سفارش (بدون مرحله‌ی انتخاب مدرک)
+const EDIT_STEP_KEYS: StepKey[] = [
+	"naming",
+	"language",
+	"base",
+	"specials",
+	"certifications",
+	"inquiries",
+	"embassy",
+	"upload",
+	"passport",
+	"copies",
+	"scan",
+	"checkout",
+];
+
+const SummaryRow = ({ label, value, bold }: { label: string; value: number; bold?: boolean }) => (
+	<div className="flex items-center justify-between">
+		<div className={`text-sm ${bold ? "peyda font-bold text-primary" : "text-neutral-500"}`}>{label}</div>
+		<div className={`flex items-center gap-1 ${bold ? "peyda font-bold text-lg text-primary" : "font-semibold"}`}>
+			{toCurrency(value)}
+			<span className="text-xs font-normal text-neutral-400">تومان</span>
+		</div>
+	</div>
+);
 
 type EditState = {
 	translationItemId: string;
@@ -355,961 +389,767 @@ export default function CartEditPage() {
 	});
 	const canProceed = (step !== 1 || namingValid) && (step !== 7 || embassyStepValid);
 
+	// مرحله‌ی جاری و توالیِ فعالِ استپر (مراحلِ حذف‌شده از استپر هم کنار می‌روند)
+	const currentStepKey = EDIT_STEP_KEYS[step - 1];
+	const activeStepKeys = EDIT_STEP_KEYS.filter(
+		(k) => !(k === "base" && skipBaseStep) && !(k === "inquiries" && skipInquiriesStep)
+	);
+
 	return (
-		<div className="flex flex-col gap-4 pt-16 max-lg:pt-8 px-4">
-			{/* Step indicator bar */}
-			<div className="bg-white border border-neutral-200 rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3">
-				<div>
-					<div className="peyda font-bold text-primary">ویرایش سفارش ترجمه</div>
-					<div className="text-xs text-neutral-500">
-						{editState.translationItemTitle} · {editState.languageName}
-					</div>
-				</div>
-				<div className="flex items-center gap-1.5 flex-wrap">
-					{Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-						<div
-							key={i}
-							className={`h-2 rounded-full duration-300 ${
-								i + 1 === step
-									? "w-6 bg-primary"
-									: i + 1 < step
-										? "w-3 bg-primary/40"
-										: "w-3 bg-neutral-200"
-							}`}
-						/>
-					))}
-				</div>
-				<div className="text-sm text-neutral-500 peyda">
-					مرحله {step} از {TOTAL_STEPS}
-				</div>
-			</div>
-
-			{/* Step content */}
-			<div className="bg-white border border-neutral-200 rounded-2xl p-5 min-h-80">
-				{/* Step 1: Document info */}
-				{step === 1 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">اطلاعات مدارک</div>
-						<div className="flex flex-col gap-5">
-							{documentKeys.map((key, index) => {
-								const nameValue = editState.translationItemNames[key] ?? "";
-								const nameError = documentKeys.length > 1 && !nameValue.trim();
-								return (
-									<div key={key} className="flex items-center gap-3">
-										<div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-											<IconDocument className="fill-primary stroke-0 w-4 h-4" />
-										</div>
-										<div className="flex-1">
-											<TabanInput
-												value={nameValue}
-												name={key}
-												placeholder={namePlaceholder}
-												label={`نام مدرک شماره ${index + 1}`}
-												setValue={(val: string) =>
-													setEditState((prev) =>
-														prev ? { ...prev, translationItemNames: { ...prev.translationItemNames, [key]: val ?? "" } } : prev
-													)
-												}
-												isHandleError
-												hasError={nameError}
-												errorText={nameError ? "وارد کردن نام مدرک الزامی است" : ""}
-											/>
-										</div>
-									</div>
-								);
-							})}
-						</div>
-						<div className="text-sm bg-secondary/10 border border-secondary/20 text-primary p-3 rounded-lg flex items-center gap-2">
-							<IconTranslate stroke="#1a3047" strokeWidth={0} className="fill-primary w-4 h-4 shrink-0" />
-							<span>
-								نوع مدرک:{" "}
-								<span className="font-semibold">{editState.translationItemTitle}</span>
-							</span>
+		<div className="w-full bg-gradient-to-b from-secondary/[0.04] to-transparent py-8 lg:py-10 max-lg:px-4">
+			<div className="max-w-5xl mx-auto flex flex-col gap-8">
+				<div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur px-5 py-5 lg:px-8">
+					<div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-dashed border-neutral-200">
+						<div className="peyda font-bold text-primary">ویرایش سفارش ترجمه</div>
+						<div className="text-xs text-neutral-500">
+							{editState.translationItemTitle} · {editState.languageName}
 						</div>
 					</div>
-				)}
+					<OrderStepper steps={activeStepKeys} currentStep={currentStepKey} />
+				</div>
 
-				{/* Step 2: Language + official type */}
-				{step === 2 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">انتخاب زبان ترجمه</div>
-						{languages.loading && !languages.result ? (
-							<div className="flex justify-center py-8">
-								<TabanLoading size={24} />
-							</div>
-						) : languages.result?.success && (languages.result.data?.data?.length ?? 0) > 0 ? (
-							<div className="flex flex-wrap gap-3">
-								{languages.result.data?.data?.map((lang, index) => (
-									<motion.div
-										key={lang.languageId}
-										initial={{ opacity: 0, y: 8 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{ delay: index * 0.04, duration: 0.3 }}
-									>
-										<div
-											onClick={() =>
-												setEditState((prev) =>
-													prev
-														? {
-																...prev,
-																languageId: lang.languageId,
-																languageName: lang.languageName,
-															}
-														: prev
-												)
-											}
-											className={`border rounded-lg cursor-pointer flex items-center gap-3 p-3 duration-200 min-w-36 ${
-												editState.languageId === lang.languageId
-													? "bg-secondary border-secondary"
-													: "border-neutral-300 hover:bg-secondary/10"
-											}`}
-										>
-											<Image
-												width={28}
-												height={28}
-												alt=""
-												src={`/images/languages/${lang.languageCode}.png`}
-											/>
-											<span
-												className={`peyda font-semibold text-sm ${
-													editState.languageId === lang.languageId ? "text-white" : ""
-												}`}
+				<div className="rounded-3xl border border-neutral-200 bg-white shadow-sm p-5 lg:p-10 min-h-[420px]">
+					<motion.div
+						key={step}
+						initial={{ opacity: 0, x: 16 }}
+						animate={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.25, ease: "easeOut" }}
+					>
+						{/* Step 1: Document naming */}
+						{step === 1 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader
+									title="مدارک خود را نام‌گذاری کنید"
+									subtitle="با یک نام دلخواه، تشخیص مدارک در مراحل بعدی برای شما ساده‌تر می‌شود"
+								/>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7 max-w-3xl mx-auto w-full">
+									{documentKeys.map((key, index) => {
+										const value = editState.translationItemNames[key] ?? "";
+										const hasError = documentKeys.length > 1 && !value.trim();
+										return (
+											<motion.div
+												key={key}
+												initial={{ opacity: 0, y: 12 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.05 }}
+												className="flex flex-col gap-1"
 											>
-												{lang.languageName}
-											</span>
-										</div>
-									</motion.div>
-								))}
-							</div>
-						) : languages.result && !languages.result.success && isRetryAble(languages.result.code) ? (
-							<ErrorComponent
-								executeFunction={() => languages.fetchData()}
-								callAble
-								errorText="دریافت لیست زبان‌ها با خطا مواجه شد"
-							/>
-						) : null}
-
-						{/* نوع ترجمه به‌صورت پیش‌فرض «رسمی» است و فعلاً از کاربر پرسیده نمی‌شود (مخفی) */}
-					</div>
-				)}
-
-				{/* Step 3: Base rates */}
-				{step === 3 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">نرخ پایه ترجمه</div>
-						{baseRate.loading && !baseRate.result ? (
-							<div className="flex justify-center py-8">
-								<TabanLoading size={24} />
-							</div>
-						) : baseRate.result?.success && (baseRate.result.data?.data?.length ?? 0) > 0 ? (
-							<div className="flex flex-col gap-6">
-								{documentKeys.map((key, index) => (
-									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											{baseRate.result?.data?.data?.[0]?.title} برای{" "}
-											{editState.translationItemNames[key]}
-										</div>
-										<div className="w-64">
-											<TabanInput
-												isNumber
-												type="number"
-												value={editState.baseRateCount[key] ?? ""}
-												// groupMode
-												setValue={(val: string) =>
-													setEditState((prev) =>
-														prev
-															? {
-																	...prev,
-																	baseRateCount: {
-																		...prev.baseRateCount,
-																		[key]: val ?? "",
-																	},
-																}
-															: prev
-													)
-												}
-												name={key}
-											/>
-										</div>
-									</div>
-								))}
-							</div>
-						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">
-								نرخ پایه‌ای برای این ترکیب تعریف نشده است
+												<div>{`نام مدرک شماره ${index + 1}`}</div>
+												<TabanInput
+													value={value}
+													name={key}
+													placeholder={namePlaceholder}
+													leadingIcon={<IconDocument width={20} height={20} className="fill-secondary stroke-0" />}
+													setValue={(val: string) =>
+														setEditState((prev) =>
+															prev ? { ...prev, translationItemNames: { ...prev.translationItemNames, [key]: val ?? "" } } : prev
+														)
+													}
+													isHandleError
+													hasError={hasError}
+													errorText={hasError ? "وارد کردن نام مدرک الزامی است" : ""}
+												/>
+											</motion.div>
+										);
+									})}
+								</div>
+								<div className="max-w-3xl mx-auto w-full text-sm bg-secondary/10 border border-secondary/20 text-primary p-3 rounded-xl flex items-center gap-2">
+									<IconTranslate stroke="#1a3047" strokeWidth={0} className="fill-primary w-4 h-4 shrink-0" />
+									<span>
+										نوع مدرک: <span className="font-semibold">{editState.translationItemTitle}</span>
+									</span>
+								</div>
 							</div>
 						)}
-					</div>
-				)}
 
-				{/* Step 4: Special items */}
-				{step === 4 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">موارد خاص ترجمه</div>
-						{dynamicRates.loading && !dynamicRates.result ? (
-							<div className="flex justify-center py-8">
-								<TabanLoading size={24} />
-							</div>
-						) : dynamicRates.result?.success && (dynamicRates.result.data?.data?.length ?? 0) > 0 ? (
-							<div className="flex flex-col gap-6">
-								{documentKeys.map((key) => (
-									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											موارد خاص برای {editState.translationItemNames[key]}
-										</div>
-										<div className="flex flex-wrap gap-6">
-											{dynamicRates.result?.data?.data?.map((rate, index) => (
-												<motion.div
-													key={rate.dynamicRateId}
-													className="w-48"
-													initial={{ opacity: 0, y: 8 }}
-													animate={{ opacity: 1, y: 0 }}
-													transition={{ delay: index * 0.04 }}
-												>
-													<div className="flex flex-col gap-1.5">
-														<div className="text-sm font-semibold text-neutral-600">
-															{rate.label}
+						{/* Step 2: Language */}
+						{step === 2 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader title="زبان ترجمه را انتخاب کنید" subtitle="مدارک شما به زبان انتخابی ترجمه خواهد شد" />
+								{languages.loading && !languages.result ? (
+									<CardsSkeleton count={6} />
+								) : languages.result?.success && (languages.result.data?.data?.length ?? 0) > 0 ? (
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+										{languages.result.data?.data?.map((lang, index) => (
+											<motion.div
+												key={lang.languageId}
+												initial={{ opacity: 0, y: 12 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.04 }}
+											>
+												<SelectCard
+													selected={editState.languageId === lang.languageId}
+													onClick={() =>
+														setEditState((prev) =>
+															prev ? { ...prev, languageId: lang.languageId, languageName: lang.languageName } : prev
+														)
+													}
+													icon={<IconTranslate width={26} height={26} className="fill-current stroke-0" />}
+													title={lang.languageName}
+													indicator="none"
+													trailing={
+														<div className="w-9 h-9 rounded-lg overflow-hidden bg-neutral-100 flex items-center justify-center">
+															<Image width={28} height={28} alt={lang.languageName} src={`/images/languages/${lang.languageCode}.png`} />
 														</div>
+													}
+												/>
+											</motion.div>
+										))}
+									</div>
+								) : languages.result && !languages.result.success && isRetryAble(languages.result.code) ? (
+									<ErrorComponent executeFunction={() => languages.fetchData()} ticketAble errorText="دریافت لیست زبان‌ها با خطا مواجه شد." />
+								) : (
+									<div className="text-center text-sm text-neutral-400 py-10">داده‌ای موجود نیست</div>
+								)}
+							</div>
+						)}
+
+						{/* Step 3: Base rates */}
+						{step === 3 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader
+									title={`${baseRate.result?.data?.data?.[0]?.title ?? "نرخ پایه"} مدارک`}
+									subtitle="تعداد پایه‌ی هر مدرک را برای محاسبه‌ی دقیق نرخ ترجمه وارد کنید"
+								/>
+								{baseRate.loading && !baseRate.result ? (
+									<CardsSkeleton count={4} columns={2} />
+								) : baseRate.result?.success && (baseRate.result.data?.data?.length ?? 0) > 0 ? (
+									<div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
+										{documentKeys.map((key, index) => (
+											<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+												<div className="flex flex-col gap-2">
+													<span className="text-sm text-neutral-500">{baseRate.result?.data?.data?.[0]?.title ?? "نرخ پایه"}</span>
+													<div className="w-full sm:w-72">
 														<TabanInput
 															isNumber
 															type="number"
-															value={
-																editState.specialItems[key]?.[
-																	rate.dynamicRateId
-																] ?? ""
+															value={editState.baseRateCount[key] ?? ""}
+															setValue={(val: string) =>
+																setEditState((prev) =>
+																	prev ? { ...prev, baseRateCount: { ...prev.baseRateCount, [key]: val ?? "" } } : prev
+																)
 															}
-															onChange={(e) =>
-																setEditState((prev) => {
-																	if (!prev) return prev;
-																	return {
-																		...prev,
-																		specialItems: {
-																			...prev.specialItems,
-																			[key]: {
-																				...prev.specialItems[key],
-																				[rate.dynamicRateId]:
-																					e.target.value,
+															name={key}
+														/>
+													</div>
+												</div>
+											</DocumentSection>
+										))}
+									</div>
+								) : (
+									<div className="text-sm text-neutral-400 py-4 text-center">نرخ پایه‌ای برای این ترکیب تعریف نشده است</div>
+								)}
+							</div>
+						)}
+
+						{/* Step 4: Special items */}
+						{step === 4 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader title="موارد خاص ترجمه" subtitle="در صورت نیاز، تعداد موارد خاص هر مدرک را مشخص کنید (اختیاری)" />
+								{dynamicRates.loading && !dynamicRates.result ? (
+									<CardsSkeleton count={4} columns={2} />
+								) : dynamicRates.result?.success && (dynamicRates.result.data?.data?.length ?? 0) > 0 ? (
+									<div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+										{documentKeys.map((key, index) => (
+											<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+												<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+													{dynamicRates.result?.data?.data?.map((rate) => (
+														<div key={rate.dynamicRateId} className="flex flex-col gap-2">
+															<span className="peyda font-semibold text-sm text-neutral-600">{rate.label}</span>
+															<TabanInput
+																isNumber
+																type="number"
+																value={editState.specialItems[key]?.[rate.dynamicRateId] ?? ""}
+																onChange={(e) =>
+																	setEditState((prev) => {
+																		if (!prev) return prev;
+																		return {
+																			...prev,
+																			specialItems: {
+																				...prev.specialItems,
+																				[key]: { ...prev.specialItems[key], [rate.dynamicRateId]: e.target.value },
 																			},
-																		},
-																	};
-																})
-															}
-															name={rate.dynamicRateId}
-														/>
-													</div>
-												</motion.div>
-											))}
-										</div>
-									</div>
-								))}
-							</div>
-						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">
-								موارد خاصی برای این ترکیب تعریف نشده است
-							</div>
-						)}
-					</div>
-				)}
-
-				{/* Step 5: Certifications */}
-				{step === 5 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">مهر و تاییدات ترجمه</div>
-						{certificationRates.loading && !certificationRates.result ? (
-							<div className="flex justify-center py-8">
-								<TabanLoading size={24} />
-							</div>
-						) : certificationRates.result?.success && (certificationRates.result.data?.data?.length ?? 0) > 0 ? (
-							<div className="flex flex-col gap-6">
-								{documentKeys.map((key) => {
-									const rateId =
-										certificationRates.result?.data?.data?.[0]?.certificationRateId ?? null;
-									return (
-										<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-											<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-												<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-												تاییدات برای {editState.translationItemNames[key]}
-											</div>
-											<div className="flex flex-wrap gap-4">
-												{/* Justice certification */}
-												<motion.div
-													className="flex-1 min-w-48"
-													initial={{ opacity: 0, y: 8 }}
-													animate={{ opacity: 1, y: 0 }}
-												>
-													<div
-														onClick={() => {
-															setEditState((prev) => {
-																if (!prev) return prev;
-																const current = prev.justiceCertification[key];
-																if (current) {
-																	// حذف دادگستری: امور خارجه هم برداشته می‌شود و استعلام/سفارتِ این مدرک پاک می‌گردد
-																	return {
-																		...prev,
-																		justiceCertification: { ...prev.justiceCertification, [key]: null },
-																		mfaCertification: { ...prev.mfaCertification, [key]: null },
-																		justiceInquiries: { ...prev.justiceInquiries, [key]: [] },
-																		selfInquiry: { ...prev.selfInquiry, [key]: false },
-																		embassies: { ...prev.embassies, [key]: [] },
-																	};
+																		};
+																	})
 																}
-																return {
-																	...prev,
-																	justiceCertification: { ...prev.justiceCertification, [key]: rateId },
-																};
-															});
-														}}
-														className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
-															editState.justiceCertification[key]
-																? "bg-secondary border-secondary"
-																: "border-neutral-300 hover:bg-secondary/10"
-														}`}
-													>
-														<IconJustice
-															width={36}
-															height={36}
-															viewBox="0 0 48 48"
-															className={`shrink-0 ${
-																editState.justiceCertification[key]
-																	? "fill-white stroke-0"
-																	: "fill-primary stroke-0"
-															}`}
-														/>
-														<div className="flex items-center gap-2">
-															<span
-																className={`peyda font-semibold ${
-																	editState.justiceCertification[key]
-																		? "text-white"
-																		: ""
-																}`}
-															>
-																مهر دادگستری
-															</span>
-														</div>
-													</div>
-												</motion.div>
-
-												{/* MFA certification */}
-												<motion.div
-													className="flex-1 min-w-48"
-													initial={{ opacity: 0, y: 8 }}
-													animate={{ opacity: 1, y: 0 }}
-													transition={{ delay: 0.05 }}
-												>
-													<div
-														onClick={() => {
-															setEditState((prev) => {
-																if (!prev) return prev;
-																const current =
-																	prev.mfaCertification[key];
-																if (current) {
-																	// حذف امور خارجه: تایید سفارتِ این مدرک هم پاک می‌شود
-																	return {
-																		...prev,
-																		mfaCertification: {
-																			...prev.mfaCertification,
-																			[key]: null,
-																		},
-																		embassies: { ...prev.embassies, [key]: [] },
-																	};
-																}
-																// انتخاب مهر امور خارجه، مهر دادگستری را هم اجباراً فعال می‌کند
-																return {
-																	...prev,
-																	mfaCertification: {
-																		...prev.mfaCertification,
-																		[key]: rateId,
-																	},
-																	justiceCertification: {
-																		...prev.justiceCertification,
-																		[key]:
-																			prev.justiceCertification[key] ??
-																			rateId,
-																	},
-																};
-															});
-														}}
-														className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
-															editState.mfaCertification[key]
-																? "bg-secondary border-secondary"
-																: "border-neutral-300 hover:bg-secondary/10"
-														}`}
-													>
-														<IconMfa
-															width={36}
-															height={36}
-															className={`shrink-0 ${
-																editState.mfaCertification[key]
-																	? "!stroke-white"
-																	: "stroke-primary"
-															}`}
-														/>
-														<div className="flex flex-col">
-															<span
-																className={`peyda font-semibold ${
-																	editState.mfaCertification[key]
-																		? "text-white"
-																		: ""
-																}`}
-															>
-																مهر وزارت امور خارجه
-															</span>
-														</div>
-													</div>
-												</motion.div>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">
-								تاییداتی برای این ترکیب تعریف نشده است
-							</div>
-						)}
-
-						<div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-2.5">
-							<IconInfo className="stroke-amber-600 w-5 h-5 shrink-0 mt-0.5" />
-							<span className="text-sm leading-7 text-amber-700">
-								لازم به ذکر است که جهت اخذ تاییدات، ارائه‌ی اصل مدارک به ارگان‌های مربوطه الزامی است.
-							</span>
-						</div>
-					</div>
-				)}
-
-				{/* Step 6: Justice inquiries */}
-				{step === 6 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">استعلام‌های ترجمه</div>
-						{justiceInquiryRates.loading && !justiceInquiryRates.result ? (
-							<div className="flex justify-center py-8">
-								<TabanLoading size={24} />
-							</div>
-						) : justiceInquiryRates.result?.success && (justiceInquiryRates.result.data?.data?.length ?? 0) > 0 ? (
-							documentKeys.filter((key) => !!editState.justiceCertification[key]).length === 0 ? (
-								<div className="flex items-center gap-2.5 bg-secondary/5 border border-secondary/30 rounded-2xl px-4 py-4">
-									<IconJustice width={26} height={26} viewBox="0 0 48 48" className="fill-secondary stroke-0 shrink-0" />
-									<span className="text-sm leading-7 text-primary peyda font-semibold">
-										استعلام تنها برای مدارکی قابل انتخاب است که «مهر دادگستری» دارند. در صورت نیاز، در مرحله‌ی تاییدات مهر دادگستری را فعال کنید.
-									</span>
-								</div>
-							) : (
-								<div className="flex flex-col gap-6">
-									{documentKeys.filter((key) => !!editState.justiceCertification[key]).map((key) => {
-										const selfInq = !!editState.selfInquiry[key];
-										return (
-											<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-												<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-													<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-													استعلام برای {editState.translationItemNames[key]}
-												</div>
-												<div className="flex flex-wrap gap-4">
-													{justiceInquiryRates.result?.data?.data?.map((inquiry, index) => {
-														const isSelected = (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
-														return (
-															<motion.div key={inquiry.justiceInquiryRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
-																<div
-																	onClick={() => {
-																		setEditState((prev) => {
-																			if (!prev) return prev;
-																			const current = prev.justiceInquiries[key] ?? [];
-																			const updated = isSelected
-																				? current.filter((id) => id !== inquiry.justiceInquiryRateId)
-																				: [...current, inquiry.justiceInquiryRateId];
-																			// با انتخاب استعلام از لیست، «خودم می‌گیرم» همان مدرک غیرفعال و پاک می‌شود
-																			return { ...prev, justiceInquiries: { ...prev.justiceInquiries, [key]: updated }, selfInquiry: { ...prev.selfInquiry, [key]: false } };
-																		});
-																	}}
-																	className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"}`}
-																>
-																	<IconInquiry width={32} height={32} viewBox="0 0 1024 1024" className={`shrink-0 ${isSelected ? "fill-white stroke-0" : "fill-primary stroke-0"}`} />
-																	<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{inquiry.justiceInquiryName}</span>
-																</div>
-															</motion.div>
-														);
-													})}
-												</div>
-
-												<div className="mt-4">
-													<button
-														type="button"
-														onClick={() =>
-															setEditState((prev) => {
-																if (!prev) return prev;
-																const next = !prev.selfInquiry[key];
-																const justiceInquiries = next
-																	? { ...prev.justiceInquiries, [key]: [] }
-																	: prev.justiceInquiries;
-																return { ...prev, selfInquiry: { ...prev.selfInquiry, [key]: next }, justiceInquiries };
-															})
-														}
-														className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
-															selfInq ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
-														}`}
-													>
-														<span
-															className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-																selfInq ? "bg-secondary border-secondary" : "border-neutral-300"
-															}`}
-														>
-															{selfInq && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
-														</span>
-														<span className="text-sm font-medium text-primary">استعلام‌های این مدرک را خودم تهیه می‌کنم</span>
-													</button>
-													{selfInq && (
-														<div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 p-3 flex items-start gap-2.5">
-															<IconInfo className="stroke-sky-600 w-5 h-5 shrink-0 mt-0.5" />
-															<span className="text-xs leading-6 text-sky-700">
-																می‌توانید بعداً در پنل کاربری، در بخش جزئیات سفارش، نتیجه‌ی استعلام را برای ما آپلود کنید. کارشناسان ما در این زمینه شما را راهنمایی می‌کنند.
-															</span>
-														</div>
-													)}
-												</div>
-											</div>
-										);
-									})}
-								</div>
-							)
-						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">استعلامی برای این ترکیب تعریف نشده است</div>
-						)}
-					</div>
-				)}
-
-				{/* Step 7: Embassy approvals */}
-					{step === 7 && (
-						<div className="flex flex-col gap-4">
-							<div className="peyda font-bold text-xl text-primary">تایید سفارت</div>
-							{!embassyStepValid && (
-								<span className="text-xs text-red-500">
-									برای مدارکی که تیک «تایید سفارت» را زده‌اید، انتخابِ حداقل یک سفارت الزامی است
-								</span>
-							)}
-							{embassyRates.loading && !embassyRates.result ? (
-								<div className="flex justify-center py-8">
-									<TabanLoading size={24} />
-								</div>
-							) : embassyRates.result?.success && (embassyRates.result.data?.data?.length ?? 0) > 0 ? (
-								<div className="flex flex-col gap-6">
-									{documentKeys.map((key) => {
-										const allowed = !!editState.justiceCertification[key] && !!editState.mfaCertification[key];
-										const want = !!wantEmbassyByDoc[key];
-										return (
-											<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-												<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-													<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-													تایید سفارت برای {editState.translationItemNames[key]}
-												</div>
-												{!allowed ? (
-													<div className="flex items-center gap-2.5 bg-secondary/5 border border-secondary/30 rounded-xl px-3 py-2.5">
-														<IconEmbassy viewBox="0 0 50 64" width={22} height={22} className="stroke-secondary stroke-2 shrink-0" />
-														<span className="text-xs leading-6 text-primary peyda font-semibold">
-															برای تایید سفارت این مدرک، ابتدا «مهر دادگستری» و «مهر وزارت امور خارجه» را در مرحله‌ی تاییدات فعال کنید
-														</span>
-													</div>
-												) : (
-													<div className="flex flex-col gap-4">
-														{/* تیکِ تمایل: تا انتخاب نشود، سفارت‌ها نمایش داده نمی‌شوند */}
-														<button
-															type="button"
-															onClick={() => toggleWantEmbassy(key)}
-															className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
-																want ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
-															}`}
-														>
-															<span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${want ? "bg-secondary border-secondary" : "border-neutral-300"}`}>
-																{want && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
-															</span>
-															<span className="text-sm font-medium text-primary">می‌خواهم این مدرک به تایید سفارت برسد</span>
-														</button>
-														{want && (
-															<div className="flex flex-wrap gap-4">
-																{embassyRates.result?.data?.data?.map((embassy, index) => {
-																	const isSelected = (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
-																	return (
-																		<motion.div key={embassy.embassyRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
-																			<div
-																				onClick={() => {
-																					setEditState((prev) => {
-																						if (!prev) return prev;
-																						const current = prev.embassies[key] ?? [];
-																						const updated = isSelected
-																							? current.filter((id) => id !== embassy.embassyRateId)
-																							: [...current, embassy.embassyRateId];
-																						return { ...prev, embassies: { ...prev.embassies, [key]: updated } };
-																					});
-																				}}
-																				className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${
-																					isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"
-																				}`}
-																			>
-																				<IconEmbassy viewBox="0 0 50 64"  width={32} height={32} className={`shrink-0 ${isSelected ? "stroke-white stroke-2" : "stroke-primary stroke-2"}`} />
-																				<span className={`peyda font-semibold text-sm ${isSelected ? "text-white" : ""}`}>{embassy.embassyName}</span>
-																			</div>
-																		</motion.div>
-																	);
-																})}
-															</div>
-														)}
-													</div>
-												)}
-											</div>
-										);
-									})}
-								</div>
-							) : (
-								<div className="text-sm text-neutral-400 py-4 text-center">تایید سفارتی برای این ترکیب تعریف نشده است</div>
-							)}
-						</div>
-					)}
-
-					{/* Step 8: Upload documents */}
-					{step === 8 && (
-						<div className="flex flex-col gap-4">
-							<div className="peyda font-bold text-xl text-primary">آپلود مدارک و اسناد</div>
-							{uploadDescription && (
-								<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-4">
-									<div className="flex items-center gap-2 peyda font-bold text-primary mb-2 text-sm">
-										<IconRequired viewBox="0 0 100 100" width={18} height={18} className="fill-secondary stroke-0" />
-										نکات بارگذاری مدارک
-									</div>
-									<div className="text-sm text-neutral-600 leading-7 whitespace-pre-line">{uploadDescription}</div>
-								</div>
-							)}
-							<div className="flex items-start gap-2 text-xs text-neutral-600 bg-secondary/5 border border-secondary/20 rounded-xl p-3.5">
-								<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
-								<span className="leading-6">
-									این مدارک برای انجام ترجمه‌ی رسمی کافی نیست؛ پیک مجموعه برای دریافت اصل مدارک به محل شما مراجعه می‌کند و بارگذاری در این مرحله صرفاً برای افزایش سرعت ترجمه است.
-								</span>
-							</div>
-							<div className="flex flex-col gap-6">
-								{documentKeys.map((key) => (
-									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											آپلود {editState.translationItemNames[key]}
-										</div>
-										<UploadBox
-											value={editState.assetsByDoc[key] ?? []}
-											onChange={(urls) => setEditState((prev) => (prev ? { ...prev, assetsByDoc: { ...prev.assetsByDoc, [key]: urls } } : prev))}
-											folder={assetFolderName(uploadScope, editState.translationItemNames[key] ?? "")}
-											hint="فایل‌های این مدرک را اینجا رها کنید یا انتخاب نمایید"
-										/>
-										<DocumentDescriptionField
-											docTitle={editState.translationItemNames[key] ?? "مدرک"}
-											value={editState.descriptionByDoc[key] ?? ""}
-											onChange={(desc) => setEditState((prev) => (prev ? { ...prev, descriptionByDoc: { ...prev.descriptionByDoc, [key]: desc } } : prev))}
-										/>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-
-					{/* Step 9: Upload passport */}
-				{step === 9 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">پاسپورت</div>
-						<PassportPicker value={editState.passports} onChange={(urls) => setEditState((prev) => (prev ? { ...prev, passports: urls } : prev))} />
-					</div>
-				)}
-
-				{/* Step 10: Copies */}
-					{step === 10 && (
-						<div className="flex flex-col gap-4">
-							<div className="peyda font-bold text-xl text-primary">تعداد نسخه مدارک</div>
-							<div className="flex flex-col gap-6">
-								{documentKeys.map((key) => (
-									<div key={key} className="border-b border-dashed border-neutral-200 pb-4">
-										<div className="text-base font-bold text-secondary mb-3 flex items-center gap-1.5">
-											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											تعداد نسخه برای {editState.translationItemNames[key]}
-										</div>
-										<div className="w-64">
-											<TabanInput
-												isNumber
-												type="number"
-												value={editState.copyCount[key] ?? "1"}
-												// groupMode
-												setValue={(val: string) =>
-													setEditState((prev) =>
-														prev ? { ...prev, copyCount: { ...prev.copyCount, [key]: val ?? "" } } : prev
-													)
-												}
-												name={key}
-											/>
-										</div>
-									</div>
-								))}
-							</div>
-							<div className="flex items-start gap-2 text-xs text-neutral-500 bg-neutral-100/60 border border-neutral-200 rounded-xl p-3.5">
-								<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
-								<span className="leading-6">
-									برای نسخه‌های اضافه، هزینه‌ انجام ترجمه دریافت نمی‌گردد؛ ولی سایر هزینه‌ها مانند: خدمات، تاییدات و ... به ازای هر نسخه دریافت می‌گردد.
-								</span>
-							</div>
-						</div>
-					)}
-
-					{/* Step 11: Scan */}
-				{step === 11 && (
-					<div className="flex flex-col gap-8">
-						<div className="flex flex-col gap-1.5">
-							<div className="peyda font-bold text-xl text-primary">اسکن مدارک</div>
-							<div className="text-sm text-neutral-500">در صورت نیاز، می‌توانید برای هر مدرک سرویس اسکن را انتخاب کنید</div>
-						</div>
-						<div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
-							{documentKeys.map((key) => {
-								const scanRate = scanRates.result?.success ? scanRates.result.data?.data?.[0] ?? null : null;
-								const isSelected = !!(editState.scanRateIdByDoc?.[key]);
-								return (
-									<div key={key} className="border border-neutral-200 rounded-xl p-4">
-										<div className="text-sm font-bold text-secondary mb-3 flex items-center gap-1.5">
-											<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
-											{editState.translationItemNames[key]}
-										</div>
-										<button
-											type="button"
-											onClick={() => {
-												setEditState((prev) => {
-													if (!prev) return prev;
-													const current = prev.scanRateIdByDoc ?? {};
-													const already = !!current[key];
-													return {
-														...prev,
-														scanRateIdByDoc: {
-															...current,
-															[key]: already ? null : (scanRate?.scanRateId ?? null),
-														},
-													};
-												});
-											}}
-											className={`flex items-center gap-3 w-full text-right rounded-xl border px-4 py-4 duration-150 ${
-												isSelected ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
-											}`}
-										>
-											<span
-												className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-													isSelected ? "bg-secondary border-secondary" : "border-neutral-300"
-												}`}
-											>
-												{isSelected && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
-											</span>
-											<div className="flex flex-1 items-center justify-between">
-												<span className="text-sm font-medium text-primary">اسکن این مدرک</span>
-												{scanRate && (
-													<span className={`text-sm font-semibold ${isSelected ? "text-secondary" : "text-neutral-500"}`}>
-														{toCurrency(scanRate.price)} تومان
-													</span>
-												)}
-											</div>
-										</button>
-									</div>
-								);
-							})}
-						</div>
-					</div>
-				)}
-
-				{/* Step 12: Summary */}
-				{step === 12 && (
-					<div className="flex flex-col gap-4">
-						<div className="peyda font-bold text-xl text-primary">خلاصه سفارش</div>
-						{calculation.loading && !calculation.result ? (
-							<div className="flex items-center gap-2 justify-center py-8">
-								<TabanLoading size={24} />
-								<span className="text-sm text-neutral-500">در حال محاسبه نرخ سفارش...</span>
-							</div>
-						) : calculation.result?.success && calculation.result.data?.data ? (
-							(() => {
-								const bd = calculation.result.data.data;
-								return (
-									<div className="flex flex-col gap-2">
-										<div className="flex items-center justify-between text-sm py-1">
-											<span className="text-neutral-500">مدرک ترجمه:</span>
-											<span className="font-medium">{bd.translationItemTitle}</span>
-										</div>
-										<div className="flex items-center justify-between text-sm py-1">
-											<span className="text-neutral-500">زبان ترجمه:</span>
-											<span className="font-medium">{bd.languageName}</span>
-										</div>
-										<div className="h-px bg-neutral-100 my-2" />
-										{bd.documents.map((doc) => (
-											<div
-												key={doc.documentKey}
-												className="border border-neutral-200 rounded-lg p-3 flex flex-col gap-2"
-											>
-												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-1.5 text-sm font-bold text-secondary">
-														<div className="w-2 h-2 rounded bg-primary/70 rotate-45" />
-														{doc.title}
-														{(doc.copyCount ?? 1) > 1 && (
-															<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
-																× {convertToPersianNumber(String(doc.copyCount))} نسخه
-															</span>
-														)}
-													</div>
-													<div className="font-semibold text-sm">
-														{toCurrency(doc.documentTotal)} تومان
-													</div>
-												</div>
-												<div className="flex flex-col gap-1 text-xs text-neutral-500">
-													<div className="flex justify-between">
-														<span>هزینه ترجمه</span>
-														<span>
-															{toCurrency(doc.translationTotal ?? doc.base.total + doc.specialsTotal)} تومان
-														</span>
-													</div>
-													{doc.mfaCertification && (
-														<div className="flex justify-between">
-															<span>مهر وزارت امور خارجه</span>
-															<span>
-																{toCurrency(doc.mfaCertification.price)}{" "}
-																تومان
-															</span>
-														</div>
-													)}
-													{doc.justiceCertification && (
-														<div className="flex justify-between">
-															<span>مهر دادگستری</span>
-															<span>
-																{toCurrency(
-																	doc.justiceCertification.price
-																)}{" "}
-																تومان
-															</span>
-														</div>
-													)}
-													{doc.embassyApprovals?.map((e) => (
-															<div key={e.embassyRateId} className="flex justify-between">
-																<span>{e.embassyName}</span>
-																<span>{toCurrency(e.price)} تومان</span>
-															</div>
-														))}
-														{doc.justiceInquiries.map((i) => (
-														<div
-															key={i.justiceInquiryRateId}
-															className="flex justify-between"
-														>
-															<span>{i.justiceInquiryName}</span>
-															<span>{toCurrency(i.price)} تومان</span>
+																name={rate.dynamicRateId}
+															/>
 														</div>
 													))}
 												</div>
-											</div>
+											</DocumentSection>
 										))}
-										<div className="h-px bg-neutral-100 my-1" />
-										<div className="flex justify-between text-sm py-1">
-											<span>مبلغ ترجمه:</span>
-											<span className="font-semibold">
-												{toCurrency(bd.summary.translationPrice)} تومان
-											</span>
-										</div>
-										{!!bd.summary.tierDiscountPercent && bd.summary.tierDiscountPercent > 0 && (
-										<div className="flex justify-between text-sm py-1 text-emerald-600">
-											<span>تخفیف باشگاه مشتریان ({bd.summary.tierDiscountPercent}٪):</span>
-											<span className="font-semibold">
-												{toCurrency(bd.summary.tierDiscountAmount ?? 0)}- تومان
-											</span>
-										</div>
-										)}
-										<div className="flex justify-between text-sm py-1">
-											<span>مبلغ تاییدات:</span>
-											<span className="font-semibold">
-												{toCurrency(bd.summary.certificationPrice)} تومان
-											</span>
-										</div>
-										<div className="flex justify-between text-sm py-1">
-											<span>مبلغ استعلام‌ها:</span>
-											<span className="font-semibold">
-												{toCurrency(bd.summary.inquiryPrice)} تومان
-												</span>
-											</div>
-											<div className="flex justify-between text-sm py-1">
-												<span>مبلغ تایید سفارت:</span>
-												<span className="font-semibold">
-													{toCurrency(bd.summary.embassyPrice ?? 0)} تومان
-											</span>
-										</div>
-										{(bd.summary.scanPrice ?? 0) > 0 && (
-											<div className="flex justify-between text-sm py-1">
-												<span>مبلغ اسکن مدارک:</span>
-												<span className="font-semibold">
-													{toCurrency(bd.summary.scanPrice ?? 0)} تومان
-												</span>
-											</div>
-										)}
-										{bd.summary.taxPercent > 0 && (
-											<>
-										<div className="flex justify-between text-sm py-1">
-											<span>
-												مالیات ({bd.summary.taxPercent}٪):
-											</span>
-											<span className="font-semibold">
-												{toCurrency(bd.summary.taxPrice)} تومان
-											</span>
-										</div>
-											</>
-										)}
-										<div className="h-px bg-neutral-100 my-1" />
-										<div className="flex justify-between font-bold py-1">
-											<span>مبلغ کل سفارش:</span>
-											<span className="text-lg text-primary">
-												{toCurrency(bd.summary.totalPrice)} تومان
-											</span>
-										</div>
-
-										<DeliverySection
-											hasJustice={bd.documents.some((d) => !!d.justiceCertification)}
-											hasMfa={bd.documents.some((d) => !!d.mfaCertification)}
-											desiredDate={editState.desiredDeliveryDate}
-											onDateChange={(d) => setEditState((prev) => (prev ? { ...prev, desiredDeliveryDate: d } : prev))}
-										/>
 									</div>
-								);
-							})()
-						) : calculation.result && !calculation.result.success ? (
-							<ErrorComponent
-								executeFunction={() => calcPayload && calculation.fetchData(calcPayload)}
-								callAble
-								errorText={calculation.result.description || "محاسبه نرخ با خطا مواجه شد"}
-							/>
-						) : (
-							<div className="text-sm text-neutral-400 py-4 text-center">
-								اطلاعات کافی برای محاسبه نرخ وجود ندارد
+								) : (
+									<div className="text-sm text-neutral-400 py-4 text-center">موارد خاصی برای این ترکیب تعریف نشده است</div>
+								)}
 							</div>
 						)}
-					</div>
-				)}
-			</div>
 
-			{/* Navigation buttons */}
-			<div className="flex items-center justify-between gap-3">
-				<div className="flex items-center gap-2">
-					<Link href="/cart">
-						<TabanButton variant="text">انصراف</TabanButton>
-					</Link>
-					{step > 1 && (
-						<TabanButton variant="bordered" onClick={goPrev}>
-							مرحله قبلی
+						{/* Step 5: Certifications */}
+						{step === 5 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader title="مهر و تاییدات ترجمه" subtitle="در صورت نیاز، مهرهای رسمی هر مدرک را انتخاب کنید (اختیاری)" />
+								{certificationRates.loading && !certificationRates.result ? (
+									<CardsSkeleton count={4} columns={2} />
+								) : certificationRates.result?.success && (certificationRates.result.data?.data?.length ?? 0) > 0 ? (
+									<div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+										{documentKeys.map((key, index) => {
+											const rateId = certificationRates.result?.data?.data?.[0]?.certificationRateId ?? null;
+											return (
+												<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+													<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+														<SelectCard
+															selected={!!editState.justiceCertification[key]}
+															onClick={() =>
+																setEditState((prev) => {
+																	if (!prev) return prev;
+																	const current = prev.justiceCertification[key];
+																	if (current) {
+																		// حذف دادگستری: امور خارجه هم برداشته می‌شود و استعلام/سفارتِ این مدرک پاک می‌گردد
+																		return {
+																			...prev,
+																			justiceCertification: { ...prev.justiceCertification, [key]: null },
+																			mfaCertification: { ...prev.mfaCertification, [key]: null },
+																			justiceInquiries: { ...prev.justiceInquiries, [key]: [] },
+																			selfInquiry: { ...prev.selfInquiry, [key]: false },
+																			embassies: { ...prev.embassies, [key]: [] },
+																		};
+																	}
+																	return { ...prev, justiceCertification: { ...prev.justiceCertification, [key]: rateId } };
+																})
+															}
+															icon={<IconJustice width={36} height={36} viewBox="0 0 48 48" className="fill-current stroke-0" />}
+															title="مهر دادگستری"
+															description={
+																editState.mfaCertification[key]
+																	? "تایید دادگستری، پیشنیاز تایید ترجمه توسط وزارت امور خارجه می باشد"
+																	: "تایید رسمی ترجمه توسط قوه قضاییه"
+															}
+														/>
+														<SelectCard
+															selected={!!editState.mfaCertification[key]}
+															onClick={() =>
+																setEditState((prev) => {
+																	if (!prev) return prev;
+																	const current = prev.mfaCertification[key];
+																	if (current) {
+																		// حذف امور خارجه: تایید سفارتِ این مدرک هم پاک می‌شود
+																		return { ...prev, mfaCertification: { ...prev.mfaCertification, [key]: null }, embassies: { ...prev.embassies, [key]: [] } };
+																	}
+																	// انتخاب مهر امور خارجه، مهر دادگستری را هم اجباراً فعال می‌کند
+																	return {
+																		...prev,
+																		mfaCertification: { ...prev.mfaCertification, [key]: rateId },
+																		justiceCertification: { ...prev.justiceCertification, [key]: prev.justiceCertification[key] ?? rateId },
+																	};
+																})
+															}
+															icon={<IconMfa width={32} height={32} className="stroke-current fill-none" />}
+															title="مهر وزارت امور خارجه"
+															description="تایید رسمی ترجمه توسط وزارت امور خارجه"
+														/>
+													</div>
+												</DocumentSection>
+											);
+										})}
+
+										<div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-2.5">
+											<IconInfo className="stroke-amber-600 w-5 h-5 shrink-0 mt-0.5" />
+											<span className="text-sm leading-7 text-amber-700">
+												لازم به ذکر است که جهت اخذ تاییدات، ارائه‌ی اصل مدارک به ارگان‌های مربوطه الزامی است.
+											</span>
+										</div>
+									</div>
+								) : (
+									<div className="text-sm text-neutral-400 py-4 text-center">تاییداتی برای این ترکیب تعریف نشده است</div>
+								)}
+							</div>
+						)}
+
+						{/* Step 6: Justice inquiries */}
+						{step === 6 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader title="استعلام‌های ترجمه" subtitle="در صورت نیاز به استعلام خاص، آن‌ها را برای هر مدرک انتخاب کنید (اختیاری)" />
+								{justiceInquiryRates.loading && !justiceInquiryRates.result ? (
+									<CardsSkeleton count={4} columns={2} />
+								) : justiceInquiryRates.result?.success && (justiceInquiryRates.result.data?.data?.length ?? 0) > 0 ? (
+									<div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+										{documentKeys.filter((key) => !!editState.justiceCertification[key]).length === 0 ? (
+											<div className="flex items-center gap-2.5 bg-secondary/5 border border-secondary/30 rounded-2xl px-4 py-4">
+												<IconJustice width={26} height={26} viewBox="0 0 48 48" className="fill-secondary stroke-0 shrink-0" />
+												<span className="text-sm leading-7 text-primary peyda font-semibold">
+													استعلام تنها برای مدارکی قابل انتخاب است که «مهر دادگستری» دارند. در صورت نیاز، در مرحله‌ی تاییدات مهر دادگستری را فعال کنید.
+												</span>
+											</div>
+										) : (
+											documentKeys
+												.filter((key) => !!editState.justiceCertification[key])
+												.map((key, index) => {
+													const selfInq = !!editState.selfInquiry[key];
+													return (
+														<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+															<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+																{justiceInquiryRates.result?.data?.data?.map((inquiry) => {
+																	const isSelected = (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
+																	return (
+																		<SelectCard
+																			key={inquiry.justiceInquiryRateId}
+																			selected={isSelected}
+																			onClick={() =>
+																				setEditState((prev) => {
+																					if (!prev) return prev;
+																					const current = prev.justiceInquiries[key] ?? [];
+																					const updated = isSelected
+																						? current.filter((id) => id !== inquiry.justiceInquiryRateId)
+																						: [...current, inquiry.justiceInquiryRateId];
+																					// با انتخاب استعلام از لیست، «خودم می‌گیرم» همان مدرک غیرفعال و پاک می‌شود
+																					return { ...prev, justiceInquiries: { ...prev.justiceInquiries, [key]: updated }, selfInquiry: { ...prev.selfInquiry, [key]: false } };
+																				})
+																			}
+																			icon={<IconInquiry width={34} height={34} viewBox="0 0 1024 1024" className="fill-current stroke-0" />}
+																			title={inquiry.justiceInquiryName}
+																		/>
+																	);
+																})}
+															</div>
+
+															<div className="mt-4 pt-4 border-t border-dashed border-neutral-200">
+																<button
+																	type="button"
+																	onClick={() =>
+																		setEditState((prev) => {
+																			if (!prev) return prev;
+																			const next = !prev.selfInquiry[key];
+																			const justiceInquiries = next ? { ...prev.justiceInquiries, [key]: [] } : prev.justiceInquiries;
+																			return { ...prev, selfInquiry: { ...prev.selfInquiry, [key]: next }, justiceInquiries };
+																		})
+																	}
+																	className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
+																		selfInq ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+																	}`}
+																>
+																	<span
+																		className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+																			selfInq ? "bg-secondary border-secondary" : "border-neutral-300"
+																		}`}
+																	>
+																		{selfInq && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
+																	</span>
+																	<span className="text-sm font-medium text-primary">استعلام‌های این مدرک را خودم تهیه می‌کنم</span>
+																</button>
+																{selfInq && (
+																	<div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 p-3 flex items-start gap-2.5">
+																		<IconInfo className="stroke-sky-600 w-5 h-5 shrink-0 mt-0.5" />
+																		<span className="text-xs leading-6 text-sky-700">
+																			می‌توانید بعداً در پنل کاربری، در بخش جزئیات سفارش، نتیجه‌ی استعلام را برای ما آپلود کنید. کارشناسان ما در این زمینه شما را راهنمایی می‌کنند.
+																		</span>
+																	</div>
+																)}
+															</div>
+														</DocumentSection>
+													);
+												})
+										)}
+									</div>
+								) : (
+									<div className="text-sm text-neutral-400 py-4 text-center">استعلامی برای این ترکیب تعریف نشده است</div>
+								)}
+							</div>
+						)}
+
+						{/* Step 7: Embassy approvals */}
+						{step === 7 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader title="تایید سفارت" subtitle="در صورت نیاز به تایید سفارت، سفارت‌های مربوط به هر مدرک را انتخاب کنید (اختیاری)" />
+								{!embassyStepValid && (
+									<span className="text-xs text-red-500 text-center">
+										برای مدارکی که تیک «تایید سفارت» را زده‌اید، انتخابِ حداقل یک سفارت الزامی است
+									</span>
+								)}
+								{embassyRates.loading && !embassyRates.result ? (
+									<CardsSkeleton count={4} columns={2} />
+								) : embassyRates.result?.success && (embassyRates.result.data?.data?.length ?? 0) > 0 ? (
+									<div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+										{documentKeys.map((key, index) => {
+											const allowed = !!editState.justiceCertification[key] && !!editState.mfaCertification[key];
+											const want = !!wantEmbassyByDoc[key];
+											const hasSelection = (editState.embassies[key]?.length ?? 0) > 0;
+											return (
+												<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+													{!allowed ? (
+														<div className="flex items-center gap-2.5 bg-secondary/5 border border-secondary/30 rounded-xl px-4 py-3">
+															<IconEmbassy viewBox="0 0 50 64" width={24} height={24} className="stroke-secondary stroke-2 shrink-0" />
+															<span className="text-xs leading-6 text-primary peyda font-semibold">
+																برای تایید سفارت این مدرک، ابتدا «مهر دادگستری» و «مهر وزارت امور خارجه» را در مرحله‌ی تاییدات فعال کنید
+															</span>
+														</div>
+													) : (
+														<div className="flex flex-col gap-4">
+															{/* تیکِ تمایل: تا انتخاب نشود، سفارت‌ها نمایش داده نمی‌شوند */}
+															<button
+																type="button"
+																onClick={() => toggleWantEmbassy(key)}
+																className={`flex items-center gap-2.5 w-full text-right rounded-xl border px-4 py-3 duration-150 ${
+																	want ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+																}`}
+															>
+																<span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${want ? "bg-secondary border-secondary" : "border-neutral-300"}`}>
+																	{want && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
+																</span>
+																<span className="text-sm font-medium text-primary">می‌خواهم این مدرک به تایید سفارت برسد</span>
+															</button>
+															{want && (
+																<div className="flex flex-col gap-2">
+																	<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+																		{embassyRates.result?.data?.data?.map((embassy) => {
+																			const isSelected = (editState.embassies[key] ?? []).includes(embassy.embassyRateId);
+																			return (
+																				<SelectCard
+																					key={embassy.embassyRateId}
+																					selected={isSelected}
+																					onClick={() =>
+																						setEditState((prev) => {
+																							if (!prev) return prev;
+																							const current = prev.embassies[key] ?? [];
+																							const updated = isSelected
+																								? current.filter((id) => id !== embassy.embassyRateId)
+																								: [...current, embassy.embassyRateId];
+																							return { ...prev, embassies: { ...prev.embassies, [key]: updated } };
+																						})
+																					}
+																					icon={<IconEmbassy viewBox="0 0 50 64" width={32} height={32} className="stroke-current stroke-2" />}
+																					title={embassy.embassyName}
+																				/>
+																			);
+																		})}
+																	</div>
+																	{!hasSelection && <span className="text-xs text-red-500">برای ادامه، حداقل یک سفارت را انتخاب کنید</span>}
+																</div>
+															)}
+														</div>
+													)}
+												</DocumentSection>
+											);
+										})}
+									</div>
+								) : (
+									<div className="text-sm text-neutral-400 py-4 text-center">تایید سفارتی برای این ترکیب تعریف نشده است</div>
+								)}
+							</div>
+						)}
+
+						{/* Step 8: Upload documents */}
+						{step === 8 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader
+									title="آپلود مدارک"
+									subtitle="تصویر مدارکی که قصد ترجمه‌ی آن‌ها را دارید، برای هر مدرک جداگانه بارگذاری کنید"
+									icon={<IconUpload viewBox="0 0 32 32" width={26} height={26} className="stroke-0 fill-current" />}
+								/>
+								<div className="max-w-3xl mx-auto w-full flex flex-col gap-6">
+									{uploadDescription && (
+										<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-5">
+											<div className="flex items-center gap-2 peyda font-bold text-primary mb-3">
+												<IconRequired viewBox="0 0 100 100" width={22} height={22} className="fill-secondary stroke-0" />
+												نکات بارگذاری مدارک
+											</div>
+											<div className="text-sm text-neutral-600 leading-7 whitespace-pre-line">{uploadDescription}</div>
+										</div>
+									)}
+									<div className="flex items-start gap-2 text-xs text-neutral-600 bg-secondary/5 border border-secondary/20 rounded-xl p-3.5">
+										<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
+										<span className="leading-6">
+											این مدارک برای انجام ترجمه‌ی رسمی کافی نیست؛ پیک مجموعه برای دریافت اصل مدارک به محل شما مراجعه می‌کند و بارگذاری در این مرحله صرفاً برای افزایش سرعت ترجمه است.
+										</span>
+									</div>
+									<div className="flex flex-col gap-5">
+										{documentKeys.map((key, index) => (
+											<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+												<UploadBox
+													value={editState.assetsByDoc[key] ?? []}
+													onChange={(urls) => setEditState((prev) => (prev ? { ...prev, assetsByDoc: { ...prev.assetsByDoc, [key]: urls } } : prev))}
+													folder={assetFolderName(uploadScope, editState.translationItemNames[key] ?? "")}
+													hint="فایل‌های این مدرک را اینجا رها کنید یا انتخاب نمایید"
+												/>
+												<DocumentDescriptionField
+													docTitle={editState.translationItemNames[key] ?? "مدرک"}
+													value={editState.descriptionByDoc[key] ?? ""}
+													onChange={(desc) => setEditState((prev) => (prev ? { ...prev, descriptionByDoc: { ...prev.descriptionByDoc, [key]: desc } } : prev))}
+												/>
+											</DocumentSection>
+										))}
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* Step 9: Passport */}
+						{step === 9 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader
+									title="پاسپورت"
+									subtitle="پاسپورت‌های مربوط به این سفارش را انتخاب یا بارگذاری کنید"
+									icon={<IconUpload viewBox="0 0 32 32" width={26} height={26} className="stroke-0 fill-current" />}
+								/>
+								<div className="max-w-3xl mx-auto w-full">
+									<PassportPicker value={editState.passports} onChange={(urls) => setEditState((prev) => (prev ? { ...prev, passports: urls } : prev))} />
+								</div>
+							</div>
+						)}
+
+						{/* Step 10: Copies */}
+						{step === 10 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader
+									title="تعداد نسخه مدارک"
+									subtitle="در صورت نیاز به نسخه‌ی اضافه، تعداد نسخه‌ی هر مدرک را مشخص کنید"
+									icon={<IconCopy width={24} height={24} className="stroke-current fill-none" />}
+								/>
+								<div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
+									{documentKeys.map((key, index) => (
+										<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+											<div className="flex flex-col gap-2">
+												<span className="text-sm text-neutral-500">تعداد نسخه</span>
+												<div className="w-full sm:w-72">
+													<TabanInput
+														isNumber
+														type="number"
+														value={editState.copyCount[key] ?? "1"}
+														setValue={(val: string) =>
+															setEditState((prev) => (prev ? { ...prev, copyCount: { ...prev.copyCount, [key]: val ?? "" } } : prev))
+														}
+														name={key}
+													/>
+												</div>
+											</div>
+										</DocumentSection>
+									))}
+									<div className="flex items-start gap-2 text-xs text-neutral-500 bg-neutral-100/60 border border-neutral-200 rounded-xl p-3.5 mt-1">
+										<IconRequired viewBox="0 0 100 100" width={16} height={16} className="fill-secondary stroke-0 shrink-0 mt-0.5" />
+										<span className="leading-6">
+											برای نسخه‌های اضافه، هزینه‌ انجام ترجمه دریافت نمی‌گردد؛ ولی سایر هزینه‌ها مانند: خدمات، تاییدات و ... به ازای هر نسخه دریافت می‌گردد.
+										</span>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* Step 11: Scan */}
+						{step === 11 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader
+									title="اسکن مدارک"
+									subtitle="در صورت نیاز، می‌توانید برای هر مدرک سرویس اسکن را انتخاب کنید"
+									icon={<IconDocument width={24} height={24} className="fill-current stroke-0" />}
+								/>
+								<div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
+									{documentKeys.map((key, index) => {
+										const scanRate = scanRates.result?.success ? scanRates.result.data?.data?.[0] ?? null : null;
+										const isSelected = !!editState.scanRateIdByDoc?.[key];
+										return (
+											<DocumentSection key={key} index={index} title={editState.translationItemNames[key] ?? "مدرک"}>
+												<button
+													type="button"
+													onClick={() =>
+														setEditState((prev) => {
+															if (!prev) return prev;
+															const current = prev.scanRateIdByDoc ?? {};
+															const already = !!current[key];
+															return { ...prev, scanRateIdByDoc: { ...current, [key]: already ? null : (scanRate?.scanRateId ?? null) } };
+														})
+													}
+													className={`flex items-center gap-3 w-full text-right rounded-xl border px-4 py-4 duration-150 ${
+														isSelected ? "border-secondary bg-secondary/5" : "border-neutral-200 hover:border-secondary/40"
+													}`}
+												>
+													<span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${isSelected ? "bg-secondary border-secondary" : "border-neutral-300"}`}>
+														{isSelected && <IconTick className="stroke-white w-4 h-4" strokeWidth={3.5} />}
+													</span>
+													<div className="flex flex-1 items-center justify-between">
+														<span className="text-sm font-medium text-primary">اسکن این مدرک</span>
+														{scanRate && (
+															<span className={`text-sm font-semibold ${isSelected ? "text-secondary" : "text-neutral-500"}`}>
+																{toCurrency(scanRate.price)} تومان
+															</span>
+														)}
+													</div>
+												</button>
+											</DocumentSection>
+										);
+									})}
+								</div>
+							</div>
+						)}
+
+						{/* Step 12: Summary */}
+						{step === 12 && (
+							<div className="flex flex-col gap-8">
+								<StepHeader title="خلاصه سفارش" subtitle="جزئیات نرخ سفارش خود را بررسی و آن را ذخیره کنید" />
+								<div className="max-w-3xl mx-auto w-full">
+									{calculation.loading && !calculation.result ? (
+										<div className="flex items-center gap-2 justify-center py-16">
+											<TabanLoading size={24} />
+											<span className="text-sm text-neutral-500">در حال محاسبه نرخ سفارش...</span>
+										</div>
+									) : calculation.result?.success && calculation.result.data?.data ? (
+										(() => {
+											const bd = calculation.result.data.data;
+											return (
+												<div className="flex flex-col gap-5">
+													<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-5 flex flex-col gap-3">
+														<div className="flex items-center justify-between text-sm">
+															<span className="text-neutral-500">مدرک ترجمه</span>
+															<div className="flex items-center gap-2">
+																<span className="peyda font-semibold text-primary">{bd.translationItemTitle}</span>
+																{bd.documents.length > 1 && (
+																	<span className="text-[11px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded">
+																		× {convertToPersianNumber(String(bd.documents.length))}
+																	</span>
+																)}
+															</div>
+														</div>
+														<div className="h-[1px] w-full bg-neutral-200" />
+														<div className="flex items-center justify-between text-sm">
+															<span className="text-neutral-500">زبان ترجمه</span>
+															<span className="peyda font-semibold text-primary">{bd.languageName}</span>
+														</div>
+													</div>
+
+													<div className="flex flex-col gap-3">
+														{bd.documents.map((doc) => (
+															<div key={doc.documentKey} className="rounded-2xl border border-neutral-200 p-4 flex flex-col gap-2.5">
+																<div className="flex items-center justify-between pb-2 border-b border-dashed border-neutral-200">
+																	<div className="flex items-center gap-1.5 peyda font-bold text-secondary text-sm">
+																		<span className="w-2 h-2 rounded-sm bg-secondary rotate-45" />
+																		{doc.title}
+																		{(doc.copyCount ?? 1) > 1 && (
+																			<span className="text-[10px] text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mr-1">
+																				× {convertToPersianNumber(String(doc.copyCount))} نسخه
+																			</span>
+																		)}
+																	</div>
+																	<div className="flex items-center gap-1 peyda font-semibold text-primary text-sm">
+																		{toCurrency(doc.documentTotal)}
+																		<span className="text-xs font-normal text-neutral-400">تومان</span>
+																	</div>
+																</div>
+																<div className="flex flex-col gap-1.5 text-xs text-neutral-500">
+																	<div className="flex items-center justify-between">
+																		<span>هزینه ترجمه</span>
+																		<span>{toCurrency(doc.translationTotal ?? doc.base.total + doc.specialsTotal)} تومان</span>
+																	</div>
+																	{doc.mfaCertification && (
+																		<div className="flex items-center justify-between">
+																			<span>مهر وزارت امور خارجه</span>
+																			<span>{toCurrency(doc.mfaCertification.price)} تومان</span>
+																		</div>
+																	)}
+																	{doc.justiceCertification && (
+																		<div className="flex items-center justify-between">
+																			<span>مهر دادگستری</span>
+																			<span>{toCurrency(doc.justiceCertification.price)} تومان</span>
+																		</div>
+																	)}
+																	{doc.embassyApprovals?.map((e) => (
+																		<div key={e.embassyRateId} className="flex items-center justify-between">
+																			<span>{e.embassyName}</span>
+																			<span>{toCurrency(e.price)} تومان</span>
+																		</div>
+																	))}
+																	{doc.justiceInquiries.map((i) => (
+																		<div key={i.justiceInquiryRateId} className="flex items-center justify-between">
+																			<span>{i.justiceInquiryName}</span>
+																			<span>{toCurrency(i.price)} تومان</span>
+																		</div>
+																	))}
+																</div>
+															</div>
+														))}
+													</div>
+
+													<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-5 flex flex-col gap-3">
+														<SummaryRow label="مبلغ ترجمه" value={bd.summary.translationPrice} />
+														{!!bd.summary.tierDiscountPercent && bd.summary.tierDiscountPercent > 0 && (
+															<div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 -mt-1">
+																<div className="flex items-center gap-2 text-sm text-emerald-700">
+																	<IconStar className="fill-emerald-500 stroke-0 w-4 h-4" />
+																	<span>تخفیف باشگاه مشتریان ({bd.summary.tierDiscountPercent}٪)</span>
+																</div>
+																<div className="flex items-center gap-1 font-semibold text-emerald-700">
+																	{toCurrency(bd.summary.tierDiscountAmount ?? 0)}-
+																	<span className="text-xs font-normal text-emerald-500">تومان</span>
+																</div>
+															</div>
+														)}
+														<div className="h-[1px] w-full bg-neutral-200" />
+														<SummaryRow label="مبلغ تاییدات" value={bd.summary.certificationPrice} />
+														<div className="h-[1px] w-full bg-neutral-200" />
+														<SummaryRow label="مبلغ استعلام‌ها" value={bd.summary.inquiryPrice} />
+														<div className="h-[1px] w-full bg-neutral-200" />
+														<SummaryRow label="مبلغ تایید سفارت" value={bd.summary.embassyPrice ?? 0} />
+														{(bd.summary.scanPrice ?? 0) > 0 && (
+															<>
+																<div className="h-[1px] w-full bg-neutral-200" />
+																<SummaryRow label="مبلغ اسکن مدارک" value={bd.summary.scanPrice ?? 0} />
+															</>
+														)}
+														{bd.summary.taxPercent > 0 && (
+															<>
+																<div className="h-[1px] w-full bg-neutral-200" />
+																<SummaryRow label={`مالیات (${bd.summary.taxPercent}٪)`} value={bd.summary.taxPrice} />
+															</>
+														)}
+														<div className="h-[1px] w-full bg-neutral-200" />
+														<SummaryRow label="مبلغ کل سفارش" value={bd.summary.totalPrice} bold />
+													</div>
+
+													<DeliverySection
+														hasJustice={bd.documents.some((d) => !!d.justiceCertification)}
+														hasMfa={bd.documents.some((d) => !!d.mfaCertification)}
+														desiredDate={editState.desiredDeliveryDate}
+														onDateChange={(d) => setEditState((prev) => (prev ? { ...prev, desiredDeliveryDate: d } : prev))}
+													/>
+												</div>
+											);
+										})()
+									) : calculation.result && !calculation.result.success ? (
+										<ErrorComponent
+											executeFunction={() => calcPayload && calculation.fetchData(calcPayload)}
+											callAble
+											errorText={calculation.result.description || "محاسبه نرخ با خطا مواجه شد"}
+										/>
+									) : (
+										<div className="text-sm text-neutral-400 py-4 text-center">اطلاعات کافی برای محاسبه نرخ وجود ندارد</div>
+									)}
+								</div>
+							</div>
+						)}
+					</motion.div>
+				</div>
+
+				{/* Navigation buttons */}
+				<div className="flex items-center justify-between gap-3">
+					<div className="flex items-center gap-2">
+						<Link href="/cart">
+							<TabanButton variant="text">انصراف</TabanButton>
+						</Link>
+						{step > 1 && (
+							<TabanButton variant="bordered" onClick={goPrev}>
+								مرحله قبلی
+							</TabanButton>
+						)}
+					</div>
+					{step < TOTAL_STEPS ? (
+						<TabanButton onClick={goNext} icon={<IconArrowLine />} disabled={!canProceed}>
+							مرحله بعدی
+						</TabanButton>
+					) : (
+						<TabanButton onClick={submitUpdate} isLoading={updateItem.loading} disabled={updateItem.loading || calculation.loading}>
+							ذخیره و بروزرسانی سفارش
 						</TabanButton>
 					)}
 				</div>
-				{step < TOTAL_STEPS ? (
-					<TabanButton onClick={goNext} icon={<IconArrowLine />} disabled={!canProceed}>
-						مرحله بعدی
-					</TabanButton>
-				) : (
-					<TabanButton
-						onClick={submitUpdate}
-						isLoading={updateItem.loading}
-						disabled={updateItem.loading || calculation.loading}
-					>
-						ذخیره و بروزرسانی سفارش
-					</TabanButton>
-				)}
 			</div>
 		</div>
 	);
