@@ -21,6 +21,11 @@ import { IconArrowLine, IconCircleUser } from "@/app/_components/icon/icons";
 import { useProfiletore } from "@/stores/profile";
 
 type AuthStep = "username" | "login" | "otp" | "password";
+/**
+ * مقصدِ مرحله‌های otp و password را مشخص می‌کند تا این دو مرحله بین سه فلو به اشتراک گذاشته شوند:
+ * signup (ثبت‌نام)، login (ورود با رمز یکبارمصرف)، forgot (فراموشی رمز عبور).
+ */
+type OtpMode = "signup" | "login" | "forgot";
 
 type AuthModalProps = {
 	open: boolean;
@@ -37,6 +42,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 	const showNotification = useNotificationStore((state) => state.showNotification);
 	const { profile, setProfile } = useProfiletore();
 	const [step, setStep] = useState<AuthStep>("username");
+	const [otpMode, setOtpMode] = useState<OtpMode>("signup");
 	const [username, setUsername] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 	const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -53,10 +59,16 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 	const setPasswordApi = useApi(
 		async (u: string, p: string, ref?: string) => await AuthEndpoints.setPassword(u, p, ref)
 	);
+	const sendLoginOtp = useApi(async (u: string) => await AuthEndpoints.sendLoginOTP(u));
+	const loginWithOtp = useApi(async (u: string, code: string) => await AuthEndpoints.loginWithOTP(u, code));
+	const sendForgetOtp = useApi(async (u: string) => await AuthEndpoints.sendForgetPasswordOTP(u));
+	const checkForgetOtp = useApi(async (u: string, code: string) => await AuthEndpoints.checkForgetPasswordOTP(u, code));
+	const changePasswordApi = useApi(async (u: string, p: string) => await AuthEndpoints.changePassword(u, p));
 	const getProfile = useApi(async () => await TabanEndpoints.getProfile());
 
 	const resetAll = () => {
 		setStep("username");
+		setOtpMode("signup");
 		setUsername("");
 		setPassword("");
 		setConfirmPassword("");
@@ -134,6 +146,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 				setErrors([]);
 				setStep("login");
 			} else {
+				setOtpMode("signup");
 				sendOtp.fetchData(username);
 			}
 		} else {
@@ -169,7 +182,47 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		else showNotification({ type: "error", message: login.result.description ?? "ورود با خطا مواجه شد" });
 	}, [login.result]);
 
-	/* ---------- otp step ---------- */
+	// ورود با رمز یکبارمصرف: شماره در مرحله‌ی قبل اعتبارسنجی شده، پس فقط کد ارسال می‌شود
+	const startLoginWithOtp = () => {
+		if (!username) return;
+		setErrors([]);
+		setOtpMode("login");
+		sendLoginOtp.fetchData(username);
+	};
+
+	useEffect(() => {
+		if (!sendLoginOtp.result) return;
+		if (sendLoginOtp.result.success) {
+			setErrors([]);
+			setOtp("");
+			setStep("otp");
+			startResendCountdown();
+		} else {
+			showNotification({ type: "error", message: sendLoginOtp.result.description ?? "ارسال کد تایید با خطا مواجه شد" });
+		}
+	}, [sendLoginOtp.result]);
+
+	// فراموشی رمز عبور: ارسال کد تایید برای بازیابی رمز
+	const startForgotPassword = () => {
+		if (!username) return;
+		setErrors([]);
+		setOtpMode("forgot");
+		sendForgetOtp.fetchData(username);
+	};
+
+	useEffect(() => {
+		if (!sendForgetOtp.result) return;
+		if (sendForgetOtp.result.success) {
+			setErrors([]);
+			setOtp("");
+			setStep("otp");
+			startResendCountdown();
+		} else {
+			showNotification({ type: "error", message: sendForgetOtp.result.description ?? "ارسال کد تایید با خطا مواجه شد" });
+		}
+	}, [sendForgetOtp.result]);
+
+	/* ---------- otp step (shared between signup / login / forgot) ---------- */
 	const submitOtp = (e?: FormEvent) => {
 		e?.preventDefault();
 		const errs: FormErrors[] = [];
@@ -177,7 +230,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		else if (otp.length !== 5) errs.push({ item: "otp", message: "کد تایید باید ۵ رقمی باشد" });
 		setErrors(errs);
 		if (errs.length > 0) return;
-		checkOtp.fetchData(username, otp);
+		if (otpMode === "login") loginWithOtp.fetchData(username, otp);
+		else if (otpMode === "forgot") checkForgetOtp.fetchData(username, otp);
+		else checkOtp.fetchData(username, otp);
 	};
 
 	useEffect(() => {
@@ -190,13 +245,31 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		}
 	}, [checkOtp.result]);
 
+	useEffect(() => {
+		if (!loginWithOtp.result) return;
+		if (loginWithOtp.result.success) finalizeAuth(loginWithOtp.result.data?.data);
+		else showNotification({ type: "error", message: loginWithOtp.result.description ?? "ورود با خطا مواجه شد" });
+	}, [loginWithOtp.result]);
+
+	useEffect(() => {
+		if (!checkForgetOtp.result) return;
+		if (checkForgetOtp.result.success) {
+			setErrors([]);
+			setStep("password");
+		} else {
+			showNotification({ type: "error", message: checkForgetOtp.result.description ?? "تایید کد با خطا مواجه شد" });
+		}
+	}, [checkForgetOtp.result]);
+
 	const resendHandler = () => {
 		if (resendIn > 0) return;
 		setOtp("");
-		sendOtp.fetchData(username);
+		if (otpMode === "login") sendLoginOtp.fetchData(username);
+		else if (otpMode === "forgot") sendForgetOtp.fetchData(username);
+		else sendOtp.fetchData(username);
 	};
 
-	/* ---------- password step ---------- */
+	/* ---------- password step (set-password for signup / change-password for forgot) ---------- */
 	const submitPassword = (e?: FormEvent) => {
 		e?.preventDefault();
 		const errs: FormErrors[] = [];
@@ -206,7 +279,8 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		else if (password && password !== confirmPassword) errs.push({ item: "confirmPassword", message: "رمز عبور و تکرار آن مطابقت ندارد" });
 		setErrors(errs);
 		if (errs.length > 0) return;
-		setPasswordApi.fetchData(username, password, referralCode.trim() || undefined);
+		if (otpMode === "forgot") changePasswordApi.fetchData(username, password);
+		else setPasswordApi.fetchData(username, password, referralCode.trim() || undefined);
 	};
 
 	useEffect(() => {
@@ -215,14 +289,51 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		else showNotification({ type: "error", message: setPasswordApi.result.description ?? "ساخت حساب با خطا مواجه شد" });
 	}, [setPasswordApi.result]);
 
+	useEffect(() => {
+		if (!changePasswordApi.result) return;
+		if (changePasswordApi.result.success) {
+			// تغییر رمز توکن برنمی‌گرداند؛ پس مثل فلوی صفحه‌ای کاربر با رمز جدید وارد می‌شود (ورود خودکار نداریم)
+			showNotification({ type: "success", message: "رمز عبور با موفقیت تغییر کرد، اکنون وارد شوید" });
+			setPassword("");
+			setConfirmPassword("");
+			setOtp("");
+			setErrors([]);
+			setStep("login");
+		} else {
+			showNotification({ type: "error", message: changePasswordApi.result.description ?? "تغییر رمز عبور با خطا مواجه شد" });
+		}
+	}, [changePasswordApi.result]);
+
 	const usernameLoading = checkUsername.loading || sendOtp.loading;
-	const stepTitle = step === "username" ? "ورود | ثبت نام" : step === "login" ? "ورود" : step === "otp" ? "کد تایید" : "تعیین رمز عبور";
+	const otpChecking = otpMode === "login" ? loginWithOtp.loading : otpMode === "forgot" ? checkForgetOtp.loading : checkOtp.loading;
+	const otpResending = otpMode === "login" ? sendLoginOtp.loading : otpMode === "forgot" ? sendForgetOtp.loading : sendOtp.loading;
+	const passwordSubmitting = otpMode === "forgot" ? changePasswordApi.loading : setPasswordApi.loading || getProfile.loading;
+	const stepTitle =
+		step === "username"
+			? "ورود | ثبت نام"
+			: step === "login"
+				? "ورود"
+				: step === "otp"
+					? otpMode === "forgot"
+						? "بازیابی رمز عبور"
+						: otpMode === "login"
+							? "ورود با رمز یکبار مصرف"
+							: "کد تایید"
+					: otpMode === "forgot"
+						? "رمز عبور جدید"
+						: "تعیین رمز عبور";
 
 	const goBackToUsername = () => {
 		setErrors([]);
 		setPassword("");
 		setOtp("");
 		setStep("username");
+	};
+
+	const goBackToLogin = () => {
+		setErrors([]);
+		setOtp("");
+		setStep("login");
 	};
 
 	return (
@@ -285,6 +396,15 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 						hasError={!!findError(errors, "password")}
 						errorText={findError(errors, "password")?.message}
 					/>
+					<button
+						type="button"
+						onClick={startForgotPassword}
+						disabled={sendForgetOtp.loading}
+						className="text-xs text-secondary self-start flex items-center gap-1 hover:gap-1.5 duration-150 disabled:opacity-60"
+					>
+						{sendForgetOtp.loading ? "در حال ارسال کد..." : "فراموشی رمز عبور"}
+						<IconArrowLine width={14} height={14} />
+					</button>
 					<TabanButton
 						type="submit"
 						className="!w-full justify-center"
@@ -293,6 +413,17 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 						disabled={login.loading || getProfile.loading}
 					>
 						ورود به حساب
+					</TabanButton>
+					<TabanButton
+						variant="bordered"
+						type="button"
+						onClick={startLoginWithOtp}
+						isLoading={sendLoginOtp.loading}
+						loadingText="در حال ارسال کد..."
+						className="!w-full justify-center"
+						disabled={sendLoginOtp.loading}
+					>
+						ورود با رمز یکبار مصرف
 					</TabanButton>
 					<button
 						type="button"
@@ -309,11 +440,23 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 			{step === "otp" && (
 				<form className="flex flex-col gap-4 pt-2" onSubmit={submitOtp}>
 					<div className="text-sm text-center text-neutral-500 leading-6">
-						حسابی با شماره <span dir="ltr">{username}</span> یافت نشد. کد تایید برای ساخت حساب ارسال شد.
+						{otpMode === "signup" ? (
+							<>
+								حسابی با شماره <span dir="ltr">{username}</span> یافت نشد. کد تایید برای ساخت حساب ارسال شد.
+							</>
+						) : otpMode === "forgot" ? (
+							<>
+								کد تایید برای شماره <span dir="ltr">{username}</span> ارسال شد، برای تغییر رمز عبور آن را وارد کنید
+							</>
+						) : (
+							<>
+								کد تایید برای شماره <span dir="ltr">{username}</span> ارسال شد، برای ورود آن را وارد کنید
+							</>
+						)}
 					</div>
 					<TabanInput
 						isLtr
-						disabled={checkOtp.loading}
+						disabled={otpChecking}
 						value={otp}
 						onChange={(e) => setOtp(e.target.value)}
 						name="otp"
@@ -324,8 +467,12 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 						errorText={findError(errors, "otp")?.message}
 					/>
 					<div className="flex items-center justify-between text-xs">
-						<button type="button" onClick={goBackToUsername} className="text-secondary">
-							اصلاح شماره همراه
+						<button
+							type="button"
+							onClick={otpMode === "signup" ? goBackToUsername : goBackToLogin}
+							className="text-secondary"
+						>
+							{otpMode === "signup" ? "اصلاح شماره همراه" : "ورود با رمز عبور"}
 						</button>
 						{resendIn > 0 ? (
 							<span className="text-neutral-400">ارسال مجدد تا {resendIn} ثانیه دیگر</span>
@@ -333,7 +480,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 							<button
 								type="button"
 								onClick={resendHandler}
-								disabled={sendOtp.loading}
+								disabled={otpResending}
 								className="text-primary font-medium"
 							>
 								دریافت مجدد کد
@@ -343,11 +490,11 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 					<TabanButton
 						type="submit"
 						className="!w-full justify-center"
-						isLoading={checkOtp.loading}
-						loadingText="در حال بررسی"
-						disabled={checkOtp.loading}
+						isLoading={otpChecking || getProfile.loading}
+						loadingText={otpMode === "login" ? "در حال ورود" : "در حال بررسی"}
+						disabled={otpChecking || getProfile.loading}
 					>
-						ادامه
+						{otpMode === "login" ? "ورود به حساب" : "ادامه"}
 					</TabanButton>
 				</form>
 			)}
@@ -355,15 +502,17 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 			{/* password step */}
 			{step === "password" && (
 				<form className="flex flex-col gap-4 pt-2" onSubmit={submitPassword}>
-					<div className="text-sm text-center text-neutral-500">یک رمز عبور برای حساب خود تعیین کنید</div>
+					<div className="text-sm text-center text-neutral-500">
+						{otpMode === "forgot" ? "رمز عبور جدید خود را وارد کنید" : "یک رمز عبور برای حساب خود تعیین کنید"}
+					</div>
 					<TabanInput
 						isLtr
 						isPasswordInput
-						disabled={setPasswordApi.loading}
+						disabled={passwordSubmitting}
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 						name="password"
-						label="رمز عبور"
+						label={otpMode === "forgot" ? "رمز عبور جدید" : "رمز عبور"}
 						isHandleError
 						hasError={!!findError(errors, "password")}
 						errorText={findError(errors, "password")?.message}
@@ -371,7 +520,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 					<TabanInput
 						isLtr
 						isPasswordInput
-						disabled={setPasswordApi.loading}
+						disabled={passwordSubmitting}
 						value={confirmPassword}
 						onChange={(e) => setConfirmPassword(e.target.value)}
 						name="confirmPassword"
@@ -380,22 +529,24 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 						hasError={!!findError(errors, "confirmPassword")}
 						errorText={findError(errors, "confirmPassword")?.message}
 					/>
-					<TabanInput
-						isLtr
-						disabled={setPasswordApi.loading}
-						value={referralCode}
-						onChange={(e) => setReferralCode(e.target.value)}
-						name="referralCode"
-						label="کد معرف (اختیاری)"
-					/>
+					{otpMode !== "forgot" && (
+						<TabanInput
+							isLtr
+							disabled={passwordSubmitting}
+							value={referralCode}
+							onChange={(e) => setReferralCode(e.target.value)}
+							name="referralCode"
+							label="کد معرف (اختیاری)"
+						/>
+					)}
 					<TabanButton
 						type="submit"
 						className="!w-full justify-center"
-						isLoading={setPasswordApi.loading || getProfile.loading}
-						loadingText="در حال ساخت حساب"
-						disabled={setPasswordApi.loading || getProfile.loading}
+						isLoading={passwordSubmitting}
+						loadingText={otpMode === "forgot" ? "در حال ثبت" : "در حال ساخت حساب"}
+						disabled={passwordSubmitting}
 					>
-						ساخت حساب و ورود
+						{otpMode === "forgot" ? "تغییر رمز عبور" : "ساخت حساب و ورود"}
 					</TabanButton>
 				</form>
 			)}
