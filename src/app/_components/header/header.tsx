@@ -183,9 +183,10 @@ export const Header = () => {
 				className={`header bg-primary flex flex-col max-lg:!hidden w-full top-[var(--top-banner-height)] right-0 rounded-none  fixed duration-300 px-0 lg:!px-6 z-[100] shadow-sm h-[72px]`}
 			>
 				<div className="container mx-auto flex justify-between items-center py-2">
-					<div className="flex gap-8 items-center">
-						<Link href="/" className="flex items-center">
+					<div className="flex gap-12 items-center">
+						<Link href="/" className="flex items-center gap-2">
 							<Image src="/images/logo2White.svg" width={48} height={32} alt="logo" />
+							<div className="text-white/85 morabba text-xl">رسمــی‌یاب</div>
 						</Link>
 						<div className=" gap-3 hidden lg:!flex text-sm peyda">
 							{menuItems?.map((it) => (
@@ -307,12 +308,16 @@ export const Header = () => {
 				<div className="w-full ">
 					<div className="flex w-full">
 						<div className="flex lg:!hidden justify-between px-6 items-center w-full">
-							<span onClick={menuHandler} className="cursor-pointer lg:!hidden">
+							<div className="w-full flex items-center justify-start"><span onClick={menuHandler} className="cursor-pointer lg:!hidden">
 								<Image src="/images/menu.svg" alt="menu" width={24} height={24} className="max-lg:!w-5 max-lg:!h-5"/>
-							</span>
-							<Link href="/" className=" relative">
+							</span></div>
+							<div className="w-full flex items-center justify-center"><Link href="/" className=" relative flex items-center gap-2">
 								<Image width={90} height={56} src="/images/logo2.svg" alt="logo" className="max-lg:!w-10 py-2" />
-							</Link>
+								<div className="text-primary/85 morabba text-xl">رسمــی‌یاب</div>
+							</Link></div>
+							<div className="w-full flex items-center justify-center"></div>
+							
+							
 						</div>
 					</div>
 				</div>

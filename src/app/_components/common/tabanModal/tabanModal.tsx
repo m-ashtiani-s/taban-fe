@@ -40,7 +40,7 @@ export default function TabanModal({ open, setOpen, title, children, onClose, wi
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center bg-secondary/15 px-4 py-2">
-							<IconCross strokeOpacity={0} width={24} height={24} className="relative -top-[2px]" fill="#4d4d4d" />
+							<IconCross strokeOpacity={0} width={24} height={24} className="relative -top-[2px]" fill="#4d4d4d" onClick={handleClose}/>
 							<div className="font-semibold">{title}</div>
 						</div>
 						<div className="p-4">{children}</div>

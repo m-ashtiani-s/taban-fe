@@ -44,7 +44,7 @@ export default function Page() {
 
 	const getTwoMinutesFromNow = () => {
 		const time = new Date();
-		time.setSeconds(time.getSeconds() + 2);
+		time.setSeconds(time.getSeconds() + 120);
 		return time;
 	};
 

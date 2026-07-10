@@ -168,6 +168,7 @@ export default function Page() {
 					<div className="mt-4">
 						<TabanInput
 							isLtr
+							isPasswordInput
 							disabled={loginLoading}
 							value={formValues?.password}
 							groupMode
