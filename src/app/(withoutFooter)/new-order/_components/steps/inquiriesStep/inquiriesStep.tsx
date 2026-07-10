@@ -29,12 +29,12 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 	const isSelfInquiry = (docKey: string): boolean => !!order?.selfInquiryByDoc?.[docKey];
 
 	const isSelected = (rateId: string, docKey: string): boolean => {
-		if (!hasJusticeCert(docKey) || isSelfInquiry(docKey)) return false;
+		if (!hasJusticeCert(docKey)) return false;
 		const item = order?.justiceInquiriesItems?.find((it) => it?.translationItemId === docKey);
 		return !!item?.justiceInquiries?.some((it) => it?.justiceInquiryRateId === rateId);
 	};
 
-	// با فعال‌کردن «خودم می‌گیرم»، انتخاب استعلام‌های همان مدرک پاک می‌شود
+	// فعال‌کردن «خودم می‌گیرم» انتخاب استعلام‌های همان مدرک را پاک می‌کند (و انتخاب استعلام هم این تیک را برمی‌دارد)
 	const toggleSelfInquiry = (docKey: string) => {
 		if (!hasJusticeCert(docKey)) return;
 		setOrder((prev) => {
@@ -50,8 +50,8 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 	};
 
 	const toggle = (rate: JusticeInquiryRate, docKey: string, docTitle: string) => {
-		// بدون مهر دادگستری یا وقتی کاربر خودش استعلام می‌گیرد، انتخاب استعلام مجاز نیست
-		if (!hasJusticeCert(docKey) || isSelfInquiry(docKey)) return;
+		// انتخاب استعلام فقط به مهر دادگستری وابسته است؛ با انتخاب از لیست، «خودم می‌گیرم» همان مدرک غیرفعال و پاک می‌شود
+		if (!hasJusticeCert(docKey)) return;
 		const selection: JusticeInquirySelection = { justiceInquiryRateId: rate.justiceInquiryRateId };
 		setOrder((prev) => {
 			const others = (prev?.justiceInquiriesItems ?? []).filter((it) => it?.translationItemId !== docKey);
@@ -62,6 +62,7 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 				: [...(current?.justiceInquiries ?? []), selection];
 			return {
 				...prev,
+				selfInquiryByDoc: { ...(prev?.selfInquiryByDoc ?? {}), [docKey]: false },
 				justiceInquiriesItems: [...others, { translationItemId: docKey, translationItemTitle: docTitle, justiceInquiries }],
 			};
 		});
@@ -87,11 +88,7 @@ export default function InquiriesStep({ rates }: InquiriesStepProps) {
 						const selfInq = isSelfInquiry(docKey);
 						return (
 							<DocumentSection key={docKey} index={index} title={names[docKey] ?? "مدرک"}>
-								<div
-									className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${
-										selfInq ? "opacity-40 pointer-events-none select-none" : ""
-									}`}
-								>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									{inquiryRates.map((rate) => (
 										<SelectCard
 											key={rate.justiceInquiryRateId}

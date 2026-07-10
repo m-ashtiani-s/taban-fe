@@ -267,6 +267,16 @@ export default function OrderItemEditPage() {
 	const hasBaseRate = !!(baseRate.result?.success && baseRate.result.data?.data?.[0]?.title);
 	const skipBaseStep = !baseRate.loading && !!baseRate.result && !hasBaseRate;
 
+	// مرحله‌ی استعلام (مرحله ۶) فقط وقتی نمایش داده می‌شود که برای مدرکی «مهر دادگستری» انتخاب شده باشد،
+	// یا از قبل استعلامی (یا «خودم می‌گیرم») برای مدرکی ثبت شده باشد؛ در غیر این صورت از فلو حذف می‌شود.
+	const skipInquiriesStep = useMemo(() => {
+		if (!editState) return false;
+		const keys = Object.keys(editState.translationItemNames);
+		const hasJustice = keys.some((key) => !!editState.justiceCertification[key]);
+		const hasInquiries = keys.some((key) => (editState.justiceInquiries[key]?.length ?? 0) > 0 || !!editState.selfInquiry[key]);
+		return !hasJustice && !hasInquiries;
+	}, [editState]);
+
 	// اگر با وجود آماده‌شدنِ نرخ‌ها همچنان روی مرحله‌ی نرخ پایه بمانیم ولی نرخی نباشد، رد شو
 	useEffect(() => {
 		if (step === 3 && skipBaseStep) setStep(4);
@@ -274,13 +284,17 @@ export default function OrderItemEditPage() {
 
 	const goNext = () =>
 		setStep((s) => {
-			const next = Math.min(s + 1, TOTAL_STEPS);
-			return next === 3 && skipBaseStep ? 4 : next;
+			let next = Math.min(s + 1, TOTAL_STEPS);
+			if (next === 3 && skipBaseStep) next = 4;
+			if (next === 6 && skipInquiriesStep) next = 7;
+			return next;
 		});
 	const goPrev = () =>
 		setStep((s) => {
-			const prev = Math.max(s - 1, 1);
-			return prev === 3 && skipBaseStep ? 2 : prev;
+			let prev = Math.max(s - 1, 1);
+			if (prev === 6 && skipInquiriesStep) prev = 5;
+			if (prev === 3 && skipBaseStep) prev = 2;
+			return prev;
 		});
 
 	const submitUpdate = () => {
@@ -652,21 +666,21 @@ export default function OrderItemEditPage() {
 													<div className="w-2.5 h-2.5 rounded bg-primary/70 rotate-45 shrink-0" />
 													استعلام برای {editState.translationItemNames[key]}
 												</div>
-												<div className={`flex flex-wrap gap-4 ${selfInq ? "opacity-40 pointer-events-none select-none" : ""}`}>
+												<div className="flex flex-wrap gap-4">
 													{justiceInquiryRates.result?.data?.data?.map((inquiry, index) => {
-														const isSelected = !selfInq && (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
+														const isSelected = (editState.justiceInquiries[key] ?? []).includes(inquiry.justiceInquiryRateId);
 														return (
 															<motion.div key={inquiry.justiceInquiryRateId} className="flex-1 min-w-48" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
 																<div
 																	onClick={() => {
-																		if (selfInq) return;
 																		setEditState((prev) => {
 																			if (!prev) return prev;
 																			const current = prev.justiceInquiries[key] ?? [];
 																			const updated = isSelected
 																				? current.filter((id) => id !== inquiry.justiceInquiryRateId)
 																				: [...current, inquiry.justiceInquiryRateId];
-																			return { ...prev, justiceInquiries: { ...prev.justiceInquiries, [key]: updated } };
+																			// با انتخاب استعلام از لیست، «خودم می‌گیرم» همان مدرک غیرفعال و پاک می‌شود
+																			return { ...prev, justiceInquiries: { ...prev.justiceInquiries, [key]: updated }, selfInquiry: { ...prev.selfInquiry, [key]: false } };
 																		});
 																	}}
 																	className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer duration-200 ${isSelected ? "bg-secondary border-secondary" : "border-neutral-300 hover:bg-secondary/10"}`}

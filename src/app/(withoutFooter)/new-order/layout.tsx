@@ -57,9 +57,24 @@ function NewOrderFlow({ children }: { children: React.ReactNode }) {
 	const currentStep = useMemo<StepKey | null>(() => slugToStep(pathname.split("/").pop()), [pathname]);
 
 	const count = order?.translationItemCount ?? 1;
-	const steps = rates.steps;
 	const itemId = order?.translationItem?.translationItemId;
 	const languageId = order?.language?.languageId;
+
+	// مرحله‌ی استعلام‌ها فقط وقتی نمایش داده می‌شود که «مهر دادگستری» برای مدرکی انتخاب شده باشد،
+	// یا کاربر از قبل استعلامی (یا «خودم می‌گیرم») برای مدرکی ثبت کرده باشد. در غیر این صورت
+	// این مرحله کاملاً از توالی حذف می‌شود.
+	const showInquiries = useMemo(() => {
+		const hasJustice = (order?.justiceCertification ?? []).some((it) => !!it?.justiceCertification);
+		const hasRegisteredInquiries =
+			(order?.justiceInquiriesItems ?? []).some((it) => (it?.justiceInquiries?.length ?? 0) > 0) ||
+			Object.values(order?.selfInquiryByDoc ?? {}).some(Boolean);
+		return hasJustice || hasRegisteredInquiries;
+	}, [order?.justiceCertification, order?.justiceInquiriesItems, order?.selfInquiryByDoc]);
+
+	const steps = useMemo<StepKey[]>(
+		() => (showInquiries ? rates.steps : rates.steps.filter((key) => key !== "inquiries")),
+		[rates.steps, showInquiries]
+	);
 
 	// ناوبری بین مراحل (جایگزین setCurrentStep قبلی)
 	const goToStep = useCallback(

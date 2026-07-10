@@ -95,7 +95,7 @@ export default function CertificationsStep({ rates }: CertificationsStepProps) {
 								title="مهر دادگستری"
 								description={
 									isSelected("mfa", docKey)
-										? "پیش‌نیاز مهر وزارت امور خارجه است؛ با برداشتن آن، مهر امور خارجه نیز برداشته می‌شود"
+										? "تایید دادگستری، پیشنیاز تایید ترجمه توسط وزارت امور خارجه می باشد"
 										: "تایید رسمی ترجمه توسط قوه قضاییه"
 								}
 							/>
