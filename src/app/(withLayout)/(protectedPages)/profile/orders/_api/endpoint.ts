@@ -37,14 +37,6 @@ export const OrderEndpoints = {
 		});
 		return res?.data?.data;
 	},
-	// TODO: موقت — تا قبل از اتصال درگاه پرداخت واقعی. این فقط وضعیت سفارش را پرداخت‌شده می‌کند.
-	payOrder: async (orderId: string) => {
-		const res = await httpClient.call<Res<Order>>({
-			method: "PUT",
-			url: `v1/user/orders/${orderId}/pay`,
-		});
-		return res?.data;
-	},
 	updateOrderItem: async (orderId: string, cartItemId: string, payload: AddDocumentToCartPayload) => {
 		const res = await httpClient.call<Res<Order>>({
 			method: "PUT",

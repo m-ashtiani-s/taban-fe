@@ -35,12 +35,9 @@ import {
 } from "@/app/_components/icon/icons";
 import { svgIcon } from "@/app/_components/icon/icon.types";
 import { OrderEndpoints } from "../_api/endpoint";
+import { PaymentEndpoints } from "../_api/payment.endpoint";
 import { Order, OrderCustomerInfo, OrderedDoc, OrderShippingAddressInfo, OrderStatus } from "../_types/order.type";
 import { guideToneClasses, orderFlowSteps, orderStatusGuide, orderStatusMeta, paymentStatusMeta } from "../_constants/orderStatus";
-import axios from "axios";
-import { API_URL } from "@/config/global";
-import { storage } from "@/types/Storage";
-import { StorageKey } from "@/types/StorageKey";
 
 const statusGuideIcon: Record<OrderStatus, React.FC<svgIcon>> = {
 	document_submission: IconInfo,
@@ -62,7 +59,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 	const router = useRouter();
 	const showNotification = useNotificationStore((s) => s.showNotification);
 	const { result, resultData, fetchData, loading } = useApi(async (id: string) => await OrderEndpoints.getOrder(id), true);
-	const pay = useApi(async (id: string) => await OrderEndpoints.payOrder(id));
+	const pay = useApi(async (id: string, backUrl: string) => await PaymentEndpoints.initiate(id, backUrl));
 	const removeCoupon = useApi(async (id: string) => await OrderEndpoints.removeCoupon(id));
 	const [removeCouponModalOpen, setRemoveCouponModalOpen] = useState<boolean>(false);
 	const [invoiceLoading, setInvoiceLoading] = useState<boolean>(false);
@@ -71,15 +68,16 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 		fetchData(params.orderId);
 	}, []);
 
-	// TODO: موقت — تا قبل از اتصال درگاه پرداخت واقعی، فقط وضعیت سفارش را پرداخت‌شده می‌کند.
+	// شروع پرداخت: از بک‌اند لینک درگاه زرین‌پال را می‌گیریم و کاربر را به آن هدایت می‌کنیم.
+	// بعد از پرداخت، درگاه کاربر را به backUrl (صفحه‌ی نتیجه) برمی‌گرداند.
 	const payHandler = async () => {
-		const res = await pay.fetchDataResult(params.orderId);
-		if (res.success) {
-			showNotification({ type: "success", message: res.data?.message ?? "پرداخت با موفقیت انجام شد" });
-			fetchData(params.orderId);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "پرداخت با خطا مواجه شد" });
+		const backUrl = `${window.location.origin}/payment/result`;
+		const res = await pay.fetchDataResult(params.orderId, backUrl);
+		if (res.success && res.data?.data?.redirectUrl) {
+			window.location.href = res.data.data.redirectUrl;
+			return;
 		}
+		showNotification({ type: "error", message: !res.success ? res.description ?? "اتصال به درگاه پرداخت ناموفق بود" : "اتصال به درگاه پرداخت ناموفق بود" });
 	};
 
 	const removeCouponHandler = async () => {
@@ -408,7 +406,7 @@ function StatusGuidance({ order, onPay, paying }: { order: Order; onPay: () => v
 							<div className="text-xs text-neutral-500">مبلغ قابل پرداخت</div>
 							<div className={`peyda font-bold text-lg ${tone.title}`}>{toCurrency(order.finalAmount)} تومان</div>
 						</div>
-						<TabanButton onClick={onPay} isLoading={paying} loadingText="در حال پرداخت...">
+						<TabanButton onClick={onPay} isLoading={paying} loadingText="در حال انتقال به درگاه...">
 							پرداخت سفارش
 						</TabanButton>
 					</div>
