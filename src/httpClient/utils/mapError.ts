@@ -89,9 +89,3 @@ export function mapError<T = any>(err: any): ResultError {
 		statusCode: err?.response?.status,
 	};
 }
-
-export function shouldRetry(code: string): boolean {
-	const retryableErrors = [InternalErrorCode.UNKNOWN, InternalErrorCode.TIMEOUT, InternalErrorCode.NETWORK_ERROR, InternalErrorCode.SERVICE_UNAVAILABLE];
-
-	return retryableErrors.includes(code as InternalErrorCode);
-}

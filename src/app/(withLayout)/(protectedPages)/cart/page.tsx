@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCartStore } from "@/stores/cart";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
-import { useApi } from "@/hooks/useApi";
+import { withMappedError } from "@/utils/withMappedError";
+import { STALE_TIME } from "@/core/query/staleTime";
 import { AppliedCoupon, AppliedCouponItemDiscount, CartItem } from "@/types/cart.type";
 import { toCurrency } from "@/utils/string";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
@@ -18,41 +20,36 @@ import Link from "next/link";
 import CartCoupon from "./_components/cartCoupon/cartCoupon";
 
 export default function CartPage() {
-	const { cart, setCart } = useCartStore();
-	const showNotification = useNotificationStore((s) => s.showNotification);
 	const [deleteTarget, setDeleteTarget] = useState<CartItem | null>(null);
 
-	const getCart = useApi(async () => await CartEndpoints.getCart(), true);
+	const { cart, setCart } = useCartStore();
+	const showNotification = useNotificationStore((s) => s.showNotification);
 
-	const removeItem = useApi(async (cartItemId: string) => await CartEndpoints.removeFromCart(cartItemId));
+	const queryClient = useQueryClient();
+
+	const cartQuery = useQuery({
+		queryKey: ["cart"],
+		queryFn: () => withMappedError(() => CartEndpoints.getCart()),
+		staleTime: STALE_TIME.REALTIME,
+		meta: { showNotification: true },
+	});
+
+	const removeItem = useMutation({
+		mutationFn: (cartItemId: string) => withMappedError(() => CartEndpoints.removeFromCart(cartItemId)),
+		meta: { showNotification: true },
+		onSuccess: (res) => {
+			queryClient.setQueryData(["cart"], res);
+			setCart(res?.data ?? null);
+			setDeleteTarget(null);
+			showNotification({ type: "success", message: "ترجمه با موفقیت از سبد خرید حذف شد" });
+		},
+	});
 
 	useEffect(() => {
-		getCart.fetchData();
-	}, []);
-
-	useEffect(() => {
-		if (getCart.result?.success) {
-			setCart(getCart.result.data?.data ?? null);
-		}
-	}, [getCart.result]);
-
-	useEffect(() => {
-		if (removeItem.result) {
-			if (removeItem.result.success) {
-				setCart(removeItem.result.data?.data ?? null);
-				setDeleteTarget(null);
-				showNotification({ type: "success", message: "ترجمه با موفقیت از سبد خرید حذف شد" });
-			} else {
-				showNotification({
-					type: "error",
-					message: removeItem.result.description ?? "حذف با خطا مواجه شد",
-				});
-			}
-		}
-	}, [removeItem.result]);
+		if (cartQuery.data) setCart(cartQuery.data.data ?? null);
+	}, [cartQuery.data]);
 
 	const items = cart?.items ?? [];
-	const isLoading = getCart.loading && !getCart.result;
 
 	return (
 		<div className="flex flex-col gap-6 pt-16 max-lg:pt-8 max-lg:px-4">
@@ -73,9 +70,9 @@ export default function CartPage() {
 						</TabanButton>
 						<TabanButton
 							className="!bg-error !border-error"
-							isLoading={removeItem.loading}
-							disabled={removeItem.loading}
-							onClick={() => deleteTarget && removeItem.fetchData(deleteTarget.cartItemId)}
+							isLoading={removeItem.isPending}
+							disabled={removeItem.isPending}
+							onClick={() => deleteTarget && removeItem.mutate(deleteTarget.cartItemId)}
 						>
 							بله، حذف شود
 						</TabanButton>
@@ -103,13 +100,13 @@ export default function CartPage() {
 				)}
 			</div>
 
-			{isLoading ? (
+			{cartQuery.isLoading ? (
 				<div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
 					<TabanLoading size={24} />
 					در حال دریافت سبد خرید...
 				</div>
-			) : getCart.result && !getCart.result.success && isRetryAble(getCart.result.code) ? (
-				<ErrorComponent executeFunction={() => getCart.fetchData()} callAble errorText="دریافت سبد خرید با خطا مواجه شد" />
+			) : cartQuery.error && isRetryAble(cartQuery.error.code) ? (
+				<ErrorComponent executeFunction={() => cartQuery.refetch()} callAble errorText="دریافت سبد خرید با خطا مواجه شد" />
 			) : items.length === 0 ? (
 				<div className="flex flex-col items-center justify-center gap-6 py-20 bg-white border border-neutral-200 rounded-2xl">
 					<div className="w-24 h-24 rounded-full bg-neutral-100 flex items-center justify-center">
