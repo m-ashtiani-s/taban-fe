@@ -1,3 +1,3 @@
-export type CircularProgress = {
+export type CircularProgressProps = {
 	percent: number;
 };

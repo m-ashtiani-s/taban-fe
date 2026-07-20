@@ -4,148 +4,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "./style.scss";
-import { Fragment, useEffect, useRef, useState } from "react";
-import { MenuPopup } from "./_components/menu/menu";
+import { Fragment, useState } from "react";
+import { MobileMenuPopup } from "./_components/mobileMenuPopup/mobileMenuPopup";
 import BottomNav from "./_components/bottomNav/bottomNav";
 import TabanButton from "../common/tabanButton/tabanButton";
-import ProfleMenu from "./_components/ProfleMenu/ProfleMenu";
-import { IconArrow, IconCart, IconCircleUser, IconTranslate, IconUser } from "../icon/icons";
-import { convertToPersianNumber } from "@/utils/enNumberToPersian";
+import ProfleMenu from "./_components/profleMenu/profleMenu";
+import { IconArrow, IconCircleUser, IconTranslate } from "../icon/icons";
 import { useProfiletore } from "@/stores/profile";
-import { useCartStore } from "@/stores/cart";
 import TabanModal from "../common/tabanModal/tabanModal";
 import { menuItems } from "./_constant/menuItems";
-import { MenuItem } from "@/types/menuItem.type";
-import { CartEndpoints } from "@/app/_api/cartEndpoints";
-
-function CartBadge() {
-	const cart = useCartStore((state) => state.cart);
-	const count = cart?.items?.length ?? 0;
-	return (
-		<div className="relative group py-2">
-			{/* Cart icon */}
-			<Link href="/cart" className="relative">
-				<div className="w-10 h-10 flex items-center justify-center cursor-pointer">
-					<IconCart strokeWidth={1.5} className="stroke-white w-6 h-6 duration-200 group-hover:!stroke-secondary" />
-					{count > 0 && (
-						<span className="absolute -top-1 -left-1 min-w-5 h-5 px-1 bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-							{count}
-						</span>
-					)}
-				</div>
-			</Link>
-
-			{/* Hover popup */}
-			<div className="hidden group-hover:!block absolute top-full left-0 pt-1 z-50">
-				<div className="w-80 bg-white border border-neutral-200 shadow-xl rounded-xl overflow-hidden">
-					{/* Header */}
-					<div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-						<span className="text-sm font-semibold text-primary peyda">سبد خرید</span>
-						{count > 0 && (
-							<span className="text-xs text-neutral-500">
-								{convertToPersianNumber(String(count))} آیتم
-							</span>
-						)}
-					</div>
-
-					{/* Items list */}
-					{count === 0 ? (
-						<div className="px-4 py-6 flex flex-col items-center gap-2 text-neutral-400">
-							<IconCart strokeWidth={1.5} className="w-8 h-8 stroke-neutral-300" />
-							<span className="text-xs">سبد خرید خالی است</span>
-						</div>
-					) : (
-						<div className="max-h-56 overflow-y-auto divide-y divide-neutral-100">
-							{cart?.items?.map((item) => (
-								<div key={item.cartItemId} className="px-4 py-3 flex items-start gap-3">
-									<div className="flex-1 min-w-0">
-										<div className="text-xs font-medium text-primary truncate">
-											{item.breakdown.translationItemTitle}
-										</div>
-										<div className="text-[11px] text-neutral-500 mt-0.5">
-											{item.breakdown.languageName}
-											{" · "}
-											{convertToPersianNumber(String(item.payload.documents.length))} سند
-										</div>
-									</div>
-									<div className="text-xs font-bold text-secondary whitespace-nowrap shrink-0">
-										{convertToPersianNumber(item.breakdown.summary.totalPrice.toLocaleString())}
-										<span className="font-normal text-neutral-400 mr-0.5">ت</span>
-									</div>
-								</div>
-							))}
-						</div>
-					)}
-
-					{/* Footer */}
-					{count > 0 && (
-						<div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between bg-neutral-50/60">
-							<span className="text-xs text-neutral-600">جمع کل</span>
-							<span className="text-sm font-bold text-primary peyda">
-								{convertToPersianNumber(
-									(cart?.cartSumWithDiscount ?? cart?.cartSum ?? 0).toLocaleString()
-								)}{" "}
-								<span className="text-xs font-normal text-neutral-500">تومان</span>
-							</span>
-						</div>
-					)}
-
-					<Link
-						href="/cart"
-						className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white text-xs font-medium py-3 duration-200"
-					>
-						<IconCart strokeWidth={1.5} className="w-4 h-4 stroke-white" />
-						مشاهده سبد خرید
-					</Link>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function HeaderMenu({ children, number }: { children: MenuItem[]; number: number }) {
-	return (
-		<span className={`sub-wrap${number} absolute top-0 right-full duration-200 p-3`}>
-			<span className="flex flex-col bg-white p-2 rounded-lg">
-				{children?.map((child) => (
-					<div
-						key={child?.title}
-						className={`relative !text-sm sub-group${number + 1} py-2 flex items-center justify-between gap-4 whitespace-nowrap text-primary/80 hover:!text-primary bg-neutral-50/0 hover:!bg-neutral-200/80 rounded-lg duration-200`}
-					>
-						<Link href={child?.href} className="flex gap-8 items-center px-2 w-full justify-between">
-							{child?.title}
-							{child?.childrens?.length > 0 && (
-								<IconArrow className="-rotate-90 fill-primary" height={24} width={24} strokeWidth={0} />
-							)}
-						</Link>
-
-						{child?.childrens?.length > 0 && (
-							<Fragment key={child?.title}>
-								<HeaderMenu children={child?.childrens} number={number + 1} />
-							</Fragment>
-						)}
-					</div>
-				))}
-			</span>
-		</span>
-	);
-}
+import HeaderMenu from "./_components/headerMenu/headerMenu";
+import CartBadge from "./_components/cartBadge/cartBadge";
 
 export const Header = () => {
 	const [open, setOpen] = useState<boolean>(false);
 	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
-
 	const { profile, setProfile } = useProfiletore();
-	const { setCart } = useCartStore();
 	const pathname = usePathname();
-
-	useEffect(() => {
-		if (profile) {
-			CartEndpoints.getCart().then((res) => {
-				if (res?.success) setCart(res.data ?? null);
-			}).catch(() => {});
-		}
-	}, [profile]);
 
 	const isItemActive = (href: string) => {
 		const clean = href.replace(/\/$/, "");
@@ -161,7 +36,6 @@ export const Header = () => {
 		await localStorage.removeItem("token");
 		setProfile(null);
 		setLogoutOpen(false);
-		// رفرش یک‌باره‌ی صفحه تا کل state اپ به حالت خروج برگردد
 		window.location.reload();
 	};
 
@@ -304,20 +178,34 @@ export const Header = () => {
 			<header
 				className={`lg:!hidden w-full top-[var(--top-banner-height)] right-0 rounded-none border-white border-b-neutral-200 fixed duration-300  z-[111] bg-white shadow-sm border py-1`}
 			>
-				<MenuPopup open={open} setOpen={setOpen} />
+				<MobileMenuPopup open={open} setOpen={setOpen} />
 				<div className="w-full ">
 					<div className="flex w-full">
 						<div className="flex lg:!hidden justify-between px-6 items-center w-full">
-							<div className="w-full flex items-center justify-start"><span onClick={menuHandler} className="cursor-pointer lg:!hidden">
-								<Image src="/images/menu.svg" alt="menu" width={24} height={24} className="max-lg:!w-5 max-lg:!h-5"/>
-							</span></div>
-							<div className="w-full flex items-center justify-center"><Link href="/" className=" relative flex items-center gap-2">
-								<Image width={90} height={56} src="/images/logo2.svg" alt="logo" className="max-lg:!w-10 py-2" />
-								<div className="text-primary/85 morabba text-xl">رسمــی‌یاب</div>
-							</Link></div>
+							<div className="w-full flex items-center justify-start">
+								<span onClick={menuHandler} className="cursor-pointer lg:!hidden">
+									<Image
+										src="/images/menu.svg"
+										alt="menu"
+										width={24}
+										height={24}
+										className="max-lg:!w-5 max-lg:!h-5"
+									/>
+								</span>
+							</div>
+							<div className="w-full flex items-center justify-center">
+								<Link href="/" className=" relative flex items-center gap-2">
+									<Image
+										width={90}
+										height={56}
+										src="/images/logo2.svg"
+										alt="logo"
+										className="max-lg:!w-10 py-2"
+									/>
+									<div className="text-primary/85 morabba text-xl">رسمــی‌یاب</div>
+								</Link>
+							</div>
 							<div className="w-full flex items-center justify-center"></div>
-							
-							
 						</div>
 					</div>
 				</div>

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
+import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 import { useProfiletore } from "@/stores/profile";
 import { IconCart, IconCircleUser, IconDashboard, IconDocument, IconLogout, IconMoney, IconOrder, IconStar, IconTruck, IconUser } from "@/app/_components/icon/icons";
@@ -67,18 +69,16 @@ export default function ProfileSidebar() {
 		fetchData: executeProfile,
 	} = useApi(async () => await TabanEndpoints.getProfile());
 
-	const { resultData: completionData, fetchData: executeCompletion } = useApi(
-		async () => await TabanEndpoints.getProfileCompletionStatus(),
-	);
+	const completionQuery = useQuery({
+		queryKey: ["profile", "completion"],
+		queryFn: () => withMappedError(() => TabanEndpoints.getProfileCompletionStatus()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
 
 	useEffect(() => {
 		executeProfile();
 	}, []);
-
-	// درصد تکمیل با هر تغییر پروفایل (مثلاً پس از تکمیل فرم) دوباره از سرور گرفته می‌شود
-	useEffect(() => {
-		executeCompletion();
-	}, [profile]);
 
 	useEffect(() => {
 		if (profileResult?.success) {
@@ -86,7 +86,7 @@ export default function ProfileSidebar() {
 		}
 	}, [profileResult]);
 
-	const completion = completionData?.data;
+	const completion = completionQuery.data?.data;
 	const displayProfile = profile ?? profileResultData?.data;
 
 	const logoutHandler = async () => {

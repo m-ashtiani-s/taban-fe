@@ -7,6 +7,7 @@ import { Notifications } from "./_components/notification/notification";
 import AppBootstrap from "./_components/appBootstrap/appBootstrap";
 import TopBanner from "./_components/topBanner/topBanner";
 import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/config/site";
+import { QueryProvider } from "./queryProvider";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_BASE_URL),
@@ -65,36 +66,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 	return (
 		<html lang="fa" dir="rtl">
-			<head>
-			</head>
+			<head></head>
 			<body className="content-center bg-white text-primary">
-				<script
-					type="application/ld+json"
-					dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
-				/>
-				<script
-					type="application/ld+json"
-					dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }}
-				/>
-				<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
-					<NextTopLoader
-						color="#1a3047"
-						initialPosition={0.08}
-						crawlSpeed={200}
-						height={4}
-						crawl={true}
-						showSpinner={false}
-						easing="ease"
-						speed={200}
-						shadow="0 0 10px #2299DD,0 0 5px #2299DD"
-						zIndex={1600}
-						showAtBottom={false}
-					/>
-					<AppBootstrap />
-					<Notifications />
-					<TopBanner />
-					{children}
-				</Providers>
+				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
+				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }} />
+				<QueryProvider>
+					<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
+						<NextTopLoader
+							color="#1a3047"
+							initialPosition={0.08}
+							crawlSpeed={200}
+							height={4}
+							crawl={true}
+							showSpinner={false}
+							easing="ease"
+							speed={200}
+							shadow="0 0 10px #2299DD,0 0 5px #2299DD"
+							zIndex={1600}
+							showAtBottom={false}
+						/>
+						<AppBootstrap />
+						<Notifications />
+						<TopBanner />
+						{children}
+					</Providers>
+				</QueryProvider>
 			</body>
 		</html>
 	);

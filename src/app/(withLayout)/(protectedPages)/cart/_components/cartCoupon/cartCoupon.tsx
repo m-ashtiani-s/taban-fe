@@ -1,58 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNotificationStore } from "@/stores/notification.store";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
+import { withMappedError } from "@/utils/withMappedError";
 import { toCurrency } from "@/utils/string";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import { IconCheck, IconCoupon, IconCross } from "@/app/_components/icon/icons";
 import { CartCouponProps } from "./cartCoupon.type";
 
-export default function CartCoupon({ cart, onCartChange }: CartCouponProps) {
-	const showNotification = useNotificationStore((s) => s.showNotification);
+export default function CartCoupon({ cart }: CartCouponProps) {
 	const [expanded, setExpanded] = useState<boolean>(false);
 	const [code, setCode] = useState<string>("");
 
-	const applyCoupon = useApi(async (couponCode: string) => await CartEndpoints.applyCoupon(couponCode));
-	const removeCoupon = useApi(async () => await CartEndpoints.removeCoupon());
+	const showNotification = useNotificationStore((s) => s.showNotification);
 
-	useEffect(() => {
-		if (applyCoupon.result) {
-			if (applyCoupon.result.success) {
-				onCartChange(applyCoupon.result.data?.data ?? null);
-				setCode("");
-				setExpanded(false);
-				showNotification({
-					type: "success",
-					message: applyCoupon.result.data?.message ?? "کد تخفیف با موفقیت اعمال شد",
-				});
-			} else {
-				showNotification({
-					type: "error",
-					message: applyCoupon.result.description ?? "اعمال کد تخفیف با خطا مواجه شد",
-				});
-			}
-		}
-	}, [applyCoupon.result]);
+	const queryClient = useQueryClient();
 
-	useEffect(() => {
-		if (removeCoupon.result) {
-			if (removeCoupon.result.success) {
-				onCartChange(removeCoupon.result.data?.data ?? null);
-				showNotification({
-					type: "success",
-					message: removeCoupon.result.data?.message ?? "کد تخفیف حذف شد",
-				});
-			} else {
-				showNotification({
-					type: "error",
-					message: removeCoupon.result.description ?? "حذف کد تخفیف با خطا مواجه شد",
-				});
-			}
-		}
-	}, [removeCoupon.result]);
+	const { mutate: applyCoupon, isPending: applyCouponPending } = useMutation({
+		mutationFn: (couponCode: string) => withMappedError(() => CartEndpoints.applyCoupon(couponCode)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			queryClient.setQueryData(["cart", "detail"], data);
+			setCode("");
+			setExpanded(false);
+			showNotification({ type: "success", message: data?.message ?? "کد تخفیف با موفقیت اعمال شد" });
+		},
+	});
+
+	const { mutate: removeCoupon, isPending: removeCouponPending } = useMutation({
+		mutationFn: () => withMappedError(() => CartEndpoints.removeCoupon()),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			queryClient.setQueryData(["cart", "detail"], data);
+			showNotification({ type: "success", message: data?.message ?? "کد تخفیف حذف شد" });
+		},
+	});
+
+	const applied = cart?.appliedCoupon ?? null;
 
 	const submitHandler = () => {
 		const trimmed = code.trim();
@@ -60,10 +47,8 @@ export default function CartCoupon({ cart, onCartChange }: CartCouponProps) {
 			showNotification({ type: "error", message: "کد تخفیف را وارد کنید" });
 			return;
 		}
-		applyCoupon.fetchData(trimmed);
+		applyCoupon(trimmed);
 	};
-
-	const applied = cart?.appliedCoupon ?? null;
 
 	if (applied) {
 		return (
@@ -83,9 +68,9 @@ export default function CartCoupon({ cart, onCartChange }: CartCouponProps) {
 					<TabanButton
 						variant="text"
 						className="!text-error !px-2"
-						onClick={() => removeCoupon.fetchData()}
-						isLoading={removeCoupon.loading}
-						disabled={removeCoupon.loading}
+						onClick={() => removeCoupon()}
+						isLoading={removeCouponPending}
+						disabled={removeCouponPending}
 					>
 						حذف کد
 					</TabanButton>
@@ -150,7 +135,7 @@ export default function CartCoupon({ cart, onCartChange }: CartCouponProps) {
 								isLtr
 								value={code}
 								setValue={setCode}
-								disabled={applyCoupon.loading}
+								disabled={applyCouponPending}
 								onKeyDown={(e) => {
 									if (e?.key === "Enter") submitHandler();
 								}}
@@ -158,8 +143,8 @@ export default function CartCoupon({ cart, onCartChange }: CartCouponProps) {
 						</div>
 						<TabanButton
 							onClick={submitHandler}
-							isLoading={applyCoupon.loading}
-							disabled={applyCoupon.loading || !code.trim()}
+							isLoading={applyCouponPending}
+							disabled={applyCouponPending || !code.trim()}
 							className="!px-5"
 						>
 							اعمال
@@ -171,7 +156,7 @@ export default function CartCoupon({ cart, onCartChange }: CartCouponProps) {
 								setExpanded(false);
 								setCode("");
 							}}
-							disabled={applyCoupon.loading}
+							disabled={applyCouponPending}
 						>
 							<IconCross className="fill-neutral-500 stroke-0 w-5 h-5" />
 						</TabanButton>

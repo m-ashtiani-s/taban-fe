@@ -1,6 +1,7 @@
 import React from "react";
+import { CircularProgressProps } from "./circularProgress.type";
 const size = 40;
-export default function CircularProgress({ percent = "50" }) {
+export default function CircularProgress({ percent = 50}:CircularProgressProps) {
 	const radius = (size - 4) / 2;
 	const circumference = 2 * Math.PI * radius;
 	const offset = circumference - (+percent / 100) * circumference;

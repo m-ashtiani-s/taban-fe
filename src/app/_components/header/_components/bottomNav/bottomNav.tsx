@@ -2,19 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { IconCart, IconCircleUser, IconHome, IconTranslate } from "@/app/_components/icon/icons";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
-import { useCartStore } from "@/stores/cart";
+import { CartEndpoints } from "@/app/_api/cartEndpoints";
+import { withMappedError } from "@/utils/withMappedError";
 import { useProfiletore } from "@/stores/profile";
 
 export default function BottomNav() {
 	const pathname = usePathname();
-	const cart = useCartStore((state) => state.cart);
 	const profile = useProfiletore((state) => state.profile);
-	const cartCount = cart?.items?.length ?? 0;
 
-	// Hide the bottom bar inside the full-screen order wizard so it doesn't
-	// collide with that flow's own bottom action buttons.
+	const cartQuery = useQuery({
+		queryKey: ["cart", "detail"],
+		queryFn: () => withMappedError(() => CartEndpoints.getCart()),
+		enabled: !!profile,
+		staleTime: 3_000,
+	});
+
+	const cartCount = cartQuery.data?.data?.items?.length ?? 0;
 	if (pathname.startsWith("/new-order")) return null;
 
 	const items = [

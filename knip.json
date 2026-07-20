@@ -1,0 +1,12 @@
+{
+  "entry": [
+    "src/app/**/{page,layout,loading,error,not-found,route,template,default}.{ts,tsx}",
+    "src/middleware.ts",
+    ".storybook/main.{js,ts}",
+    "src/**/*.stories.{ts,tsx}"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/declarations.d.ts"],
+  "ignoreDependencies": [],
+  "next": true
+}

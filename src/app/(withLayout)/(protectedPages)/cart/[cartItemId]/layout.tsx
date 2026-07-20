@@ -1,60 +1,49 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useCartStore } from "@/stores/cart";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
-import { useApi } from "@/hooks/useApi";
-import { AddDocumentToCartPayload, CartItem } from "@/types/cart.type";
+import { withMappedError } from "@/utils/withMappedError";
+import { AddDocumentToCartPayload } from "@/types/cart.type";
 import { useNotificationStore } from "@/stores/notification.store";
 import EditFlowLayout from "@/app/(withLayout)/(protectedPages)/_orderEditFlow/editFlowLayout";
 
 /**
  * لایوتِ فلوی ویرایشِ آیتمِ سبد خرید — مرحله‌به‌مرحله و روت-محور (مثل فلوی ثبت سفارش).
- * داده‌ی آیتم را (از استور یا API) بارگذاری و همراه با تنظیماتِ سبد به EditFlowLayout می‌دهد.
+ * داده‌ی آیتم را بارگذاری و همراه با تنظیماتِ سبد به EditFlowLayout می‌دهد.
  */
 export default function CartEditLayout({ children }: { children: ReactNode }) {
 	const params = useParams();
 	const router = useRouter();
 	const cartItemId = params?.cartItemId as string;
-	const { cart, setCart } = useCartStore();
+
 	const showNotification = useNotificationStore((s) => s.showNotification);
 
-	const storeItem = useMemo<CartItem | null>(
-		() => cart?.items?.find((it) => it.cartItemId === cartItemId) ?? null,
-		[cart, cartItemId]
-	);
-	const [fetchedItem, setFetchedItem] = useState<CartItem | null>(null);
+	const queryClient = useQueryClient();
 
-	const getCart = useApi(async () => await CartEndpoints.getCart());
-	const updateItem = useApi(async (payload: AddDocumentToCartPayload) => await CartEndpoints.updateCartItem(cartItemId, payload));
+	const cartQuery = useQuery({
+		queryKey: ["cart", "detail"],
+		queryFn: () => withMappedError(() => CartEndpoints.getCart()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
 
-	useEffect(() => {
-		if (!storeItem) getCart.fetchData();
-	}, []);
-
-	useEffect(() => {
-		if (getCart.result?.success) {
-			const fetchedCart = getCart.result.data?.data ?? null;
-			setCart(fetchedCart);
-			setFetchedItem(fetchedCart?.items?.find((it) => it.cartItemId === cartItemId) ?? null);
-		}
-	}, [getCart.result]);
-
-	useEffect(() => {
-		if (!updateItem.result) return;
-		if (updateItem.result.success) {
-			setCart(updateItem.result.data?.data ?? null);
+	const { mutate: updateItem, isPending: updateItemPending } = useMutation({
+		mutationFn: (payload: AddDocumentToCartPayload) =>
+			withMappedError(() => CartEndpoints.updateCartItem(cartItemId, payload)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			queryClient.setQueryData(["cart", "detail"], data);
 			showNotification({ type: "success", message: "سفارش با موفقیت بروزرسانی شد" });
 			router.push("/cart");
-		} else {
-			showNotification({ type: "error", message: updateItem.result.description ?? "بروزرسانی سفارش با خطا مواجه شد" });
-		}
-	}, [updateItem.result]);
+		},
+	});
 
-	const source = storeItem ?? fetchedItem;
-	const loading = !source && (getCart.loading || !getCart.result);
-	const notFound = !source && !getCart.loading && !!getCart.result;
+	const source = cartQuery.data?.data?.items?.find((it) => it.cartItemId === cartItemId) ?? null;
+	const loading = cartQuery.isPending;
+	// خطای دریافت سبد هم به همان صفحه‌ی «یافت نشد» می‌رسد، وگرنه با source خالی چیزی رندر نمی‌شود
+	const notFound = !loading && !source;
 
 	return (
 		<EditFlowLayout
@@ -70,8 +59,8 @@ export default function CartEditLayout({ children }: { children: ReactNode }) {
 				summaryVariant: "full",
 				stepBase: `/cart/${cartItemId}`,
 			}}
-			submit={(payload) => updateItem.fetchData(payload)}
-			submitLoading={updateItem.loading}
+			submit={(payload) => updateItem(payload)}
+			submitLoading={updateItemPending}
 		>
 			{children}
 		</EditFlowLayout>

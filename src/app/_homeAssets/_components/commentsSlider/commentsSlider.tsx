@@ -9,8 +9,9 @@ import "./style.scss";
 import { useEffect, useState } from "react";
 import { Comment } from "../../_types/comment.type";
 import { IconStar } from "@/app/_components/icon/icons";
+import { CommentsSliderProps } from "./commentsSlider.type";
 
-export default function CommentsSlider({ comments }: { comments: Comment[] }) {
+export default function CommentsSlider({ comments }: CommentsSliderProps) {
 	const [width, setWidth] = useState<number>(0);
 
 	useEffect(() => {

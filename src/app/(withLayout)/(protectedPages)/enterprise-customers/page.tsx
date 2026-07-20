@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
+import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useEnterpriseStore } from "@/stores/enterprise";
 import { TabanEndpoints } from "@/app/_api/endpoints";
@@ -27,18 +29,23 @@ export default function EnterpriseRegisterPage() {
 	const [registered, setRegistered] = useState<boolean>(false);
 
 	const getMine = useApi(async () => await EnterpriseCustomerEndpoints.getMyEnterpriseCustomer(), true);
-	const getCompletion = useApi(async () => await TabanEndpoints.getProfileCompletionStatus(), true);
 	const register = useApi(async (payload: EnterpriseCustomerPayload) => await EnterpriseCustomerEndpoints.register(payload));
+
+	const completionQuery = useQuery({
+		queryKey: ["profile", "completion"],
+		queryFn: () => withMappedError(() => TabanEndpoints.getProfileCompletionStatus()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
 
 	useEffect(() => {
 		getMine.fetchData();
-		getCompletion.fetchData();
 	}, []);
 
 	const alreadyEnterprise = getMine.result?.success && !!getMine.resultData?.data;
-	const completion = getCompletion.resultData?.data;
+	const completion = completionQuery.data?.data;
 	const profileCompleted = completion?.isCompleted ?? false;
-	const loading = (getMine.loading && !getMine.result) || (getCompletion.loading && !getCompletion.result);
+	const loading = (getMine.loading && !getMine.result) || completionQuery.isPending;
 
 	useEffect(() => {
 		if (formSubmitted) formValidator();

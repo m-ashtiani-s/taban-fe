@@ -15,7 +15,7 @@ import AuthModal from "@/app/_components/common/authModal/authModal";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 import DeliverySection from "@/app/_components/common/deliverySection/deliverySection";
 import { useNotificationStore } from "@/stores/notification.store";
-import { useCartStore } from "@/stores/cart";
+import { useQueryClient } from "@tanstack/react-query";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { RateCalculationRequest, RateCalculationResponse } from "@/types/rateCalculation.type";
@@ -38,7 +38,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 	const router = useRouter();
 	const { order, setOrder, resetOrder } = useNewOrderStore();
 	const showNotification = useNotificationStore((state) => state.showNotification);
-	const setCart = useCartStore((state) => state.setCart);
+	const queryClient = useQueryClient();
 
 	const [successModalOpen, setSuccessModalOpen] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -112,8 +112,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 	useEffect(() => {
 		if (addToCart.result) {
 			if (addToCart.result.success) {
-				const cart = addToCart.result.data?.data ?? null;
-				if (cart) setCart(cart);
+				queryClient.setQueryData(["cart", "detail"], addToCart.result.data);
 				setSuccessModalOpen(true);
 			} else {
 				showNotification({ type: "error", message: addToCart.result.description ?? "افزودن به سبد خرید با خطا مواجه شد" });

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
+import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 import { useProfiletore } from "@/stores/profile";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -30,13 +32,15 @@ export default function Page() {
 		loading: profileLoading,
 	} = useApi(async () => await TabanEndpoints.getProfile());
 
-	const { resultData: completionData, fetchData: executeCompletion } = useApi(
-		async () => await TabanEndpoints.getProfileCompletionStatus(),
-	);
+	const completionQuery = useQuery({
+		queryKey: ["profile", "completion"],
+		queryFn: () => withMappedError(() => TabanEndpoints.getProfileCompletionStatus()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
 
 	useEffect(() => {
 		executeProfile();
-		executeCompletion();
 	}, []);
 
 	useEffect(() => {
@@ -46,7 +50,7 @@ export default function Page() {
 	}, [profileResult]);
 
 	const user = profile ?? profileResultData?.data;
-	const completion = completionData?.data;
+	const completion = completionQuery.data?.data;
 	const percent = Math.round(completion?.completionPercent ?? 0);
 	const isCompleted = completion?.isCompleted ?? false;
 

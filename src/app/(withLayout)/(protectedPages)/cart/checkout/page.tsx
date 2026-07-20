@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
-import { useCartStore } from "@/stores/cart";
+import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
 import { TabanEndpoints } from "@/app/_api/endpoints";
@@ -23,8 +24,8 @@ const PAGE_SIZE = 10;
 
 export default function CheckoutPage() {
 	const router = useRouter();
-	const { cart, setCart } = useCartStore();
 	const showNotification = useNotificationStore((s) => s.showNotification);
+	const queryClient = useQueryClient();
 
 	const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
 	const [addrPage, setAddrPage] = useState<number>(1);
@@ -35,22 +36,28 @@ export default function CheckoutPage() {
 	const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
 	const [completeModalOpen, setCompleteModalOpen] = useState<boolean>(false);
 
-	const getCart = useApi(async () => await CartEndpoints.getCart(), true);
-	const getCompletion = useApi(async () => await TabanEndpoints.getProfileCompletionStatus());
+	const cartQuery = useQuery({
+		queryKey: ["cart", "detail"],
+		queryFn: () => withMappedError(() => CartEndpoints.getCart()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
+
+	const completionQuery = useQuery({
+		queryKey: ["profile", "completion"],
+		queryFn: () => withMappedError(() => TabanEndpoints.getProfileCompletionStatus()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
+
 	const getAddresses = useApi(async (page: number) => await ShippingAddressEndpoints.getShippingAddresses({ isActive: true }, page, PAGE_SIZE));
 	const createOrder = useApi(
 		async () => await OrderEndpoints.createOrder({ shippingAddressId: selectedAddressId, remarks: remarks.trim() || undefined }),
 	);
 
 	useEffect(() => {
-		getCart.fetchData();
-		getCompletion.fetchData();
 		loadAddresses(1);
 	}, []);
-
-	useEffect(() => {
-		if (getCart.result?.success) setCart(getCart.result.data?.data ?? null);
-	}, [getCart.result]);
 
 	useEffect(() => {
 		if (formSubmitted) formValidator();
@@ -83,15 +90,16 @@ export default function CheckoutPage() {
 			showNotification({ type: "error", message: "لطفا آدرس تحویل را انتخاب کنید" });
 			return;
 		}
-		if (getCompletion.resultData?.data && !getCompletion.resultData.data.isCompleted) {
+		if (completionQuery.data?.data && !completionQuery.data.data.isCompleted) {
 			setCompleteModalOpen(true);
 			return;
 		}
 		const res = await createOrder.fetchDataResult();
 		if (res.success) {
 			showNotification({ type: "success", message: res.data?.message ?? "سفارش با موفقیت ثبت شد" });
+			// باطل‌کردن با تأخیر تا کاربر قبلش از این صفحه رفته باشد، وگرنه سبدِ خالی‌شده یک لحظه فلش می‌زند
 			setTimeout(() => {
-				setCart(null);
+				queryClient.invalidateQueries({ queryKey: ["cart", "detail"] });
 			}, 1000);
 			const orderId = res.data?.data?.orderId;
 			router.push(orderId ? `/profile/orders/${orderId}` : "/profile/orders");
@@ -100,10 +108,10 @@ export default function CheckoutPage() {
 		}
 	};
 
+	const cart = cartQuery.data?.data ?? null;
 	const items = cart?.items ?? [];
-	const cartLoading = getCart.loading && !getCart.result;
 
-	if (cartLoading) {
+	if (cartQuery.isPending) {
 		return (
 			<div className="flex items-center justify-center gap-2 py-20 text-sm text-neutral-500">
 				<TabanLoading size={24} />

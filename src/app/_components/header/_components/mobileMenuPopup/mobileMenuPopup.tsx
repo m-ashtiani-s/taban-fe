@@ -1,13 +1,12 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { IconArrow, IconCircleUser, IconDocument, IconHome, IconInfo, IconSupport24, IconTranslate } from "@/app/_components/icon/icons";
 import { useProfiletore } from "@/stores/profile";
 import { menuItems } from "../../_constant/menuItems";
-import { MenuPopupProps } from "./menu.type";
+import { MobileMenuPopupProps } from "./mobileMenuPopup.type";
 
 const iconFor = (href: string) => {
 	if (href === "/") return IconHome;
@@ -18,7 +17,7 @@ const iconFor = (href: string) => {
 	return IconArrow;
 };
 
-export const MenuPopup: React.FC<MenuPopupProps> = ({ open, setOpen }) => {
+export const MobileMenuPopup: React.FC<MobileMenuPopupProps> = ({ open, setOpen }) => {
 	const [hidden, setHidden] = useState<boolean>(true);
 	const pathname = usePathname();
 	const profile = useProfiletore((state) => state.profile);

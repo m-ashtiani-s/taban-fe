@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useProfiletore } from "@/stores/profile";
@@ -43,6 +44,7 @@ export default function CompleteProfileForm() {
 	const backUrl = searchParams.get("backUrl");
 	const showNotification = useNotificationStore((state) => state.showNotification);
 	const { profile, setProfile } = useProfiletore();
+	const queryClient = useQueryClient();
 
 	const [formValues, setFormValues] = useState<CompleteProfileFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
@@ -157,13 +159,14 @@ export default function CompleteProfileForm() {
 				type: "success",
 				message: updateResult.data?.message ?? "پروفایل با موفقیت ذخیره شد",
 			});
-			// پروفایل را تازه از سرور می‌خوانیم و در استور می‌نشانیم تا درصد تکمیل (که به تغییر
-			// پروفایل واکنش نشان می‌دهد، مثل منوی هدر) بدون نیاز به رفرش دستی به‌روز شود.
 			(async () => {
 				const refreshed = await refreshProfileApi.fetchDataResult();
 				if (refreshed.success) {
 					setProfile((refreshed.data?.data as Profile) ?? null);
 				}
+				// درصد تکمیل کوئری مشترکی است که چند جا (منوی هدر، سایدبار، پیشخوان) می‌خوانندش؛
+				// با باطل‌کردنش همه‌ی آن‌ها مقدار جدید را می‌گیرند
+				queryClient.invalidateQueries({ queryKey: ["profile", "completion"] });
 				router.push(backUrl || "/profile/info");
 			})();
 		} else {

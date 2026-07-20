@@ -2,23 +2,23 @@
 import {  IconDashboard, IconLogout, IconTranslate, IconUser } from "@/app/_components/icon/icons";
 import { useProfiletore } from "@/stores/profile";
 import Link from "next/link";
-import { Dispatch, SetStateAction, useEffect } from "react";
+import { Dispatch, SetStateAction } from "react";
+import { useQuery } from "@tanstack/react-query";
 import CircularProgress from "../circularProgress/circularProgress";
-import { useApi } from "@/hooks/useApi";
+import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 
 export default function ProfleMenu({ setLogoutOpen }: { setLogoutOpen: Dispatch<SetStateAction<boolean>> }) {
-	const { profile, setProfile } = useProfiletore();
-	const {
-		result: profileCompletionResult,
-		resultData: profileCompletionResultData,
-		fetchData: executeProfileCompletion,
-		loading: profileCompletionLoading,
-	} = useApi(async () => await TabanEndpoints.getProfileCompletionStatus());
+	const { profile } = useProfiletore();
 
-	useEffect(() => {
-		executeProfileCompletion();
-	}, [profile]);
+	const completionQuery = useQuery({
+		queryKey: ["profile", "completion"],
+		queryFn: () => withMappedError(() => TabanEndpoints.getProfileCompletionStatus()),
+		enabled: !!profile,
+		staleTime: 3_000,
+	});
+
+	const completion = completionQuery.data?.data;
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -31,14 +31,14 @@ export default function ProfleMenu({ setLogoutOpen }: { setLogoutOpen: Dispatch<
 				</span>
 				<span className="py-2.5 w-full">پیشخوان</span>
 			</Link>
-			{profileCompletionResult?.success && !profileCompletionResultData?.data?.isCompleted && (
+			{!!completion && !completion.isCompleted && (
 				<Link href="/profile/complete" className=" flex items-center gap-2 bg-secondary/15 hover:bg-secondary/30 duration-200 rounded-lg">
 					<span className="px-2">
 						<IconUser />
 					</span>
 					<span className="py-2.5 border-b border-b-neutral-200/80 w-full flex items-center justify-between pl-2">
 						تکمیل پروفایل
-						<CircularProgress percent={profileCompletionResultData?.data?.completionPercent?.toFixed(0)} />
+						<CircularProgress percent={+completion.completionPercent?.toFixed(0)} />
 					</span>
 				</Link>
 			)}

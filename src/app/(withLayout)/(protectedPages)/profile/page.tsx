@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 import { useProfiletore } from "@/stores/profile";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -13,17 +13,14 @@ import ReferralCode from "./_components/referralCode/referralCode";
 export default function Page() {
 	const { profile } = useProfiletore();
 
-	const {
-		resultData: completionData,
-		fetchData: executeCompletion,
-		loading: completionLoading,
-	} = useApi(async () => await TabanEndpoints.getProfileCompletionStatus());
+	const completionQuery = useQuery({
+		queryKey: ["profile", "completion"],
+		queryFn: () => withMappedError(() => TabanEndpoints.getProfileCompletionStatus()),
+		staleTime: 3_000,
+		meta: { showNotification: true },
+	});
 
-	useEffect(() => {
-		executeCompletion();
-	}, []);
-
-	const completion = completionData?.data;
+	const completion = completionQuery.data?.data;
 	const percent = Math.round(completion?.completionPercent ?? 0);
 	const isCompleted = completion?.isCompleted ?? false;
 	const greetingName = profile?.fullName?.trim() || "کاربر رسمی‌یاب";
@@ -44,7 +41,7 @@ export default function Page() {
 			</div>
 
 			{/* Profile completion banner */}
-			{completionLoading && !completion ? (
+			{completionQuery.isPending ? (
 				<div className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-center justify-center gap-2 text-sm">
 					<TabanLoading size={24} />
 					در حال دریافت اطلاعات پروفایل...

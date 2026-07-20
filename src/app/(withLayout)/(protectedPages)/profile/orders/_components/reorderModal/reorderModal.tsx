@@ -2,8 +2,8 @@
 
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
-import { useCartStore } from "@/stores/cart";
 import { useNotificationStore } from "@/stores/notification.store";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
@@ -24,9 +24,11 @@ type ReorderModalProps = {
 };
 
 export default function ReorderModal({ open, setOpen, order }: ReorderModalProps) {
-	const setCart = useCartStore((s) => s.setCart);
-	const showNotification = useNotificationStore((s) => s.showNotification);
 	const [selected, setSelected] = useState<OrderedDoc | null>(null);
+
+	const showNotification = useNotificationStore((s) => s.showNotification);
+
+	const queryClient = useQueryClient();
 
 	const calc = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload));
 	const add = useApi(async (payload: AddDocumentToCartPayload) => await CartEndpoints.addToCart(payload));
@@ -60,7 +62,7 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 		if (!selected) return;
 		const res = await add.fetchDataResult(selected.payload);
 		if (res.success) {
-			setCart(res.data?.data ?? null);
+			queryClient.setQueryData(["cart", "detail"], res.data);
 			showNotification({ type: "success", message: "آیتم با قیمت روز به سبد خرید اضافه شد" });
 			setOpen(false);
 		} else {

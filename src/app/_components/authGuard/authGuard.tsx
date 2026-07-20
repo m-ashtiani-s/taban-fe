@@ -42,9 +42,6 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 			</div>
 		);
 	}
-	// if ((!checkProfileLoading) || (!!profileResult && !profileResult?.success)) {
-	// 	return <CheckProfileError executeCheckProfile={executeCheckProfile} />;
-	// }
 
 	return <>{children}</>;
 };
