@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useApi } from "@/hooks/useApi";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { TranslationItem } from "@/types/translationItem.type";
 import { Language } from "@/types/language.type";
-import { RateFilters } from "@/types/rateFilters.type";
+import { ResultError } from "@/types/result";
 import { IconArrow, IconArrowLine, IconDocument, IconTranslate } from "@/app/_components/icon/icons";
 import TabanAutoComplete from "@/app/_components/common/tabanAutoComplete/tabanAutoComplete";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -16,35 +17,30 @@ import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { useNotificationStore } from "@/stores/notification.store";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 
-/**
- * ویجت شروع سریع سفارش در صفحه‌ی اصلی.
- *
- * کاربر یک «مدرک» (با تعداد) و یک «زبان» انتخاب می‌کند و به فلوی ثبت سفارش
- * (new-order) هدایت می‌شود؛ انتخاب‌ها از طریق query (`item`,`lang`,`count`)
- * پاس داده می‌شوند و آنجا خوانده شده و فلو از مرحله‌ی بعد ادامه پیدا می‌کند.
- * مطابق فرم‌های سفارش، اینجا فقط «یک مدرک و یک زبان» قابل انتخاب است.
- */
 export default function HeroOrderStart() {
 	const router = useRouter();
 	const showNotification = useNotificationStore((s) => s.showNotification);
 	const [selectedItem, setSelectedItem] = useState<TranslationItem | null>(null);
 	const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
 	const [count, setCount] = useState(1);
-	// در حال بررسیِ وجودِ نرخ برای ترکیبِ مدرک و زبانِ انتخابی پیش از هدایت به فلوی سفارش
 	const [checkingRate, setCheckingRate] = useState(false);
 
-	const items = useApi(async () => await TranslationEndpoints.getTranslationItems(), true);
-	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
-	// بررسیِ وجودِ نرخ پایه برای ترکیبِ انتخابی (همان‌جا در هوم‌پیج)
-	const baseRate = useApi(async (filters: RateFilters) => await TranslationEndpoints.getBaseRate(filters));
+	const queryClient = useQueryClient();
 
-	useEffect(() => {
-		items.fetchData();
-		languages.fetchData();
-	}, []);
+	const itemsQuery = useQuery({
+		queryKey: ["translation", "items"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getTranslationItems()),
+		meta: { showNotification: true },
+	});
 
-	const itemsList = items.result?.success ? items.result.data?.data ?? [] : [];
-	const languagesList = languages.result?.success ? languages.result.data?.data ?? [] : [];
+	const languagesQuery = useQuery({
+		queryKey: ["translation", "languages"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getLanguages()),
+		meta: { showNotification: true },
+	});
+
+	const itemsList = itemsQuery.data?.data ?? [];
+	const languagesList = languagesQuery.data?.data ?? [];
 
 	const toggleLanguage = (lang: Language) => {
 		setSelectedLanguage((prev) => (prev?.languageId === lang.languageId ? null : lang));
@@ -58,32 +54,33 @@ export default function HeroOrderStart() {
 		router.push(`/new-order?${params.toString()}`);
 	};
 
-	const handleContinue = () => {
+	const handleContinue = async () => {
 		if (!selectedItem) return;
-		// اگر زبان هم انتخاب شده، ابتدا وجودِ نرخ برای این ترکیب را همین‌جا بررسی می‌کنیم؛
-		// تنها در صورت وجود نرخ به فلوی سفارش می‌رویم و آنجا مرحله‌ی زبان رد می‌شود.
-		if (selectedLanguage) {
-			setCheckingRate(true);
-			baseRate.fetchData({ translationItemId: selectedItem.translationItemId, languageId: selectedLanguage.languageId });
-		} else {
+		if (!selectedLanguage) {
 			goToOrder();
+			return;
+		}
+		setCheckingRate(true);
+		try {
+			const filters = { translationItemId: selectedItem.translationItemId, languageId: selectedLanguage.languageId };
+			const res = await queryClient.fetchQuery({
+				queryKey: ["translation", "baseRate", filters],
+				queryFn: () => withMappedError(() => TranslationEndpoints.getBaseRate(filters)),
+			});
+			if (res?.data?.[0]) {
+				goToOrder();
+			} else {
+				showNotification({
+					type: "error",
+					message: "برای این مدرک و زبان نرخی تعریف نشده است؛ لطفاً زبان دیگری انتخاب کنید.",
+				});
+			}
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError).description });
+		} finally {
+			setCheckingRate(false);
 		}
 	};
-
-	// نتیجه‌ی بررسیِ نرخ: در صورت وجود نرخ هدایت می‌کنیم، وگرنه از کاربر می‌خواهیم زبان دیگری انتخاب کند
-	useEffect(() => {
-		if (!checkingRate || !baseRate.result) return;
-		setCheckingRate(false);
-		const hasRate = baseRate.result.success && !!baseRate.result.data?.data?.[0];
-		if (hasRate) {
-			goToOrder();
-		} else {
-			showNotification({
-				type: "error",
-				message: "برای این مدرک و زبان نرخی تعریف نشده است؛ لطفاً زبان دیگری انتخاب کنید.",
-			});
-		}
-	}, [baseRate.result, checkingRate]);
 
 	return (
 		<div className="bg-white shadow-xl shadow-primary/5 border border-suppliment rounded-3xl p-6 lg:p-9 -mt-20 ">
@@ -112,7 +109,7 @@ export default function HeroOrderStart() {
 						options={itemsList}
 						selectedOption={selectedItem}
 						setSelectedOption={setSelectedItem}
-						loading={items.loading}
+						loading={itemsQuery.isPending}
 						valueField="translationItemId"
 						displayField="title"
 						renderItem={(opt) => (
@@ -165,7 +162,7 @@ export default function HeroOrderStart() {
 						زبان ترجمه را انتخاب کنید
 					</div>
 
-					{languages.loading && languagesList.length === 0 ? (
+					{languagesQuery.isPending ? (
 						<div className="flex items-center gap-2 text-xs text-neutral-400 py-1">
 							<TabanLoading size={16} /> در حال دریافت زبان‌ها...
 						</div>
