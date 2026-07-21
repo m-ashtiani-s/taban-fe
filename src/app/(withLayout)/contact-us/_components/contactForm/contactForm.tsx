@@ -40,8 +40,6 @@ export default function ContactForm() {
     };
 
     const findError = (name: keyof FormValues) => errors.find((x) => x.item === name) || null;
-
-    // اعتبارسنجی زنده پس از اولین تلاش برای ارسال
     useEffect(() => {
         if (submitted) setErrors(validate(values));
     }, [values]);

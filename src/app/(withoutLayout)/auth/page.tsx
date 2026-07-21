@@ -3,7 +3,6 @@
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconArrowLine, IconCircleUser } from "@/app/_components/icon/icons";
 import useReadSearchParams from "@/hooks/useReadSearchParams";
-import { useNotificationStore } from "@/stores/notification.store";
 import { FormErrors } from "@/types/formErrors.type";
 import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
@@ -12,7 +11,8 @@ import { findError } from "@/utils/formErrorsFinder";
 import MobileTopHeader from "@/app/_components/mobileTopHeader/mobileTopHeader";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "./_api/endpoints";
 import { CheckUsernameFormValues } from "./_types/checkUsernameFormValues.type";
 import { mobileRegex } from "@/utils/mobileRegex";
@@ -20,26 +20,35 @@ import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
 
 export default function Page() {
-	const router = useRouter();
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const [formValues, setFormValues] = useState<CheckUsernameFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
+
+	const router = useRouter();
 	const searchParams = useReadSearchParams(["username", "backUrl", "ref"]);
 
-	const {
-		result: checkUsernameResult,
-		resultData: checkUsernameResultData,
-		fetchData: executeCheckUsername,
-		loading: checkUsernameLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.checkUsername(username));
+	const sendOTPMutation = useMutation({
+		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendOTP(username)),
+		meta: { showNotification: true },
+		onSuccess: () => {
+			router.push(`/auth/sign-up/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+		},
+	});
 
-	const {
-		result: sendOTPResult,
-		fetchData: sendOTP,
-		loading: sendOTPLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.sendOTP(username));
+	const checkUsernameMutation = useMutation({
+		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.checkUsername(username)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			if (data?.data) {
+				router.push(`/auth/login?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+			} else {
+				sendOTPMutation.mutate(formValues?.username!);
+			}
+		},
+	});
+
+	const submitLoading = checkUsernameMutation.isPending || sendOTPMutation.isPending;
 
 	useEffect(() => {
 		setFormValues({ username: searchParams?.username ?? "" });
@@ -60,39 +69,9 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			executeCheckUsername(formValues?.username!);
+			checkUsernameMutation.mutate(formValues?.username!);
 		}
 	};
-
-	useEffect(() => {
-		if (checkUsernameResult) {
-			if (checkUsernameResult?.success) {
-				if (checkUsernameResultData?.data) {
-					router.push(`/auth/login?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-				} else {
-					sendOTP(formValues?.username!);
-				}
-			} else {
-				showNotification({
-					type: "error",
-					message: checkUsernameResult?.description ?? "ورود با خطا مواجه شد",
-				});
-			}
-		}
-	}, [checkUsernameResult]);
-
-	useEffect(() => {
-		if (sendOTPResult) {
-			if (sendOTPResult?.success) {
-				router.push(`/auth/sign-up/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-			} else {
-				showNotification({
-					type: "error",
-					message: sendOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
-				});
-			}
-		}
-	}, [sendOTPResult]);
 
 	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
@@ -118,7 +97,7 @@ export default function Page() {
 				<div className="mt-6">
 					<TabanInput
 						isLtr
-						disabled={sendOTPLoading || checkUsernameLoading}
+						disabled={submitLoading}
 						value={formValues?.username}
 						groupMode
 						setValue={setFormValues}
@@ -132,11 +111,11 @@ export default function Page() {
 				</div>
 				<div className="mt-1 w-full">
 					<TabanButton
-						isLoading={sendOTPLoading || checkUsernameLoading}
+						isLoading={submitLoading}
 						loadingText="در حال ورود"
 						type="submit"
 						className="!w-full"
-						disabled={formDisabled || sendOTPLoading || checkUsernameLoading}
+						disabled={formDisabled || submitLoading}
 					>
 						ورود / ثبت نام
 					</TabanButton>

@@ -14,24 +14,34 @@ import { useRouter } from "next/navigation";
 import { SetPasswordFormValues } from "../../_types/setPasswordFormValues.type";
 import { passwordRegex } from "@/utils/passwordRegex";
 import { mobileRegex } from "@/utils/mobileRegex";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "../../_api/endpoints";
 import Link from "next/link";
 
 export default function Page() {
-	const router = useRouter();
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const [formValues, setFormValues] = useState<SetPasswordFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
+
+	const showNotification = useNotificationStore((state) => state.showNotification);
+
+	const router = useRouter();
 	const searchParams = useReadSearchParams(["username", "backUrl"]);
 
-	const {
-		result: changePasswordResult,
-		fetchData: changePassword,
-		loading: changePasswordLoading,
-	} = useApi(async (username: string, password: string) => await AuthEndpoints.changePassword(username, password));
+	const changePasswordMutation = useMutation({
+		mutationFn: (vars: { username: string; password: string }) =>
+			withMappedError(() => AuthEndpoints.changePassword(vars.username, vars.password)),
+		meta: { showNotification: true },
+		onSuccess: () => {
+			showNotification({
+				type: "success",
+				message: "رمز عبور با موفقیت تغییر کرد، اکنون وارد شوید",
+			});
+			router.push(`/auth/login?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+		},
+	});
 
 	useEffect(() => {
 		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
@@ -48,27 +58,9 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			changePassword(formValues?.username!, formValues?.password!);
+			changePasswordMutation.mutate({ username: formValues?.username!, password: formValues?.password! });
 		}
 	};
-
-	useEffect(() => {
-		if (changePasswordResult) {
-			if (changePasswordResult?.success) {
-				showNotification({
-					type: "success",
-					message: "رمز عبور با موفقیت تغییر کرد، اکنون وارد شوید",
-				});
-				// پس از تغییر رمز، کاربر باید با رمز جدید وارد شود (ورود خودکار انجام نمی‌شود)
-				router.push(`/auth/login?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-			} else {
-				showNotification({
-					type: "error",
-					message: changePasswordResult?.description ?? "تغییر رمز عبور با خطا مواجه شد",
-				});
-			}
-		}
-	}, [changePasswordResult]);
 
 	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
@@ -114,7 +106,7 @@ export default function Page() {
 						<TabanInput
 							isLtr
 							isPasswordInput
-							disabled={changePasswordLoading}
+							disabled={changePasswordMutation.isPending}
 							value={formValues?.password}
 							groupMode
 							setValue={setFormValues}
@@ -129,7 +121,7 @@ export default function Page() {
 						<TabanInput
 							isLtr
 							isPasswordInput
-							disabled={changePasswordLoading}
+							disabled={changePasswordMutation.isPending}
 							value={formValues?.confirmPassword}
 							groupMode
 							setValue={setFormValues}
@@ -143,11 +135,11 @@ export default function Page() {
 				</div>
 				<div className="mt-2 flex flex-col items-center gap-2 w-full">
 					<TabanButton
-						isLoading={changePasswordLoading}
+						isLoading={changePasswordMutation.isPending}
 						loadingText="در حال ثبت"
 						type="submit"
 						className="!w-full"
-						disabled={formDisabled || changePasswordLoading}
+						disabled={formDisabled || changePasswordMutation.isPending}
 					>
 						تغییر رمز عبور
 					</TabanButton>

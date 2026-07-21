@@ -16,34 +16,54 @@ import { TimerRef } from "../../_components/timer/timer.types";
 import { Timer } from "../../_components/timer/timer";
 import Link from "next/link";
 import { mobileRegex } from "@/utils/mobileRegex";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "../../_api/endpoints";
 import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
 
 export default function Page() {
-	const router = useRouter();
-	const timerRef = useRef<TimerRef>(null);
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const [formValues, setFormValues] = useState<CheckOTPFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
 	const [showResendCode, setShowResendCode] = useState<boolean>(false);
+
+	const showNotification = useNotificationStore((state) => state.showNotification);
+
+	const router = useRouter();
+	const timerRef = useRef<TimerRef>(null);
 	const searchParams = useReadSearchParams(["username", "backUrl"]);
 
-	const {
-		result: loginOTPResult,
-		resultData: loginOTPResultData,
-		fetchData: loginWithOTP,
-		loading: loginOTPLoading,
-	} = useApi(async (username: string, otp: string) => await AuthEndpoints.loginWithOTP(username, otp));
+	const loginOTPMutation = useMutation({
+		mutationFn: (vars: { username: string; otp: string }) =>
+			withMappedError(() => AuthEndpoints.loginWithOTP(vars.username, vars.otp)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			const now = new Date();
+			const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+			storage.set(StorageKey?.TOKEN, `${data?.data?.acceeToken}`);
+			storage.set(StorageKey?.USERNAME, JSON.stringify(data?.data?.username));
+			storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
+			if (searchParams?.backUrl) {
+				window.location.href = searchParams?.backUrl;
+			} else {
+				window.location.href = "/";
+			}
+		},
+	});
 
-	const {
-		result: sendOTPResult,
-		fetchData: sendOTP,
-		loading: sendOTPLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.sendLoginOTP(username));
+	const sendOTPMutation = useMutation({
+		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendLoginOTP(username)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			showNotification({
+				type: "success",
+				message: data?.message,
+			});
+			setShowResendCode(false);
+		},
+	});
 
 	const getTwoMinutesFromNow = () => {
 		const time = new Date();
@@ -66,52 +86,13 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			loginWithOTP(formValues?.username!, formValues?.otp!);
+			loginOTPMutation.mutate({ username: formValues?.username!, otp: formValues?.otp! });
 		}
 	};
 
-	useEffect(() => {
-		if (loginOTPResult) {
-			if (loginOTPResult?.success) {
-				const now = new Date();
-				const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-				storage.set(StorageKey?.TOKEN, `${loginOTPResultData?.data?.acceeToken}`);
-				storage.set(StorageKey?.USERNAME, JSON.stringify(loginOTPResultData?.data?.username));
-				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
-				if (searchParams?.backUrl) {
-					window.location.href = searchParams?.backUrl;
-				} else {
-					window.location.href = "/";
-				}
-			} else {
-				showNotification({
-					type: "error",
-					message: loginOTPResult?.description ?? "ورود با خطا مواجه شد",
-				});
-			}
-		}
-	}, [loginOTPResult]);
-
-	useEffect(() => {
-		if (sendOTPResult) {
-			if (sendOTPResult?.success) {
-				showNotification({
-					type: "success",
-					message: sendOTPResult?.data?.message,
-				});
-				setShowResendCode(false);
-			} else {
-				showNotification({
-					type: "error",
-					message: sendOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
-				});
-			}
-		}
-	}, [sendOTPResult]);
-
 	const resendOTPHandler = () => {
 		setFormValues((prev) => ({ ...prev, otp: "" }));
-		sendOTP(formValues?.username!);
+		sendOTPMutation.mutate(formValues?.username!);
 	};
 
 	const formValidator = () => {
@@ -145,7 +126,7 @@ export default function Page() {
 					<div className="mt-4">
 						<TabanInput
 							isLtr
-							disabled={loginOTPLoading}
+							disabled={loginOTPMutation.isPending}
 							value={formValues?.otp}
 							groupMode
 							setValue={setFormValues}
@@ -166,7 +147,7 @@ export default function Page() {
 						</Link>
 						{showResendCode ? (
 							<button
-								disabled={sendOTPLoading}
+								disabled={sendOTPMutation.isPending}
 								type="button"
 								className="text-sm font-medium flex justify-center  leading-4 py-2.5 px-3 cursor-pointer bg-white/0 max-lg:!justify-start text-primary"
 								onClick={(e) => {
@@ -196,11 +177,11 @@ export default function Page() {
 				</div>
 				<div className="mt-1 flex flex-col items-center gap-2 w-full">
 					<TabanButton
-						isLoading={loginOTPLoading}
+						isLoading={loginOTPMutation.isPending}
 						loadingText="در حال ورود"
 						type="submit"
 						className="!w-full"
-						disabled={formDisabled || loginOTPLoading}
+						disabled={formDisabled || loginOTPMutation.isPending}
 					>
 						ورود به حساب
 					</TabanButton>

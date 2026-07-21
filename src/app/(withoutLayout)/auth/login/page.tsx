@@ -3,7 +3,6 @@
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconArrowLine } from "@/app/_components/icon/icons";
 import useReadSearchParams from "@/hooks/useReadSearchParams";
-import { useNotificationStore } from "@/stores/notification.store";
 import { FormErrors } from "@/types/formErrors.type";
 import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
@@ -15,37 +14,53 @@ import { StorageKey } from "@/types/StorageKey";
 import MobileTopHeader from "@/app/_components/mobileTopHeader/mobileTopHeader";
 import { useRouter } from "next/navigation";
 import { mobileRegex } from "@/utils/mobileRegex";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "../_api/endpoints";
 import Link from "next/link";
 
 export default function Page() {
-	const router = useRouter();
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const [formValues, setFormValues] = useState<LoginFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
+
+	const router = useRouter();
 	const searchParams = useReadSearchParams(["username", "backUrl"]);
 
-	const {
-		result: loginResult,
-		resultData: loginResultData,
-		fetchData: executeLogin,
-		loading: loginLoading,
-	} = useApi(async (username: string, password: string) => await AuthEndpoints.login(username, password));
+	const loginMutation = useMutation({
+		mutationFn: (vars: { username: string; password: string }) =>
+			withMappedError(() => AuthEndpoints.login(vars.username, vars.password)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			const now = new Date();
+			const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+			storage.set(StorageKey?.TOKEN, `${data?.data?.acceeToken}`);
+			storage.set(StorageKey?.USERNAME, JSON.stringify(data?.data?.username));
+			storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
+			if (searchParams?.backUrl) {
+				window.location.href = searchParams?.backUrl;
+			} else {
+				window.location.href = "/";
+			}
+		},
+	});
 
-	const {
-		result: sendLoginOTPResult,
-		fetchData: sendLoginOTP,
-		loading: sendLoginOTPLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.sendLoginOTP(username));
+	const sendLoginOTPMutation = useMutation({
+		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendLoginOTP(username)),
+		meta: { showNotification: true },
+		onSuccess: () => {
+			router.push(`/auth/login/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+		},
+	});
 
-	const {
-		result: sendForgetOTPResult,
-		fetchData: sendForgetOTP,
-		loading: sendForgetOTPLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.sendForgetPasswordOTP(username));
+	const sendForgetOTPMutation = useMutation({
+		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendForgetPasswordOTP(username)),
+		meta: { showNotification: true },
+		onSuccess: () => {
+			router.push(`/auth/change-password/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+		},
+	});
 
 	useEffect(() => {
 		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
@@ -62,7 +77,7 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			executeLogin(formValues?.username!, formValues?.password!);
+			loginMutation.mutate({ username: formValues?.username!, password: formValues?.password! });
 		}
 	};
 
@@ -80,64 +95,16 @@ export default function Page() {
 	const forgetPasswordHandler = () => {
 		const errors = validateUsernameOnly();
 		if (errors?.length === 0) {
-			sendForgetOTP(formValues?.username!);
+			sendForgetOTPMutation.mutate(formValues?.username!);
 		}
 	};
 
 	const loginWithOTPHandler = () => {
 		const errors = validateUsernameOnly();
 		if (errors?.length === 0) {
-			sendLoginOTP(formValues?.username!);
+			sendLoginOTPMutation.mutate(formValues?.username!);
 		}
 	};
-
-	useEffect(() => {
-		if (loginResult) {
-			if (loginResult?.success) {
-				const now = new Date();
-				const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-				storage.set(StorageKey?.TOKEN, `${loginResultData?.data?.acceeToken}`);
-				storage.set(StorageKey?.USERNAME, JSON.stringify(loginResultData?.data?.username));
-				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
-				if (searchParams?.backUrl) {
-					window.location.href = searchParams?.backUrl;
-				} else {
-					window.location.href = "/";
-				}
-			} else {
-				showNotification({
-					type: "error",
-					message: loginResult?.description ?? "ورود با خطا مواجه شد",
-				});
-			}
-		}
-	}, [loginResult]);
-
-	useEffect(() => {
-		if (sendForgetOTPResult) {
-			if (sendForgetOTPResult?.success) {
-				router.push(`/auth/change-password/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-			} else {
-				showNotification({
-					type: "error",
-					message: sendForgetOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
-				});
-			}
-		}
-	}, [sendForgetOTPResult]);
-
-	useEffect(() => {
-		if (sendLoginOTPResult) {
-			if (sendLoginOTPResult?.success) {
-				router.push(`/auth/login/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-			} else {
-				showNotification({
-					type: "error",
-					message: sendLoginOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
-				});
-			}
-		}
-	}, [sendLoginOTPResult]);
 
 	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
@@ -169,7 +136,7 @@ export default function Page() {
 						<TabanInput
 							isLtr
 							isPasswordInput
-							disabled={loginLoading}
+							disabled={loginMutation.isPending}
 							value={formValues?.password}
 							groupMode
 							setValue={setFormValues}
@@ -183,20 +150,20 @@ export default function Page() {
 					<button
 						type="button"
 						onClick={forgetPasswordHandler}
-						disabled={sendForgetOTPLoading}
+						disabled={sendForgetOTPMutation.isPending}
 						className="text-sm font-medium cursor-pointer leading-4 py-2.5 px-3 text-center w-fit text-[#4C8EB0] flex gap-1 items-center hover:gap-1.5 duration-200 disabled:opacity-60"
 					>
-						{sendForgetOTPLoading ? "در حال ارسال کد..." : "فراموشی رمز عبور"}
+						{sendForgetOTPMutation.isPending ? "در حال ارسال کد..." : "فراموشی رمز عبور"}
 						<IconArrowLine />
 					</button>
 				</div>
 				<div className="mt-1 flex flex-col items-center gap-2 w-full">
 					<TabanButton
-						isLoading={loginLoading}
+						isLoading={loginMutation.isPending}
 						loadingText="در حال ورود"
 						type="submit"
 						className="!w-full"
-						disabled={formDisabled || loginLoading}
+						disabled={formDisabled || loginMutation.isPending}
 					>
 						ورود به حساب
 					</TabanButton>
@@ -204,10 +171,10 @@ export default function Page() {
 						variant="bordered"
 						type="button"
 						onClick={loginWithOTPHandler}
-						isLoading={sendLoginOTPLoading}
+						isLoading={sendLoginOTPMutation.isPending}
 						loadingText="در حال ارسال کد..."
 						className="!w-full"
-						disabled={sendLoginOTPLoading}
+						disabled={sendLoginOTPMutation.isPending}
 					>
 						ورود با رمز یکبار مصرف
 					</TabanButton>

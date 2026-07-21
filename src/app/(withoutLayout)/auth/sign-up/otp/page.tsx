@@ -16,31 +16,43 @@ import { TimerRef } from "../../_components/timer/timer.types";
 import { Timer } from "../../_components/timer/timer";
 import Link from "next/link";
 import { mobileRegex } from "@/utils/mobileRegex";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "../../_api/endpoints";
 
 export default function Page() {
-	const router = useRouter();
-	const timerRef = useRef<TimerRef>(null);
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const [formValues, setFormValues] = useState<CheckOTPFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
 	const [showResendCode, setShowResendCode] = useState<boolean>(false);
+
+	const showNotification = useNotificationStore((state) => state.showNotification);
+
+	const router = useRouter();
+	const timerRef = useRef<TimerRef>(null);
 	const searchParams = useReadSearchParams(["username", "backUrl"]);
 
-	const {
-		result: checkOTPResult,
-		fetchData: checkOTP,
-		loading: checkOTPLoading,
-	} = useApi(async (username: string, otp: string) => await AuthEndpoints.checkOTP(username, otp));
+	const checkOTPMutation = useMutation({
+		mutationFn: (vars: { username: string; otp: string }) =>
+			withMappedError(() => AuthEndpoints.checkOTP(vars.username, vars.otp)),
+		meta: { showNotification: true },
+		onSuccess: () => {
+			router.push(`/auth/sign-up/set-password?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
+		},
+	});
 
-	const {
-		result: sendOTPResult,
-		fetchData: sendOTP,
-		loading: sendOTPLoading,
-	} = useApi(async (username: string) => await AuthEndpoints.sendOTP(username));
+	const sendOTPMutation = useMutation({
+		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendOTP(username)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			showNotification({
+				type: "success",
+				message: data?.message,
+			});
+			setShowResendCode(false);
+		},
+	});
 
 	const getTwoMinutesFromNow = () => {
 		const time = new Date();
@@ -63,43 +75,13 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			checkOTP(formValues?.username!, formValues?.otp!);
+			checkOTPMutation.mutate({ username: formValues?.username!, otp: formValues?.otp! });
 		}
 	};
 
-	useEffect(() => {
-		if (checkOTPResult) {
-			if (checkOTPResult?.success) {
-				router.push(`/auth/sign-up/set-password?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-			} else {
-				showNotification({
-					type: "error",
-					message: checkOTPResult?.description ?? "تایید کد با خطا مواجه شد",
-				});
-			}
-		}
-	}, [checkOTPResult]);
-
-	useEffect(() => {
-		if (sendOTPResult) {
-			if (sendOTPResult?.success) {
-				showNotification({
-					type: "success",
-					message: sendOTPResult?.data?.message,
-				});
-				setShowResendCode(false);
-			} else {
-				showNotification({
-					type: "error",
-					message: sendOTPResult?.description ?? "ارسال کد تایید با خطا مواجه شد",
-				});
-			}
-		}
-	}, [sendOTPResult]);
-
 	const resendOTPHandler = () => {
 		setFormValues((prev) => ({ ...prev, otp: "" }));
-		sendOTP(formValues?.username!);
+		sendOTPMutation.mutate(formValues?.username!);
 	};
 
 	const formValidator = () => {
@@ -133,7 +115,7 @@ export default function Page() {
 					<div className="mt-4">
 						<TabanInput
 							isLtr
-							disabled={checkOTPLoading}
+							disabled={checkOTPMutation.isPending}
 							value={formValues?.otp}
 							groupMode
 							setValue={setFormValues}
@@ -154,7 +136,7 @@ export default function Page() {
 						</Link>
 						{showResendCode ? (
 							<button
-								disabled={sendOTPLoading}
+								disabled={sendOTPMutation.isPending}
 								type="button"
 								className="text-sm font-medium flex justify-center  leading-4 py-2.5 px-3 cursor-pointer bg-white/0 max-lg:!justify-start text-primary"
 								onClick={(e) => {
@@ -184,11 +166,11 @@ export default function Page() {
 				</div>
 				<div className="mt-1 flex flex-col items-center gap-2 w-full">
 					<TabanButton
-						isLoading={checkOTPLoading}
+						isLoading={checkOTPMutation.isPending}
 						loadingText="در حال ورود"
 						type="submit"
 						className="!w-full"
-						disabled={formDisabled || checkOTPLoading}
+						disabled={formDisabled || checkOTPMutation.isPending}
 					>
 						ادامه
 					</TabanButton>

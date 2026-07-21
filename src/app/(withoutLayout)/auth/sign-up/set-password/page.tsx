@@ -3,7 +3,6 @@
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconArrowLine } from "@/app/_components/icon/icons";
 import useReadSearchParams from "@/hooks/useReadSearchParams";
-import { useNotificationStore } from "@/stores/notification.store";
 import { FormErrors } from "@/types/formErrors.type";
 import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
@@ -16,28 +15,39 @@ import { passwordRegex } from "@/utils/passwordRegex";
 import { storage } from "@/utils/Storage";
 import { StorageKey } from "@/types/StorageKey";
 import { mobileRegex } from "@/utils/mobileRegex";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "../../_api/endpoints";
 import Link from "next/link";
 
 export default function Page() {
-	const router = useRouter();
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const [formValues, setFormValues] = useState<SetPasswordFormValues>({});
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
 	const [formSubmited, setFormSubmited] = useState<boolean>(false);
 	const [formDisabled, setFormDisabled] = useState<boolean>(false);
+
+	const router = useRouter();
 	const searchParams = useReadSearchParams(["username", "backUrl", "ref"]);
 
-	const {
-		result: setPasswordResult,
-		resultData: setPasswordResultData,
-		fetchData: setPassword,
-		loading: setPasswordLoading,
-	} = useApi(
-		async (username: string, password: string, referralCode?: string) =>
-			await AuthEndpoints.setPassword(username, password, referralCode)
-	);
+	const setPasswordMutation = useMutation({
+		mutationFn: (vars: { username: string; password: string; referralCode?: string }) =>
+			withMappedError(() => AuthEndpoints.setPassword(vars.username, vars.password, vars.referralCode)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			const now = new Date();
+			const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+			// کد معرف مصرف شد؛ از استوریج پاک می‌شود
+			storage.remove(StorageKey.REFERRAL_CODE);
+			storage.set(StorageKey?.TOKEN, `${data?.data?.acceeToken}`);
+			storage.set(StorageKey?.USERNAME, JSON.stringify(data?.data?.username));
+			storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
+			if (searchParams?.backUrl) {
+				window.location.href = searchParams.backUrl;
+			} else {
+				window.location.href = "/profile";
+			}
+		},
+	});
 
 	useEffect(() => {
 		// کد معرف از پارامتر لینک (?ref=) یا از مقداری که هنگام ورود ذخیره شده، پیش‌پر می‌شود
@@ -61,33 +71,13 @@ export default function Page() {
 		setFormSubmited(true);
 		const errors = formValidator();
 		if (errors?.length === 0) {
-			setPassword(formValues?.username!, formValues?.password!, formValues?.referralCode?.trim() || undefined);
+			setPasswordMutation.mutate({
+				username: formValues?.username!,
+				password: formValues?.password!,
+				referralCode: formValues?.referralCode?.trim() || undefined,
+			});
 		}
 	};
-
-	useEffect(() => {
-		if (setPasswordResult) {
-			if (setPasswordResult?.success) {
-				const now = new Date();
-				const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-				// کد معرف مصرف شد؛ از استوریج پاک می‌شود
-				storage.remove(StorageKey.REFERRAL_CODE);
-				storage.set(StorageKey?.TOKEN, `${setPasswordResultData?.data?.acceeToken}`);
-				storage.set(StorageKey?.USERNAME, JSON.stringify(setPasswordResultData?.data?.username));
-				storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
-				if (searchParams?.backUrl) {
-					window.location.href = searchParams.backUrl;
-				} else {
-					window.location.href = "/profile";
-				}
-			} else {
-				showNotification({
-					type: "error",
-					message: setPasswordResult?.description ?? "ورود با خطا مواجه شد",
-				});
-			}
-		}
-	}, [setPasswordResult]);
 
 	const formValidator = () => {
 		const newErrors: FormErrors[] = [];
@@ -133,7 +123,7 @@ export default function Page() {
 						<TabanInput
 							isLtr
 							isPasswordInput
-							disabled={setPasswordLoading}
+							disabled={setPasswordMutation.isPending}
 							value={formValues?.password}
 							groupMode
 							setValue={setFormValues}
@@ -148,7 +138,7 @@ export default function Page() {
 						<TabanInput
 							isLtr
 							isPasswordInput
-							disabled={setPasswordLoading}
+							disabled={setPasswordMutation.isPending}
 							value={formValues?.confirmPassword}
 							groupMode
 							setValue={setFormValues}
@@ -162,7 +152,7 @@ export default function Page() {
 					<div className="mt-2">
 						<TabanInput
 							isLtr
-							disabled={setPasswordLoading}
+							disabled={setPasswordMutation.isPending}
 							value={formValues?.referralCode}
 							groupMode
 							setValue={setFormValues}
@@ -179,11 +169,11 @@ export default function Page() {
 				</div>
 				<div className="mt-2 flex flex-col items-center gap-2 w-full">
 					<TabanButton
-						isLoading={setPasswordLoading}
+						isLoading={setPasswordMutation.isPending}
 						loadingText="در حال ورود"
 						type="submit"
 						className="!w-full"
-						disabled={formDisabled || setPasswordLoading}
+						disabled={formDisabled || setPasswordMutation.isPending}
 					>
 						ورود به حساب کاربری
 					</TabanButton>
