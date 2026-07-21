@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEnterpriseStore } from "@/stores/enterprise";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { IconCart, IconOrder, IconUser } from "@/app/_components/icon/icons";
 
 function fieldOrDash(value?: string | null) {
@@ -17,7 +17,7 @@ const quickLinks = [
 
 export default function EnterpriseDashboardPage() {
 	const { enterpriseCustomer } = useEnterpriseStore();
-	const { profile } = useProfiletore();
+	const { profile } = useProfile();
 
 	return (
 		<div className="flex flex-col gap-5">

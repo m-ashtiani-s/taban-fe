@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { IconCart, IconDocument, IconStar, IconTranslate, IconUser } from "@/app/_components/icon/icons";
 import ReferralCode from "./_components/referralCode/referralCode";
 
 export default function Page() {
-	const { profile } = useProfiletore();
+	const { profile } = useProfile();
 
 	const completionQuery = useQuery({
 		queryKey: ["profile", "completion"],

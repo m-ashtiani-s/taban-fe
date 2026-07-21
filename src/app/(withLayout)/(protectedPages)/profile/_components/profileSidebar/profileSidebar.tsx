@@ -2,16 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useApi } from "@/hooks/useApi";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile, PROFILE_QUERY_KEY } from "@/hooks/useProfile";
 import { IconCart, IconCircleUser, IconDashboard, IconDocument, IconLogout, IconMoney, IconOrder, IconStar, IconTruck, IconUser } from "@/app/_components/icon/icons";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
-import { Profile } from "@/types/profile.type";
 
 const menu = [
 	{
@@ -61,13 +59,8 @@ const menu = [
 export default function ProfileSidebar() {
 	const pathname = usePathname();
 	const [logoutOpen, setLogoutOpen] = useState(false);
-	const { profile, setProfile } = useProfiletore();
-
-	const {
-		result: profileResult,
-		resultData: profileResultData,
-		fetchData: executeProfile,
-	} = useApi(async () => await TabanEndpoints.getProfile());
+	const { profile } = useProfile();
+	const queryClient = useQueryClient();
 
 	const completionQuery = useQuery({
 		queryKey: ["profile", "completion"],
@@ -76,22 +69,12 @@ export default function ProfileSidebar() {
 		meta: { showNotification: true },
 	});
 
-	useEffect(() => {
-		executeProfile();
-	}, []);
-
-	useEffect(() => {
-		if (profileResult?.success) {
-			setProfile((profileResultData?.data as Profile) ?? null);
-		}
-	}, [profileResult]);
-
 	const completion = completionQuery.data?.data;
-	const displayProfile = profile ?? profileResultData?.data;
+	const displayProfile = profile;
 
 	const logoutHandler = async () => {
 		await localStorage.removeItem("token");
-		setProfile(null);
+		queryClient.setQueryData(PROFILE_QUERY_KEY, null);
 		setLogoutOpen(false);
 		// رفرش کامل صفحه (بازگشت به خانه) تا کل state اپ به حالت خروج برگردد
 		window.location.href = "/";

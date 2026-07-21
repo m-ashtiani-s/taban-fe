@@ -10,7 +10,7 @@ import { IconArrowLine } from "@/app/_components/icon/icons";
 import { useApi } from "@/hooks/useApi";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { AddDocumentToCartPayload } from "@/types/cart.type";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { generateUUID } from "@/utils/string";
 import { StepKey, slugToStep, stepToSlug } from "@/app/(withoutFooter)/new-order/_config/steps";
 import { useOrderRates } from "@/app/(withoutFooter)/new-order/_hooks/useOrderRates";
@@ -46,14 +46,6 @@ function FlowLoading() {
 	);
 }
 
-/**
- * لایوتِ مشترکِ فلوی ویرایش (سبد خرید / آیتمِ سفارش) — معادلِ NewOrderFlow در فلوی ثبت سفارش.
- *
- * هر مرحله یک روتِ واقعی زیر همین لایوت است تا Back/Forward مرورگر بین مراحل کار کند.
- * کل state (editState، نرخ‌ها، توالی داینامیک، canGoNext و ...) اینجا زندگی می‌کند و چون
- * لایوت بین ناوبریِ مراحل remount نمی‌شود، داده‌ای موقع عقب/جلو رفتن از بین نمی‌رود. مرحله‌ی
- * جاری از روی URL مشتق و ناوبری با router انجام می‌شود.
- */
 export default function EditFlowLayout({
 	source,
 	loading,
@@ -68,7 +60,7 @@ export default function EditFlowLayout({
 }: EditFlowLayoutProps) {
 	const router = useRouter();
 	const pathname = usePathname();
-	const profile = useProfiletore((s) => s.profile);
+	const { profile } = useProfile();
 	const fallbackUploadScope = useMemo(() => generateUUID(), []);
 	const uploadScope = profile?.userId || fallbackUploadScope;
 
@@ -78,7 +70,6 @@ export default function EditFlowLayout({
 	const rates = useOrderRates();
 	const translationItem = useApi(async (id: string) => await TranslationEndpoints.getTranslationItem(id));
 
-	// مرحله‌ی جاری از آخرین سگمنتِ URL؛ روی ریشه (بدون سگمنتِ مرحله) = null
 	const currentStep = useMemo<StepKey | null>(() => slugToStep(pathname.split("/").pop()), [pathname]);
 
 	const goToStep = (key: StepKey, opts?: { replace?: boolean }) => {
@@ -87,7 +78,6 @@ export default function EditFlowLayout({
 		else router.push(url);
 	};
 
-	// ساخت یک‌بارِ editState از منبع بارگذاری‌شده
 	const builtRef = useRef(false);
 	useEffect(() => {
 		if (!source || builtRef.current) return;
@@ -95,19 +85,16 @@ export default function EditFlowLayout({
 		setEditState(buildEditState(source));
 	}, [source]);
 
-	// واکشیِ نرخ‌ها به‌محض مشخص‌شدن مدرک و زبان (و با هر تغییر زبان)
 	useEffect(() => {
 		const itemId = editState?.translationItemId;
 		const languageId = editState?.languageId;
 		if (itemId && languageId) rates.fetchAll(itemId, languageId);
 	}, [editState?.translationItemId, editState?.languageId]);
 
-	// واکشیِ توضیحات آپلود مدرک (که ادمین نوشته) برای مرحله‌ی آپلود
 	useEffect(() => {
 		if (editState?.translationItemId) translationItem.fetchData(editState.translationItemId);
 	}, [editState?.translationItemId]);
 
-	// مقداردهی اولیه‌ی تیکِ «تایید سفارت»: مدارکی که از قبل سفارت انتخاب‌شده دارند، باز نمایش داده می‌شوند
 	useEffect(() => {
 		if (!editState) return;
 		setWantEmbassyByDoc((prev) => {

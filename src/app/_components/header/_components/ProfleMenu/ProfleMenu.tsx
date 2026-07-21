@@ -1,6 +1,6 @@
 
 import {  IconDashboard, IconLogout, IconTranslate, IconUser } from "@/app/_components/icon/icons";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import Link from "next/link";
 import { Dispatch, SetStateAction } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 
 export default function ProfleMenu({ setLogoutOpen }: { setLogoutOpen: Dispatch<SetStateAction<boolean>> }) {
-	const { profile } = useProfiletore();
+	const { profile } = useProfile();
 
 	const completionQuery = useQuery({
 		queryKey: ["profile", "completion"],

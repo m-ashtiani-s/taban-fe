@@ -8,14 +8,13 @@ import AuthModal from "@/app/_components/common/authModal/authModal";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { passportFolderName } from "@/utils/string";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
 import StepHeader from "../../stepHeader/stepHeader";
 
 export default function PassportStep() {
 	const { order, setOrder } = useNewOrderStore();
-	const profile = useProfiletore((s) => s.profile);
-	const profileLoading = useProfiletore((s) => s.loading);
+	const { profile, isLoading: profileLoading } = useProfile();
 	const [authOpen, setAuthOpen] = useState<boolean>(false);
 
 	// کاربر مهمان: فایل‌ها در پوشه‌ی شناسه‌ی تصادفیِ همین سفارش ذخیره می‌شوند

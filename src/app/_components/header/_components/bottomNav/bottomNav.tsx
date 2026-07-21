@@ -7,11 +7,11 @@ import { IconCart, IconCircleUser, IconHome, IconTranslate } from "@/app/_compon
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
 import { withMappedError } from "@/utils/withMappedError";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function BottomNav() {
 	const pathname = usePathname();
-	const profile = useProfiletore((state) => state.profile);
+	const { profile } = useProfile();
 
 	const cartQuery = useQuery({
 		queryKey: ["cart", "detail"],

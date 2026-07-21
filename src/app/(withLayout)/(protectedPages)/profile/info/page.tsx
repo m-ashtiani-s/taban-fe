@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useApi } from "@/hooks/useApi";
 import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { IconCircleUser, IconEdit } from "@/app/_components/icon/icons";
-import { Profile } from "@/types/profile.type";
 import ReferralCode from "../_components/referralCode/referralCode";
 
 function fieldOrDash(value?: string | null) {
@@ -23,14 +20,7 @@ const userTypeLabel = (t?: string | null) => {
 };
 
 export default function Page() {
-	const { profile, setProfile } = useProfiletore();
-
-	const {
-		result: profileResult,
-		resultData: profileResultData,
-		fetchData: executeProfile,
-		loading: profileLoading,
-	} = useApi(async () => await TabanEndpoints.getProfile());
+	const { profile: user, isLoading: profileLoading } = useProfile();
 
 	const completionQuery = useQuery({
 		queryKey: ["profile", "completion"],
@@ -38,18 +28,6 @@ export default function Page() {
 		staleTime: 3_000,
 		meta: { showNotification: true },
 	});
-
-	useEffect(() => {
-		executeProfile();
-	}, []);
-
-	useEffect(() => {
-		if (profileResult?.success) {
-			setProfile((profileResultData?.data as Profile) ?? null);
-		}
-	}, [profileResult]);
-
-	const user = profile ?? profileResultData?.data;
 	const completion = completionQuery.data?.data;
 	const percent = Math.round(completion?.completionPercent ?? 0);
 	const isCompleted = completion?.isCompleted ?? false;

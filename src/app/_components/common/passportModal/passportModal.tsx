@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { PassportEndpoints } from "@/app/_api/passportEndpoints";
 import { passportFolderName } from "@/utils/string";
@@ -26,7 +27,7 @@ type PassportModalProps = {
  */
 export default function PassportModal({ open, setOpen, onCreated }: PassportModalProps) {
 	const showNotification = useNotificationStore((s) => s.showNotification);
-	const profile = useProfiletore((s) => s.profile);
+	const { profile } = useProfile();
 	const scope = profile?.userId || "";
 
 	const [title, setTitle] = useState<string>("");
@@ -34,8 +35,27 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 	const [image, setImage] = useState<string>("");
 	const [titleError, setTitleError] = useState<string>("");
 
-	const upload = useApi(async (f: File[]) => await TranslationEndpoints.uploadStorageFiles(f, passportFolderName(scope)));
-	const create = useApi(async (t: string, img: string) => await PassportEndpoints.createPassport({ title: t, image: img }));
+	const upload = useMutation({
+		mutationFn: (f: File[]) => withMappedError(() => TranslationEndpoints.uploadStorageFiles(f, passportFolderName(scope))),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			const url = data?.[0] ?? "";
+			if (url) {
+				setImage(url);
+				setFiles([]);
+			}
+		},
+	});
+
+	const create = useMutation({
+		mutationFn: (payload: { title: string; image: string }) => withMappedError(() => PassportEndpoints.createPassport(payload)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			showNotification({ type: "success", message: "پاسپورت با موفقیت ایجاد شد" });
+			onCreated?.(data?.data ?? null);
+			setOpen(false);
+		},
+	});
 
 	const reset = () => {
 		setTitle("");
@@ -47,36 +67,12 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 	// با انتخاب تصویر، بلافاصله آپلود انجام می‌شود (بدون دکمه‌ی جداگانه)
 	const handleSelect = (selected: File[]) => {
 		setFiles(selected);
-		if (selected.length > 0) upload.fetchData([selected[0]]);
+		if (selected.length > 0) upload.mutate([selected[0]]);
 	};
 
 	useEffect(() => {
 		if (!open) reset();
 	}, [open]);
-
-	useEffect(() => {
-		if (!upload.result) return;
-		if (upload.result.success) {
-			const url = upload.result.data?.[0] ?? "";
-			if (url) {
-				setImage(url);
-				setFiles([]);
-			}
-		} else {
-			showNotification({ type: "error", message: upload.result.description || "آپلود تصویر پاسپورت با خطا مواجه شد" });
-		}
-	}, [upload.result]);
-
-	useEffect(() => {
-		if (!create.result) return;
-		if (create.result.success) {
-			showNotification({ type: "success", message: "پاسپورت با موفقیت ایجاد شد" });
-			onCreated?.(create.result.data?.data ?? null);
-			setOpen(false);
-		} else {
-			showNotification({ type: "error", message: create.result.description || "ایجاد پاسپورت با خطا مواجه شد" });
-		}
-	}, [create.result]);
 
 	const submit = () => {
 		let ok = true;
@@ -91,7 +87,7 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 			ok = false;
 		}
 		if (!ok) return;
-		create.fetchData(title.trim(), image);
+		create.mutate({ title: title.trim(), image });
 	};
 
 	return (
@@ -115,15 +111,15 @@ export default function PassportModal({ open, setOpen, onCreated }: PassportModa
 					multiple={false}
 					accept="image/*,.pdf"
 					allowedExtensions={["JPG", "PNG", "PDF"]}
-					isLoading={upload.loading}
+					isLoading={upload.isPending}
 					hint="تصویر پاسپورت را اینجا رها کنید یا انتخاب نمایید"
 				/>
 
 				<div className="flex justify-end gap-3 mt-4">
-					<TabanButton variant="bordered" onClick={() => setOpen(false)} disabled={create.loading}>
+					<TabanButton variant="bordered" onClick={() => setOpen(false)} disabled={create.isPending}>
 						انصراف
 					</TabanButton>
-					<TabanButton onClick={submit} isLoading={create.loading} disabled={create.loading || upload.loading}>
+					<TabanButton onClick={submit} isLoading={create.isPending} disabled={create.isPending || upload.isPending}>
 						ثبت پاسپورت
 					</TabanButton>
 				</div>

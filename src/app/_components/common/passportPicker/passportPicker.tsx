@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { PassportEndpoints } from "@/app/_api/passportEndpoints";
 import { Passport } from "@/types/passport.type";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -24,13 +25,12 @@ const PAGE_SIZE = 100;
  */
 export default function PassportPicker({ value, onChange }: PassportPickerProps) {
 	const [modalOpen, setModalOpen] = useState(false);
-	const list = useApi(async () => await PassportEndpoints.getPassports({ isActive: true }, 1, PAGE_SIZE));
+	const list = useQuery({
+		queryKey: ["passports", { isActive: true }, 1, PAGE_SIZE],
+		queryFn: () => withMappedError(() => PassportEndpoints.getPassports({ isActive: true }, 1, PAGE_SIZE)),
+	});
 
-	useEffect(() => {
-		list.fetchData();
-	}, []);
-
-	const passports: Passport[] = list.result?.success ? list.result.data?.data?.elements ?? [] : [];
+	const passports: Passport[] = list.data?.data?.elements ?? [];
 	const selectedCount = passports.filter((p) => value.includes(p.image)).length;
 
 	const isSelected = (img: string) => value.includes(img);
@@ -44,7 +44,7 @@ export default function PassportPicker({ value, onChange }: PassportPickerProps)
 	}, [value, passports]);
 
 	const onCreated = (p: Passport | null) => {
-		list.fetchData();
+		list.refetch();
 		if (p?.image && !value.includes(p.image)) onChange([...value, p.image]);
 	};
 
@@ -60,7 +60,7 @@ export default function PassportPicker({ value, onChange }: PassportPickerProps)
 				</TabanButton>
 			</div>
 
-			{list.loading && !list.result ? (
+			{list.isLoading ? (
 				<div className="flex items-center justify-center gap-2 py-10 text-sm text-neutral-500">
 					<TabanLoading size={24} />
 					در حال دریافت پاسپورت‌ها...

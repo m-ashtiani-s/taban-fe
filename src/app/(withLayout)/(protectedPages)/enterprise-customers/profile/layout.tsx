@@ -4,9 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import { useEnterpriseStore } from "@/stores/enterprise";
-import { useProfiletore } from "@/stores/profile";
-import { TabanEndpoints } from "@/app/_api/endpoints";
-import { Profile } from "@/types/profile.type";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { EnterpriseCustomerEndpoints } from "../_api/endpoint";
 import EnterpriseSidebar from "./_components/enterpriseSidebar/enterpriseSidebar";
@@ -14,14 +11,11 @@ import EnterpriseSidebar from "./_components/enterpriseSidebar/enterpriseSidebar
 export default function EnterpriseProfileLayout({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
 	const { setEnterpriseCustomer } = useEnterpriseStore();
-	const { setProfile } = useProfiletore();
 
 	const getMine = useApi(async () => await EnterpriseCustomerEndpoints.getMyEnterpriseCustomer(), true);
-	const getProfile = useApi(async () => await TabanEndpoints.getProfile());
 
 	useEffect(() => {
 		getMine.fetchData();
-		getProfile.fetchData();
 	}, []);
 
 	useEffect(() => {
@@ -34,10 +28,6 @@ export default function EnterpriseProfileLayout({ children }: { children: React.
 			}
 		}
 	}, [getMine.result]);
-
-	useEffect(() => {
-		if (getProfile.result?.success) setProfile((getProfile.resultData?.data as Profile) ?? null);
-	}, [getProfile.result]);
 
 	if (getMine.loading && !getMine.result) {
 		return (

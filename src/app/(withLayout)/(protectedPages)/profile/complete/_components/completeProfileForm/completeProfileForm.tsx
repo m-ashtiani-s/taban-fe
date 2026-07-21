@@ -5,11 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/hooks/useApi";
 import { useNotificationStore } from "@/stores/notification.store";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 import { FormErrors } from "@/types/formErrors.type";
 import { findError } from "@/utils/formErrorsFinder";
-import { Profile } from "@/types/profile.type";
 import { Language } from "@/types/language.type";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -43,7 +42,6 @@ export default function CompleteProfileForm() {
 	const searchParams = useSearchParams();
 	const backUrl = searchParams.get("backUrl");
 	const showNotification = useNotificationStore((state) => state.showNotification);
-	const { profile, setProfile } = useProfiletore();
 	const queryClient = useQueryClient();
 
 	const [formValues, setFormValues] = useState<CompleteProfileFormValues>({});
@@ -67,11 +65,9 @@ export default function CompleteProfileForm() {
 	const [uploadedProfilePic, setUploadedProfilePic] = useState<string>("");
 	const [uploadingPic, setUploadingPic] = useState<boolean>(false);
 
-	const {
-		resultData: profileResultData,
-		fetchData: executeProfile,
-		loading: profileLoading,
-	} = useApi(async () => await TabanEndpoints.getProfile());
+	const { isLoading: profileLoading, query: profileQuery } = useProfile();
+	// envelope خام Res<Profile>؛ نگه داشته شده تا هیدریشن‌های موجود (profileResultData?.data) بی‌تغییر بمانند
+	const profileResultData = profileQuery.data;
 
 	const { resultData: languagesResultData, fetchData: executeLanguages, loading: languagesLoading } =
 		useApi(async () => await ProfileEndpoints.getLanguages());
@@ -82,11 +78,7 @@ export default function CompleteProfileForm() {
 		loading: updateLoading,
 	} = useApi(async (payload: UpdateUserPayload) => await ProfileEndpoints.updateUser(payload));
 
-	// پس از تکمیل پروفایل، پروفایل را دوباره از سرور می‌گیریم تا استور و درصد تکمیل تازه شوند
-	const refreshProfileApi = useApi(async () => await TabanEndpoints.getProfile());
-
 	useEffect(() => {
-		executeProfile();
 		executeLanguages();
 	}, []);
 
@@ -159,16 +151,9 @@ export default function CompleteProfileForm() {
 				type: "success",
 				message: updateResult.data?.message ?? "پروفایل با موفقیت ذخیره شد",
 			});
-			(async () => {
-				const refreshed = await refreshProfileApi.fetchDataResult();
-				if (refreshed.success) {
-					setProfile((refreshed.data?.data as Profile) ?? null);
-				}
-				// درصد تکمیل کوئری مشترکی است که چند جا (منوی هدر، سایدبار، پیشخوان) می‌خوانندش؛
-				// با باطل‌کردنش همه‌ی آن‌ها مقدار جدید را می‌گیرند
-				queryClient.invalidateQueries({ queryKey: ["profile", "completion"] });
-				router.push(backUrl || "/profile/info");
-			})();
+			// پروفایل و درصد تکمیل هر دو زیرِ کلید ["profile"] هستند؛ یک invalidate هر دو را از سرور تازه می‌کند
+			queryClient.invalidateQueries({ queryKey: ["profile"] });
+			router.push(backUrl || "/profile/info");
 		} else {
 			showNotification({
 				type: "error",

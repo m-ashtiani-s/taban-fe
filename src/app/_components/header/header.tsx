@@ -10,7 +10,8 @@ import BottomNav from "./_components/bottomNav/bottomNav";
 import TabanButton from "../common/tabanButton/tabanButton";
 import ProfleMenu from "./_components/profleMenu/profleMenu";
 import { IconArrow, IconCircleUser, IconTranslate } from "../icon/icons";
-import { useProfiletore } from "@/stores/profile";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile, PROFILE_QUERY_KEY } from "@/hooks/useProfile";
 import TabanModal from "../common/tabanModal/tabanModal";
 import { menuItems } from "./_constant/menuItems";
 import HeaderMenu from "./_components/headerMenu/headerMenu";
@@ -19,7 +20,8 @@ import CartBadge from "./_components/cartBadge/cartBadge";
 export const Header = () => {
 	const [open, setOpen] = useState<boolean>(false);
 	const [logoutOpen, setLogoutOpen] = useState<boolean>(false);
-	const { profile, setProfile } = useProfiletore();
+	const { profile } = useProfile();
+	const queryClient = useQueryClient();
 	const pathname = usePathname();
 
 	const isItemActive = (href: string) => {
@@ -34,7 +36,7 @@ export const Header = () => {
 
 	const logoutHandler = async () => {
 		await localStorage.removeItem("token");
-		setProfile(null);
+		queryClient.setQueryData(PROFILE_QUERY_KEY, null);
 		setLogoutOpen(false);
 		window.location.reload();
 	};

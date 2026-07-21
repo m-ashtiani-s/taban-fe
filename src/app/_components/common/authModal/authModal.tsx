@@ -2,7 +2,7 @@
 
 import { Dispatch, FormEvent, SetStateAction, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
 import { storage } from "@/utils/Storage";
@@ -14,12 +14,11 @@ import { passwordRegex } from "@/utils/passwordRegex";
 import { AuthEndpoints } from "@/app/(withoutLayout)/auth/_api/endpoints";
 import { Login } from "@/app/(withoutLayout)/auth/_types/login.type";
 import { TabanEndpoints } from "@/app/_api/endpoints";
-import { Profile } from "@/types/profile.type";
+import { PROFILE_QUERY_KEY } from "@/hooks/useProfile";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconArrowLine, IconCircleUser } from "@/app/_components/icon/icons";
-import { useProfiletore } from "@/stores/profile";
 
 type AuthStep = "username" | "login" | "otp" | "password";
 /**
@@ -51,7 +50,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 	const [resendIn, setResendIn] = useState<number>(0);
 
 	const showNotification = useNotificationStore((state) => state.showNotification);
-	const { profile, setProfile } = useProfiletore();
+	const queryClient = useQueryClient();
 
 	const resendTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -93,9 +92,11 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		storage.set(StorageKey.USERNAME, JSON.stringify(data?.username));
 		storage.set(StorageKey.EXPIRES_AT, JSON.stringify(tomorrow));
 
+		// توکن ذخیره شد؛ پروفایل را می‌گیریم و مستقیم توی کشِ کلیدِ واحد می‌نویسیم تا همه‌ی
+		// مصرف‌کننده‌های useProfile (هدر و...) بدون درخواست دوم به‌روز شوند
 		try {
 			const profileData = await getProfile.mutateAsync();
-			setProfile((profileData?.data as Profile) ?? null);
+			queryClient.setQueryData(PROFILE_QUERY_KEY, profileData);
 		} catch {
 		}
 

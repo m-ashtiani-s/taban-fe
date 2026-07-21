@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconCart, IconDashboard, IconOrder, IconUser } from "@/app/_components/icon/icons";
 import { useEnterpriseStore } from "@/stores/enterprise";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 
 const menu = [
 	{ label: "پیشخوان", href: "/enterprise-customers/profile", icon: <IconDashboard />, matchExact: true },
@@ -16,7 +16,7 @@ const menu = [
 export default function EnterpriseSidebar() {
 	const pathname = usePathname();
 	const { enterpriseCustomer } = useEnterpriseStore();
-	const { profile } = useProfiletore();
+	const { profile } = useProfile();
 
 	// نزدیک‌ترین (طولانی‌ترین) مسیرِ منطبق انتخاب می‌شود تا روی زیرمسیرها فقط یک آیتم فعال بماند
 	const activeHref = menu

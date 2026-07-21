@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import TabanDatePicker from "@/app/_components/memarDatePicker/tabanDatePicker";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
@@ -20,13 +20,12 @@ type DeliverySectionProps = {
  * و امکان انتخاب تاریخ تحویل دلخواه را می‌دهد. در هر سه فلوی سفارش استفاده می‌شود.
  */
 export default function DeliverySection({ hasJustice, hasMfa, desiredDate, onDateChange }: DeliverySectionProps) {
-	const urgency = useApi(async () => await UrgencyEndpoints.getUrgency(), true);
+	const urgencyQuery = useQuery({
+		queryKey: ["urgency"],
+		queryFn: () => withMappedError(() => UrgencyEndpoints.getUrgency()),
+	});
 
-	useEffect(() => {
-		urgency.fetchData();
-	}, []);
-
-	const s = urgency.resultData?.data;
+	const s = urgencyQuery.data?.data;
 	const min = s ? s.translationMinDays + (hasJustice ? s.justiceMinDays : 0) + (hasMfa ? s.mfaMinDays : 0) : 0;
 	const max = s ? s.translationMaxDays + (hasJustice ? s.justiceMaxDays : 0) + (hasMfa ? s.mfaMaxDays : 0) : 0;
 
@@ -37,7 +36,7 @@ export default function DeliverySection({ hasJustice, hasMfa, desiredDate, onDat
 				زمان تحویل
 			</div>
 
-			{urgency.loading && !urgency.result ? (
+			{urgencyQuery.isLoading ? (
 				<div className="flex items-center gap-2 text-sm text-neutral-500 py-2">
 					<TabanLoading size={20} />
 					در حال دریافت زمان تحویل...

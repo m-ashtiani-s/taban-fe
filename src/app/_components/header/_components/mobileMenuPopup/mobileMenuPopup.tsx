@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { IconArrow, IconCircleUser, IconDocument, IconHome, IconInfo, IconSupport24, IconTranslate } from "@/app/_components/icon/icons";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { menuItems } from "../../_constant/menuItems";
 import { MobileMenuPopupProps } from "./mobileMenuPopup.type";
 
@@ -20,7 +20,7 @@ const iconFor = (href: string) => {
 export const MobileMenuPopup: React.FC<MobileMenuPopupProps> = ({ open, setOpen }) => {
 	const [hidden, setHidden] = useState<boolean>(true);
 	const pathname = usePathname();
-	const profile = useProfiletore((state) => state.profile);
+	const { profile } = useProfile();
 
 	useEffect(() => {
 		if (!open) {

@@ -4,14 +4,14 @@ import { IconRequired, IconUpload } from "@/app/_components/icon/icons";
 import UploadBox from "@/app/_components/common/uploadBox/uploadBox";
 import DocumentDescriptionField from "@/app/_components/common/documentDescriptionField/documentDescriptionField";
 import { assetFolderName } from "@/utils/string";
-import { useProfiletore } from "@/stores/profile";
+import { useProfile } from "@/hooks/useProfile";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
 import StepHeader from "../../stepHeader/stepHeader";
 import DocumentSection from "../../documentSection/documentSection";
 
 export default function UploadStep() {
 	const { order, setOrder } = useNewOrderStore();
-	const profile = useProfiletore((s) => s.profile);
+	const { profile } = useProfile();
 	// ریشه‌ی پوشه: شناسه‌ی کاربر اگر وارد شده باشد، وگرنه شناسه‌ی تصادفیِ ثابتِ همین سفارش
 	const scope = profile?.userId || order?.uploadScope || "";
 	const names = order?.translationItemNames ?? {};

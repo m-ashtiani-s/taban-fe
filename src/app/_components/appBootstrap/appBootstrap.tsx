@@ -1,43 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useProfiletore } from "@/stores/profile";
-import { TabanEndpoints } from "@/app/_api/endpoints";
-import { useApi } from "@/hooks/useApi";
-import { useNotificationStore } from "@/stores/notification.store";
+import { useProfile } from "@/hooks/useProfile";
 
 /**
- * بوت‌استرپ سمت کلاینت اپ (واکشی پروفایل کاربر).
+ * بوت‌استرپ سمت کلاینت اپ: پروفایلِ کاربر را در ریشه‌ی اپ یک‌بار مانت می‌کند تا کش
+ * ["profile", "detail"] از همان ابتدا پر شود و بقیه‌ی کامپوننت‌ها از همان کش بخوانند.
  *
- * این منطق قبلاً داخل RootLayout بود و باعث می‌شد layout اجباراً client شود و
- * نتوانیم از Metadata API سرور استفاده کنیم. حالا layout سرور است و این کامپوننت
- * فقط side-effect را اجرا می‌کند و چیزی رندر نمی‌کند.
+ * دیگر استور و sync دستی وجود ندارد؛ خودِ useProfile (React Query) کش/دِدآپ را مدیریت می‌کند.
  */
 export default function AppBootstrap() {
-	const { setProfile, setLoading } = useProfiletore();
-	const showNotification = useNotificationStore((state) => state.showNotification);
-	const { result: profileResult, fetchData: executeProfile } = useApi(async () => await TabanEndpoints.getProfile());
-
-	useEffect(() => {
-		setLoading(true);
-		executeProfile();
-	}, []);
-
-	useEffect(() => {
-		if (profileResult) {
-			setLoading(false);
-			if (profileResult?.success) {
-				setProfile(profileResult?.data?.data);
-			} else {
-				setProfile(null);
-				profileResult?.statusCode !== 401 &&
-					showNotification({
-						type: "error",
-						message: profileResult?.description ?? "دریافت پروفایل با خطا مواجه شد",
-					});
-			}
-		}
-	}, [profileResult]);
-
+	useProfile();
 	return null;
 }
