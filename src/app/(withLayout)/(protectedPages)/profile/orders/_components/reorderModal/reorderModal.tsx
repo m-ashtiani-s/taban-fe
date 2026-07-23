@@ -2,8 +2,9 @@
 
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
@@ -30,43 +31,52 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 
 	const queryClient = useQueryClient();
 
-	const calc = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload));
-	const add = useApi(async (payload: AddDocumentToCartPayload) => await CartEndpoints.addToCart(payload));
+	const calcPayload: RateCalculationRequest | null = selected
+		? {
+				translationItemId: selected.payload.translationItemId,
+				languageId: selected.payload.languageId,
+				documents: selected.payload.documents,
+			}
+		: null;
+
+	const calcQuery = useQuery({
+		queryKey: ["reorderCalc", calcPayload],
+		queryFn: () => withMappedError(() => TranslationEndpoints.calculateRate(calcPayload!)),
+		enabled: !!calcPayload,
+		retry: false,
+	});
+
+	const { mutateAsync: addToCart, isPending: addPending } = useMutation({
+		mutationFn: (payload: AddDocumentToCartPayload) => withMappedError(() => CartEndpoints.addToCart(payload)),
+	});
 
 	useEffect(() => {
-		if (!open) {
-			setSelected(null);
-			calc.setResult(null);
-		}
+		if (!open) setSelected(null);
 	}, [open]);
 
 	const selectItem = (doc: OrderedDoc) => {
 		setSelected(doc);
-		calc.setResult(null);
-		calc.fetchData({
-			translationItemId: doc.payload.translationItemId,
-			languageId: doc.payload.languageId,
-			documents: doc.payload.documents,
-		});
 	};
 
 	const backToList = () => {
 		setSelected(null);
-		calc.setResult(null);
 	};
 
-	const breakdown = calc.result?.success ? (calc.result.data?.data ?? null) : null;
-	const calcFailed = !!calc.result && !calc.result.success;
+	const calcLoading = calcQuery.isFetching;
+	const calcResult =
+		calcQuery.error ?? (calcQuery.data !== undefined ? { success: true as const, data: calcQuery.data } : null);
+	const breakdown = calcResult?.success ? (calcResult.data?.data ?? null) : null;
+	const calcFailed = !!calcResult && !calcResult.success;
 
 	const confirmAdd = async () => {
 		if (!selected) return;
-		const res = await add.fetchDataResult(selected.payload);
-		if (res.success) {
-			queryClient.setQueryData(["cart", "detail"], res.data);
+		try {
+			const data = await addToCart(selected.payload);
+			queryClient.setQueryData(["cart", "detail"], data);
 			showNotification({ type: "success", message: "آیتم با قیمت روز به سبد خرید اضافه شد" });
 			setOpen(false);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "افزودن به سبد خرید با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "افزودن به سبد خرید با خطا مواجه شد" });
 		}
 	};
 
@@ -124,7 +134,7 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 						بازگشت به لیست آیتم‌ها
 					</button>
 
-					{calc.loading && !calc.result ? (
+					{calcLoading && !calcResult ? (
 						<div className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-neutral-500">
 							<TabanLoading size={30} />
 							در حال دریافت قیمت‌های روز...
@@ -257,10 +267,10 @@ export default function ReorderModal({ open, setOpen, order }: ReorderModalProps
 							</div>
 
 							<div className="flex flex-row gap-3">
-								<TabanButton variant="bordered" onClick={backToList} disabled={add.loading} className="flex-1 justify-center">
+								<TabanButton variant="bordered" onClick={backToList} disabled={addPending} className="flex-1 justify-center">
 									انصراف
 								</TabanButton>
-								<TabanButton onClick={confirmAdd} isLoading={add.loading} loadingText="در حال افزودن..." className="flex-1 justify-center">
+								<TabanButton onClick={confirmAdd} isLoading={addPending} loadingText="در حال افزودن..." className="flex-1 justify-center">
 									<IconCart className="stroke-white w-5 h-5 ml-2" />
 									افزودن به سبد خرید
 								</TabanButton>

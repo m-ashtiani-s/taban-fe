@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { toCurrency } from "@/utils/string";
@@ -19,30 +20,33 @@ import { invoiceStatusMeta } from "../_constants/invoiceStatus";
 export default function InvoiceDetailPage({ params }: { params: { invoiceId: string } }) {
 	const router = useRouter();
 	const showNotification = useNotificationStore((s) => s.showNotification);
-	const { result, resultData, fetchData, loading } = useApi(
-		async (id: string) => await InvoiceEndpoints.getInvoice(id),
-		true,
-	);
-	const pay = useApi(async (id: string) => await InvoiceEndpoints.payInvoice(id));
+	const invoiceQuery = useQuery({
+		queryKey: ["invoices", "detail", params.invoiceId],
+		queryFn: () => withMappedError(() => InvoiceEndpoints.getInvoice(params.invoiceId)),
+		retry: false,
+	});
+	const { mutateAsync: pay, isPending: payPending } = useMutation({
+		mutationFn: (id: string) => withMappedError(() => InvoiceEndpoints.payInvoice(id)),
+	});
 
-	useEffect(() => {
-		fetchData(params.invoiceId);
-	}, []);
+	const invoiceLoading = invoiceQuery.isFetching;
+	const invoiceResult =
+		invoiceQuery.error ?? (invoiceQuery.data !== undefined ? { success: true as const, data: invoiceQuery.data } : null);
 
 	// TODO: موقت — تا قبل از اتصال درگاه پرداخت واقعی، فقط وضعیت صورتحساب را پرداخت‌شده می‌کند.
 	const payHandler = async () => {
-		const res = await pay.fetchDataResult(params.invoiceId);
-		if (res.success) {
-			showNotification({ type: "success", message: res.data?.message ?? "پرداخت با موفقیت انجام شد" });
-			fetchData(params.invoiceId);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "پرداخت با خطا مواجه شد" });
+		try {
+			const data = await pay(params.invoiceId);
+			showNotification({ type: "success", message: data?.message ?? "پرداخت با موفقیت انجام شد" });
+			invoiceQuery.refetch();
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "پرداخت با خطا مواجه شد" });
 		}
 	};
 
-	const invoice = resultData?.data ?? null;
+	const invoice = (invoiceQuery.error ? null : (invoiceQuery.data ?? null))?.data ?? null;
 
-	if (loading && !result) {
+	if (invoiceLoading && !invoiceResult) {
 		return (
 			<div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
 				<TabanLoading size={26} />
@@ -51,10 +55,10 @@ export default function InvoiceDetailPage({ params }: { params: { invoiceId: str
 		);
 	}
 
-	if (!!result && !result.success && isRetryAble(result.code)) {
+	if (!!invoiceResult && !invoiceResult.success && isRetryAble(invoiceResult.code)) {
 		return (
 			<div className="flex justify-center mt-4">
-				<ErrorComponent executeFunction={() => fetchData(params.invoiceId)} callAble errorText="دریافت اطلاعات صورتحساب با خطا مواجه شد" />
+				<ErrorComponent executeFunction={() => invoiceQuery.refetch()} callAble errorText="دریافت اطلاعات صورتحساب با خطا مواجه شد" />
 			</div>
 		);
 	}
@@ -99,7 +103,7 @@ export default function InvoiceDetailPage({ params }: { params: { invoiceId: str
 			</div>
 
 			{/* pay / paid guidance */}
-			<InvoiceGuidance invoice={invoice} onPay={payHandler} paying={pay.loading} />
+			<InvoiceGuidance invoice={invoice} onPay={payHandler} paying={payPending} />
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 				{/* main */}

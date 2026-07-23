@@ -2,7 +2,8 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { AddDocumentToCartPayload } from "@/types/cart.type";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
@@ -26,37 +27,37 @@ export default function OrderItemEditLayout({ children }: { children: ReactNode 
 	const [source, setSource] = useState<OrderedDoc | null>(null);
 	const [notFound, setNotFound] = useState(false);
 
-	const getOrder = useApi(async () => await OrderEndpoints.getOrder(orderId), true);
-	const updateItem = useApi(async (payload: AddDocumentToCartPayload) => await OrderEndpoints.updateOrderItem(orderId, cartItemId, payload));
+	const orderQuery = useQuery({
+		queryKey: ["orders", "detail", orderId],
+		queryFn: () => withMappedError(() => OrderEndpoints.getOrder(orderId)),
+		retry: false,
+	});
+	const { mutate: updateItem, isPending: updatePending } = useMutation({
+		mutationFn: (payload: AddDocumentToCartPayload) => withMappedError(() => OrderEndpoints.updateOrderItem(orderId, cartItemId, payload)),
+		meta: { showNotification: true },
+		onSuccess: () => {
+			showNotification({ type: "success", message: "آیتم سفارش با موفقیت بروزرسانی شد" });
+			router.push(backHref);
+		},
+	});
+
+	const getOrderResult =
+		orderQuery.error ?? (orderQuery.data !== undefined ? { success: true as const, data: orderQuery.data } : null);
 
 	useEffect(() => {
-		getOrder.fetchData();
-	}, []);
-
-	useEffect(() => {
-		if (getOrder.result?.success) {
-			const order = getOrder.result.data?.data ?? null;
+		if (orderQuery.data) {
+			const order = orderQuery.data?.data ?? null;
 			const found = order?.orderedDocs?.find((it) => it.cartItemId === cartItemId) ?? null;
 			if (found) setSource(found);
 			else setNotFound(true);
 		}
-	}, [getOrder.result]);
-
-	useEffect(() => {
-		if (!updateItem.result) return;
-		if (updateItem.result.success) {
-			showNotification({ type: "success", message: "آیتم سفارش با موفقیت بروزرسانی شد" });
-			router.push(backHref);
-		} else {
-			showNotification({ type: "error", message: updateItem.result.description ?? "بروزرسانی آیتم سفارش با خطا مواجه شد" });
-		}
-	}, [updateItem.result]);
+	}, [orderQuery.data]);
 
 	const loadError =
-		!source && !notFound && !!getOrder.result && !getOrder.result.success && isRetryAble(getOrder.result.code) ? (
-			<ErrorComponent executeFunction={() => getOrder.fetchData()} callAble errorText="دریافت اطلاعات سفارش با خطا مواجه شد" />
+		!source && !notFound && !!getOrderResult && !getOrderResult.success && isRetryAble(getOrderResult.code) ? (
+			<ErrorComponent executeFunction={() => orderQuery.refetch()} callAble errorText="دریافت اطلاعات سفارش با خطا مواجه شد" />
 		) : null;
-	const loading = !source && !notFound && !loadError && (getOrder.loading || !getOrder.result);
+	const loading = !source && !notFound && !loadError && (orderQuery.isFetching || !getOrderResult);
 
 	return (
 		<EditFlowLayout
@@ -73,8 +74,8 @@ export default function OrderItemEditLayout({ children }: { children: ReactNode 
 				summaryVariant: "compact",
 				stepBase: `/profile/orders/${orderId}/edit/${cartItemId}`,
 			}}
-			submit={(payload) => updateItem.fetchData(payload)}
-			submitLoading={updateItem.loading}
+			submit={(payload) => updateItem(payload)}
+			submitLoading={updatePending}
 		>
 			{children}
 		</EditFlowLayout>

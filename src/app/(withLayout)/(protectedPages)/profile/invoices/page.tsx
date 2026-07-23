@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useApi } from "@/hooks/useApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { Result, ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { toCurrency } from "@/utils/string";
@@ -25,31 +27,41 @@ export default function InvoicesPage() {
 	const [totalElements, setTotalElements] = useState<number>(0);
 	const [status, setStatus] = useState<InvoiceStatus | "all">("all");
 
-	const getInvoices = useApi(
-		async (p: number, st: InvoiceStatus | "all") =>
-			await InvoiceEndpoints.getInvoices(st === "all" ? null : { status: st }, p, PAGE_SIZE),
-		true,
-	);
+	const queryClient = useQueryClient();
+	const [invoicesLoading, setInvoicesLoading] = useState<boolean>(true);
+	const [invoicesResult, setInvoicesResult] = useState<Result<Awaited<ReturnType<typeof InvoiceEndpoints.getInvoices>>> | null>(null);
 
 	useEffect(() => {
 		loadInvoices(1, status);
 	}, [status]);
 
 	const loadInvoices = async (p: number, st: InvoiceStatus | "all") => {
-		const res = await getInvoices.fetchDataResult(p, st);
-		if (res.success) {
-			const data = res.data?.data;
-			const elements = (data?.elements ?? []) as Invoice[];
+		setInvoicesLoading(true);
+		try {
+			const data = await queryClient.fetchQuery({
+				queryKey: ["invoices", "list", { status: st, page: p, pageSize: PAGE_SIZE }],
+				queryFn: () => withMappedError(() => InvoiceEndpoints.getInvoices(st === "all" ? null : { status: st }, p, PAGE_SIZE)),
+				retry: false,
+			});
+			setInvoicesResult({ success: true, data });
+			const inner = data?.data;
+			const elements = (inner?.elements ?? []) as Invoice[];
 			setInvoices((prev) => (p === 1 ? elements : [...prev, ...elements]));
-			setPage(data?.page ?? p);
-			setTotalPages(data?.totalPages ?? 1);
-			setTotalElements(data?.totalElements ?? 0);
-		} else if (!isRetryAble(res.code)) {
-			showNotification({ type: "error", message: res.description ?? "دریافت صورتحساب‌ها با خطا مواجه شد" });
+			setPage(inner?.page ?? p);
+			setTotalPages(inner?.totalPages ?? 1);
+			setTotalElements(inner?.totalElements ?? 0);
+		} catch (err) {
+			const e = err as ResultError;
+			setInvoicesResult(e);
+			if (!isRetryAble(e.code)) {
+				showNotification({ type: "error", message: e?.description ?? "دریافت صورتحساب‌ها با خطا مواجه شد" });
+			}
+		} finally {
+			setInvoicesLoading(false);
 		}
 	};
 
-	const initialLoading = getInvoices.loading && invoices.length === 0 && page === 1;
+	const initialLoading = invoicesLoading && invoices.length === 0 && page === 1;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -88,7 +100,7 @@ export default function InvoicesPage() {
 					<TabanLoading size={24} />
 					در حال دریافت صورتحساب‌ها...
 				</div>
-			) : !!getInvoices.result && !getInvoices.result.success && isRetryAble(getInvoices.result.code) ? (
+			) : !!invoicesResult && !invoicesResult.success && isRetryAble(invoicesResult.code) ? (
 				<div className="flex justify-center mt-4">
 					<ErrorComponent executeFunction={() => loadInvoices(1, status)} callAble errorText="دریافت صورتحساب‌ها با خطا مواجه شد" />
 				</div>
@@ -112,7 +124,7 @@ export default function InvoicesPage() {
 							<TabanButton
 								variant="bordered"
 								onClick={() => loadInvoices(page + 1, status)}
-								isLoading={getInvoices.loading}
+								isLoading={invoicesLoading}
 								loadingText="در حال دریافت..."
 							>
 								نمایش صورتحساب‌های بیشتر

@@ -1,11 +1,9 @@
 "use client";
 
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { useApi } from "@/hooks/useApi";
+import { Dispatch, SetStateAction, useState } from "react";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanAutocompleteWrapper from "@/app/_components/common/tabanAutocompleteWrapper/tabanAutocompleteWrapper";
-import { ShippingAddressEndpoints } from "../../_api/endpoint";
 import { ShippingAddressFilters } from "../../_types/shippingAddress.type";
 
 type LocationOption = { id: number; name: string };

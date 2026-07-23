@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { FormErrors } from "@/types/formErrors.type";
 import { findError } from "@/utils/formErrorsFinder";
@@ -65,44 +67,43 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 	);
 	const isInitialMount = useRef<boolean>(true);
 
-	const { resultData: provincesData, fetchData: executeProvinces, loading: provincesLoading } = useApi(
-		async () => await ShippingAddressEndpoints.getProvinces(""),
-	);
-	const {
-		resultData: citiesData,
-		fetchData: executeCities,
-		loading: citiesLoading,
-		setResult: setCitiesResult,
-	} = useApi(async (provinceId: number) => await ShippingAddressEndpoints.getCities("", provinceId));
+	const provincesQuery = useQuery({
+		queryKey: ["shippingAddresses", "provinces", ""],
+		queryFn: () => withMappedError(() => ShippingAddressEndpoints.getProvinces("")),
+		retry: false,
+	});
+	const citiesQuery = useQuery({
+		queryKey: ["shippingAddresses", "cities", selectedProvince?.id ?? null],
+		queryFn: () => withMappedError(() => ShippingAddressEndpoints.getCities("", selectedProvince!.id)),
+		enabled: !!selectedProvince,
+		retry: false,
+	});
+	const provincesLoading = provincesQuery.isFetching;
+	const citiesLoading = citiesQuery.isFetching;
 
-	const { fetchDataResult: executeSubmit, loading: submitLoading } = useApi(
-		async (payload: ShippingAddressPayload) =>
-			isEdit && address
-				? await ShippingAddressEndpoints.updateShippingAddress(address.shippingAddressId, payload)
-				: await ShippingAddressEndpoints.createShippingAddress(payload),
-	);
-
-	useEffect(() => {
-		executeProvinces();
-		if (isEdit && address) executeCities(address.provinceCode);
-	}, []);
+	const { mutateAsync: executeSubmit, isPending: submitLoading } = useMutation({
+		mutationFn: (payload: ShippingAddressPayload) =>
+			withMappedError(() =>
+				isEdit && address
+					? ShippingAddressEndpoints.updateShippingAddress(address.shippingAddressId, payload)
+					: ShippingAddressEndpoints.createShippingAddress(payload),
+			),
+	});
 
 	useEffect(() => {
 		if (isInitialMount.current) {
 			isInitialMount.current = false;
 			return;
 		}
-		setCitiesResult(null);
 		setSelectedCity(null);
-		if (selectedProvince) executeCities(selectedProvince.id);
 	}, [selectedProvince]);
 
 	useEffect(() => {
 		if (formSubmitted) formValidator();
 	}, [formValues, selectedProvince, selectedCity]);
 
-	const provinceOptions: LocationOption[] = (provincesData?.data?.elements ?? []) as LocationOption[];
-	const cityOptions: LocationOption[] = (citiesData?.data?.elements ?? []) as LocationOption[];
+	const provinceOptions: LocationOption[] = (provincesQuery.data?.data?.elements ?? []) as LocationOption[];
+	const cityOptions: LocationOption[] = (citiesQuery.data?.data?.elements ?? []) as LocationOption[];
 
 	const formValidator = (): FormErrors[] => {
 		const errors: FormErrors[] = [];
@@ -137,15 +138,15 @@ export default function AddressForm({ mode, address }: AddressFormProps) {
 			landlineNumber: formValues.landlineNumber?.trim() || null,
 		};
 
-		const result = await executeSubmit(payload);
-		if (result.success) {
+		try {
+			const data = await executeSubmit(payload);
 			showNotification({
 				type: "success",
-				message: result.data?.message ?? (isEdit ? "آدرس با موفقیت ویرایش شد" : "آدرس با موفقیت ایجاد شد"),
+				message: data?.message ?? (isEdit ? "آدرس با موفقیت ویرایش شد" : "آدرس با موفقیت ایجاد شد"),
 			});
 			router.push(backUrl || "/profile/addresses");
-		} else {
-			showNotification({ type: "error", message: result.description ?? "ثبت آدرس با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "ثبت آدرس با خطا مواجه شد" });
 		}
 	};
 

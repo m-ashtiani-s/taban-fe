@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { isLoggedIn } from "@/utils/auth";
 import { toCurrency } from "@/utils/string";
@@ -14,14 +14,12 @@ import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import AuthModal from "@/app/_components/common/authModal/authModal";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
 import DeliverySection from "@/app/_components/common/deliverySection/deliverySection";
-import { useNotificationStore } from "@/stores/notification.store";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { RateCalculationRequest, RateCalculationResponse } from "@/types/rateCalculation.type";
 import { useNewOrderStore } from "../../../_store/newOrder.store";
 import StepHeader from "../../stepHeader/stepHeader";
-import { useOrderRates } from "../../../_hooks/useOrderRates";
 import { CheckoutStepProps } from "./checkoutStep.type";
 
 const SummaryRow = ({ label, value, bold }: { label: string; value: number; bold?: boolean }) => (
@@ -37,7 +35,6 @@ const SummaryRow = ({ label, value, bold }: { label: string; value: number; bold
 export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 	const router = useRouter();
 	const { order, setOrder, resetOrder } = useNewOrderStore();
-	const showNotification = useNotificationStore((state) => state.showNotification);
 	const queryClient = useQueryClient();
 
 	const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -91,36 +88,33 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 		};
 	}, [order]);
 
-	const calculation = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload), true);
-	const addToCart = useApi(async () => {
-		if (!calculationPayload) throw new Error("اطلاعات کافی برای افزودن به سبد خرید وجود ندارد");
-		return await CartEndpoints.addToCart({
-			...calculationPayload,
-			passports: order?.passports ?? [],
-			assets: Object.values(order?.assetsByDoc ?? {}).flat(),
-			customerId: order?.customerId ?? null,
-			desiredDeliveryDate: order?.desiredDeliveryDate ?? null,
-		});
+	const calculationQuery = useQuery({
+		queryKey: ["rateCalculation", calculationPayload],
+		queryFn: () => withMappedError(() => TranslationEndpoints.calculateRate(calculationPayload!)),
+		enabled: !!calculationPayload,
+		retry: false,
 	});
 
-	useEffect(() => {
-		if (calculationPayload) {
-			calculation.fetchData(calculationPayload);
-		}
-	}, [calculationPayload]);
+	const { mutate: addToCart, isPending: addToCartPending } = useMutation({
+		mutationFn: () =>
+			withMappedError(() => {
+				if (!calculationPayload) throw new Error("اطلاعات کافی برای افزودن به سبد خرید وجود ندارد");
+				return CartEndpoints.addToCart({
+					...calculationPayload,
+					passports: order?.passports ?? [],
+					assets: Object.values(order?.assetsByDoc ?? {}).flat(),
+					customerId: order?.customerId ?? null,
+					desiredDeliveryDate: order?.desiredDeliveryDate ?? null,
+				});
+			}),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			queryClient.setQueryData(["cart", "detail"], data);
+			setSuccessModalOpen(true);
+		},
+	});
 
-	useEffect(() => {
-		if (addToCart.result) {
-			if (addToCart.result.success) {
-				queryClient.setQueryData(["cart", "detail"], addToCart.result.data);
-				setSuccessModalOpen(true);
-			} else {
-				showNotification({ type: "error", message: addToCart.result.description ?? "افزودن به سبد خرید با خطا مواجه شد" });
-			}
-		}
-	}, [addToCart.result]);
-
-	const breakdown: RateCalculationResponse | null = calculation.result?.success ? calculation.result.data?.data ?? null : null;
+	const breakdown: RateCalculationResponse | null = calculationQuery.data?.data ?? null;
 
 	const handleSuccessModalClose = () => {
 		setSuccessModalOpen(false);
@@ -143,7 +137,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 
 	const handleAddToCart = () => {
 		if (!breakdown) return;
-		if (isLoggedIn()) addToCart.fetchData();
+		if (isLoggedIn()) addToCart();
 		else setAuthModalOpen(true);
 	};
 
@@ -154,7 +148,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 				setOpen={setAuthModalOpen}
 				title="ورود برای ثبت سفارش"
 				description="برای افزودن ترجمه به سبد خرید، وارد حساب خود شوید یا ثبت‌نام کنید"
-				onSuccess={() => addToCart.fetchData()}
+				onSuccess={() => addToCart()}
 			/>
 
 			<TabanModal width={700} open={successModalOpen} setOpen={setSuccessModalOpen} title="سفارش با موفقیت ثبت شد" onClose={handleSuccessModalClose}>
@@ -186,7 +180,7 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 				<StepHeader title="خلاصه و پرداخت سفارش" subtitle="جزئیات نرخ سفارش خود را بررسی و آن را به سبد خرید اضافه کنید" />
 
 				<div className="max-w-3xl mx-auto w-full">
-					{calculation.loading && !breakdown ? (
+					{calculationQuery.isFetching && !breakdown ? (
 						<div className="flex items-center gap-2 justify-center py-16">
 							<TabanLoading size={24} />
 							<span className="text-sm text-neutral-500">در حال محاسبه نرخ سفارش...</span>
@@ -328,24 +322,24 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 							/>
 
 							<div className="flex items-center justify-end">
-								<TabanButton onClick={handleAddToCart} isLoading={addToCart.loading} disabled={addToCart.loading || !breakdown}>
+								<TabanButton onClick={handleAddToCart} isLoading={addToCartPending} disabled={addToCartPending || !breakdown}>
 									<IconCart className="stroke-white w-5 h-5 ml-2" />
 									افزودن به سبد خرید
 								</TabanButton>
 							</div>
 						</div>
-					) : !!calculation.result && !calculation.result.success && isRetryAble(calculation.result.code) ? (
+					) : !!calculationQuery.error && isRetryAble(calculationQuery.error.code) ? (
 						<div className="flex justify-center mt-4">
 							<ErrorComponent
-								executeFunction={() => calculationPayload && calculation.fetchData(calculationPayload)}
+								executeFunction={() => calculationQuery.refetch()}
 								callAble
-								errorText={calculation.result.description || "محاسبه نرخ با خطا مواجه شد"}
+								errorText={calculationQuery.error.description || "محاسبه نرخ با خطا مواجه شد"}
 							/>
 						</div>
-					) : !!calculation.result && !calculation.result.success ? (
+					) : !!calculationQuery.error ? (
 						<div className="flex items-center justify-center py-12 text-sm text-error">
 							<IconRequired viewBox="0 0 100 100" width={20} height={20} className="fill-error stroke-0 ml-2" />
-							{calculation.result.description || "محاسبه نرخ با خطا مواجه شد"}
+							{calculationQuery.error.description || "محاسبه نرخ با خطا مواجه شد"}
 						</div>
 					) : (
 						<div className="flex items-center justify-center py-12 text-sm text-neutral-400">اطلاعات کافی برای محاسبه نرخ وجود ندارد</div>

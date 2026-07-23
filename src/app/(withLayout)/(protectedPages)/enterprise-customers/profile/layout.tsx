@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { useEnterpriseStore } from "@/stores/enterprise";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { EnterpriseCustomerEndpoints } from "../_api/endpoint";
@@ -12,24 +13,27 @@ export default function EnterpriseProfileLayout({ children }: { children: React.
 	const router = useRouter();
 	const { setEnterpriseCustomer } = useEnterpriseStore();
 
-	const getMine = useApi(async () => await EnterpriseCustomerEndpoints.getMyEnterpriseCustomer(), true);
+	const getMineQuery = useQuery({
+		queryKey: ["enterpriseCustomer", "mine"],
+		queryFn: () => withMappedError(() => EnterpriseCustomerEndpoints.getMyEnterpriseCustomer()),
+		retry: false,
+	});
+	const getMineResult =
+		getMineQuery.error ?? (getMineQuery.data !== undefined ? { success: true as const, data: getMineQuery.data } : null);
+	const getMineLoading = getMineQuery.isFetching;
 
 	useEffect(() => {
-		getMine.fetchData();
-	}, []);
-
-	useEffect(() => {
-		if (getMine.result) {
-			if (getMine.result.success) {
-				setEnterpriseCustomer(getMine.resultData?.data ?? null);
+		if (getMineResult) {
+			if (getMineResult.success) {
+				setEnterpriseCustomer(getMineResult.data?.data ?? null);
 			} else {
 				// کاربری که مشتری سازمانی نیست به صفحه ثبت‌نام سازمانی هدایت می‌شود
 				router.replace("/enterprise-customers");
 			}
 		}
-	}, [getMine.result]);
+	}, [getMineQuery.data, getMineQuery.error]);
 
-	if (getMine.loading && !getMine.result) {
+	if (getMineLoading && !getMineResult) {
 		return (
 			<div className="container mx-auto px-4 py-20 flex items-center justify-center gap-2 text-sm text-neutral-500">
 				<TabanLoading size={28} />
@@ -38,7 +42,7 @@ export default function EnterpriseProfileLayout({ children }: { children: React.
 		);
 	}
 
-	if (getMine.result && !getMine.result.success) {
+	if (getMineResult && !getMineResult.success) {
 		return null;
 	}
 

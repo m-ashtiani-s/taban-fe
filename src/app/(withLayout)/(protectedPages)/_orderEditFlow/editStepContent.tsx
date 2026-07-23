@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
-import { RateCalculationRequest } from "@/types/rateCalculation.type";
 import { toCurrency, assetFolderName } from "@/utils/string";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
@@ -67,16 +66,25 @@ export default function EditStepContent() {
 		calcPayload,
 	} = useEditFlow();
 
-	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
-	const calculation = useApi(async (payload: RateCalculationRequest) => await TranslationEndpoints.calculateRate(payload));
+	const languagesQuery = useQuery({
+		queryKey: ["languages", "list"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getLanguages()),
+		enabled: currentStep === "language",
+		retry: false,
+	});
+	const calculationQuery = useQuery({
+		queryKey: ["editRateCalculation", calcPayload],
+		queryFn: () => withMappedError(() => TranslationEndpoints.calculateRate(calcPayload!)),
+		enabled: currentStep === "checkout" && !!calcPayload,
+		retry: false,
+	});
 
-	useEffect(() => {
-		if (currentStep === "language") languages.fetchData();
-	}, [currentStep]);
-
-	useEffect(() => {
-		if (currentStep === "checkout" && calcPayload) calculation.fetchData(calcPayload);
-	}, [currentStep]);
+	const languagesLoading = languagesQuery.isFetching;
+	const languagesResult =
+		languagesQuery.error ?? (languagesQuery.data !== undefined ? { success: true as const, data: languagesQuery.data } : null);
+	const calculationLoading = calculationQuery.isFetching;
+	const calculationResult =
+		calculationQuery.error ?? (calculationQuery.data !== undefined ? { success: true as const, data: calculationQuery.data } : null);
 
 	const documentKeys = Object.keys(editState.translationItemNames);
 
@@ -129,11 +137,11 @@ export default function EditStepContent() {
 	}
 
 	if (currentStep === "language") {
-		const list = languages.result?.success ? languages.result.data?.data ?? [] : [];
+		const list = languagesResult?.success ? languagesResult.data?.data ?? [] : [];
 		return (
 			<div className="flex flex-col gap-8">
 				<StepHeader title="زبان ترجمه را انتخاب کنید" subtitle="مدارک شما به زبان انتخابی ترجمه خواهد شد" />
-				{languages.loading && !languages.result ? (
+				{languagesLoading && !languagesResult ? (
 					<CardsSkeleton count={6} />
 				) : list.length > 0 ? (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -159,8 +167,8 @@ export default function EditStepContent() {
 							</motion.div>
 						))}
 					</div>
-				) : languages.result && !languages.result.success && isRetryAble(languages.result.code) ? (
-					<ErrorComponent executeFunction={() => languages.fetchData()} ticketAble errorText="دریافت لیست زبان‌ها با خطا مواجه شد." />
+				) : languagesResult && !languagesResult.success && isRetryAble(languagesResult.code) ? (
+					<ErrorComponent executeFunction={() => languagesQuery.refetch()} ticketAble errorText="دریافت لیست زبان‌ها با خطا مواجه شد." />
 				) : (
 					<div className="text-center text-sm text-neutral-400 py-10">داده‌ای موجود نیست</div>
 				)}
@@ -635,14 +643,14 @@ export default function EditStepContent() {
 					subtitle={isFull ? "جزئیات نرخ سفارش خود را بررسی و آن را ذخیره کنید" : "جزئیات نرخ این آیتم را بررسی و آن را ذخیره کنید"}
 				/>
 				<div className="max-w-3xl mx-auto w-full">
-					{calculation.loading && !calculation.result ? (
+					{calculationLoading && !calculationResult ? (
 						<div className="flex items-center gap-2 justify-center py-16">
 							<TabanLoading size={24} />
 							<span className="text-sm text-neutral-500">در حال محاسبه نرخ سفارش...</span>
 						</div>
-					) : calculation.result?.success && calculation.result.data?.data ? (
+					) : calculationResult?.success && calculationResult.data?.data ? (
 						(() => {
-							const bd = calculation.result.data.data;
+							const bd = calculationResult.data.data;
 							return (
 								<div className="flex flex-col gap-5">
 									<div className="rounded-2xl border border-neutral-200 bg-neutral-50/40 p-5 flex flex-col gap-3">
@@ -765,11 +773,11 @@ export default function EditStepContent() {
 								</div>
 							);
 						})()
-					) : calculation.result && !calculation.result.success ? (
+					) : calculationResult && !calculationResult.success ? (
 						<ErrorComponent
-							executeFunction={() => calcPayload && calculation.fetchData(calcPayload)}
+							executeFunction={() => calcPayload && calculationQuery.refetch()}
 							callAble
-							errorText={calculation.result.description || "محاسبه نرخ با خطا مواجه شد"}
+							errorText={calculationResult.description || "محاسبه نرخ با خطا مواجه شد"}
 						/>
 					) : (
 						<div className="text-sm text-neutral-400 py-4 text-center">اطلاعات کافی برای محاسبه نرخ وجود ندارد</div>

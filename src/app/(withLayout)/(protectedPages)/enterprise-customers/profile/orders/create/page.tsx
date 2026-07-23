@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
@@ -15,13 +15,15 @@ import { Customer } from "../../../_types/customer.type";
 export default function CreateOrderForCustomerPage() {
 	const router = useRouter();
 
-	const getCustomers = useApi(async () => await CustomerEndpoints.getCustomers({ isActive: true }, 1, 100), true);
-
-	useEffect(() => {
-		getCustomers.fetchData();
-	}, []);
-
-	const customers = (getCustomers.resultData?.data?.elements ?? []) as Customer[];
+	const customersQuery = useQuery({
+		queryKey: ["enterpriseCustomers", "list", { isActive: true, page: 1, pageSize: 100 }],
+		queryFn: () => withMappedError(() => CustomerEndpoints.getCustomers({ isActive: true }, 1, 100)),
+		retry: false,
+	});
+	const customersLoading = customersQuery.isFetching;
+	const customersResult =
+		customersQuery.error ?? (customersQuery.data !== undefined ? { success: true as const, data: customersQuery.data } : null);
+	const customers = ((customersQuery.error ? null : customersQuery.data)?.data?.elements ?? []) as Customer[];
 
 	const startOrderFor = (customer: Customer) => {
 		// همان فلوی ثبت سفارش سایت اجرا می‌شود؛ آی‌دی مشتری از طریق query به فلوی سفارش منتقل می‌شود
@@ -48,14 +50,14 @@ export default function CreateOrderForCustomerPage() {
 				مشتری‌ای که می‌خواهید سفارش ترجمه برای او ثبت شود را انتخاب کنید. پس از انتخاب، وارد فرآیند ثبت سفارش می‌شوید.
 			</div>
 
-			{getCustomers.loading && !getCustomers.result ? (
+			{customersLoading && !customersResult ? (
 				<div className="flex justify-center gap-2 items-center py-12 text-sm text-neutral-500">
 					<TabanLoading size={28} />
 					در حال دریافت مشتریان...
 				</div>
-			) : !!getCustomers.result && !getCustomers.result.success && isRetryAble(getCustomers.result.code) ? (
+			) : !!customersResult && !customersResult.success && isRetryAble(customersResult.code) ? (
 				<div className="flex justify-center mt-4">
-					<ErrorComponent executeFunction={() => getCustomers.fetchData()} callAble errorText="دریافت مشتریان با خطا مواجه شد" />
+					<ErrorComponent executeFunction={() => customersQuery.refetch()} callAble errorText="دریافت مشتریان با خطا مواجه شد" />
 				</div>
 			) : customers.length === 0 ? (
 				<div className="flex flex-col items-center justify-center gap-4 py-16 bg-white border border-dashed border-neutral-200 rounded-2xl">

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useApi } from "@/hooks/useApi";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { Result, ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { toCurrency } from "@/utils/string";
@@ -36,45 +38,59 @@ export default function EnterpriseOrdersPage() {
 	const [status, setStatus] = useState<OrderStatus | "all">("all");
 	const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
 
-	const getOrders = useApi(
-		async (p: number, st: OrderStatus | "all", customerId?: string) =>
-			await OrderEndpoints.getOrders(
-				// فقط سفارش‌های مربوط به مشتری‌های زیرمجموعه (نه سفارش‌های شخصیِ بدون مشتری)
-				{ withCustomer: true, ...(st === "all" ? {} : { status: st }), ...(customerId ? { customerId } : {}) },
-				p,
-				PAGE_SIZE,
-			),
-		true,
-	);
-	const getCustomers = useApi(async () => await CustomerEndpoints.getCustomers({ isActive: true }, 1, 100));
+	const queryClient = useQueryClient();
+	const [ordersLoading, setOrdersLoading] = useState<boolean>(true);
+	const [ordersResult, setOrdersResult] = useState<Result<Awaited<ReturnType<typeof OrderEndpoints.getOrders>>> | null>(null);
 
-	useEffect(() => {
-		getCustomers.fetchData();
-	}, []);
+	const customersQuery = useQuery({
+		queryKey: ["enterpriseCustomers", "list", { isActive: true, page: 1, pageSize: 100 }],
+		queryFn: () => withMappedError(() => CustomerEndpoints.getCustomers({ isActive: true }, 1, 100)),
+		retry: false,
+	});
 
 	useEffect(() => {
 		loadOrders(1, status, selectedCustomer?.customerId);
 	}, [status, selectedCustomer]);
 
 	const loadOrders = async (p: number, st: OrderStatus | "all", customerId?: string) => {
-		const res = await getOrders.fetchDataResult(p, st, customerId);
-		if (res.success) {
-			const data = res.data?.data;
-			const elements = (data?.elements ?? []) as Order[];
+		setOrdersLoading(true);
+		try {
+			const data = await queryClient.fetchQuery({
+				queryKey: ["enterpriseOrders", "list", { status: st, customerId: customerId ?? null, page: p, pageSize: PAGE_SIZE }],
+				queryFn: () =>
+					withMappedError(() =>
+						OrderEndpoints.getOrders(
+							// فقط سفارش‌های مربوط به مشتری‌های زیرمجموعه (نه سفارش‌های شخصیِ بدون مشتری)
+							{ withCustomer: true, ...(st === "all" ? {} : { status: st }), ...(customerId ? { customerId } : {}) },
+							p,
+							PAGE_SIZE,
+						),
+					),
+				retry: false,
+			});
+			setOrdersResult({ success: true, data });
+			const inner = data?.data;
+			const elements = (inner?.elements ?? []) as Order[];
 			setOrders((prev) => (p === 1 ? elements : [...prev, ...elements]));
-			setPage(data?.page ?? p);
-			setTotalPages(data?.totalPages ?? 1);
-		} else if (!isRetryAble(res.code)) {
-			showNotification({ type: "error", message: res.description ?? "دریافت سفارش‌ها با خطا مواجه شد" });
+			setPage(inner?.page ?? p);
+			setTotalPages(inner?.totalPages ?? 1);
+		} catch (err) {
+			const e = err as ResultError;
+			setOrdersResult(e);
+			if (!isRetryAble(e.code)) {
+				showNotification({ type: "error", message: e?.description ?? "دریافت سفارش‌ها با خطا مواجه شد" });
+			}
+		} finally {
+			setOrdersLoading(false);
 		}
 	};
 
 	const customerOptions: CustomerOption[] = [
 		{ customerId: "", fullName: "همه مشتریان" },
-		...(((getCustomers.resultData?.data?.elements ?? []) as Customer[]).map((c) => ({ customerId: c.customerId, fullName: c.fullName }))),
+		...(((customersQuery.data?.data?.elements ?? []) as Customer[]).map((c) => ({ customerId: c.customerId, fullName: c.fullName }))),
 	];
 
-	const initialLoading = getOrders.loading && orders.length === 0 && page === 1;
+	const initialLoading = ordersLoading && orders.length === 0 && page === 1;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -113,7 +129,7 @@ export default function EnterpriseOrdersPage() {
 						setSelectedOption={(opt: any) => setSelectedCustomer(opt?.customerId ? opt : null)}
 						valueField="customerId"
 						displayField="fullName"
-						loading={getCustomers.loading}
+						loading={customersQuery.isFetching}
 						scrolled
 						height={260}
 						wrapperErrorText=""
@@ -127,7 +143,7 @@ export default function EnterpriseOrdersPage() {
 					<TabanLoading size={24} />
 					در حال دریافت سفارش‌ها...
 				</div>
-			) : !!getOrders.result && !getOrders.result.success && isRetryAble(getOrders.result.code) ? (
+			) : !!ordersResult && !ordersResult.success && isRetryAble(ordersResult.code) ? (
 				<div className="flex justify-center mt-4">
 					<ErrorComponent executeFunction={() => loadOrders(1, status, selectedCustomer?.customerId)} callAble errorText="دریافت سفارش‌ها با خطا مواجه شد" />
 				</div>
@@ -190,7 +206,7 @@ export default function EnterpriseOrdersPage() {
 
 					{page < totalPages && (
 						<div className="flex justify-center mt-2">
-							<TabanButton variant="bordered" onClick={() => loadOrders(page + 1, status, selectedCustomer?.customerId)} isLoading={getOrders.loading} loadingText="در حال دریافت...">
+							<TabanButton variant="bordered" onClick={() => loadOrders(page + 1, status, selectedCustomer?.customerId)} isLoading={ordersLoading} loadingText="در حال دریافت...">
 								نمایش بیشتر
 							</TabanButton>
 						</div>

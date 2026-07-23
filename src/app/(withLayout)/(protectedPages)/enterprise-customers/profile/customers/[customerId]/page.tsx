@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
@@ -17,33 +19,34 @@ export default function Page({ params }: { params: { customerId: string } }) {
 	const showNotification = useNotificationStore((s) => s.showNotification);
 	const [statusModalOpen, setStatusModalOpen] = useState<boolean>(false);
 
-	const { result, resultData, fetchData, loading } = useApi(
-		async (id: string) => await CustomerEndpoints.getCustomer(id),
-		true,
-	);
-	const toggle = useApi(async (id: string, isActive: boolean) =>
-		isActive ? await CustomerEndpoints.deactivateCustomer(id) : await CustomerEndpoints.activateCustomer(id),
-	);
+	const customerQuery = useQuery({
+		queryKey: ["enterpriseCustomers", "detail", params.customerId],
+		queryFn: () => withMappedError(() => CustomerEndpoints.getCustomer(params.customerId)),
+		retry: false,
+	});
+	const { mutateAsync: toggle, isPending: togglePending } = useMutation({
+		mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+			withMappedError(() => (isActive ? CustomerEndpoints.deactivateCustomer(id) : CustomerEndpoints.activateCustomer(id))),
+	});
 
-	useEffect(() => {
-		fetchData(params.customerId);
-	}, []);
-
-	const customer = resultData?.data ?? null;
+	const customerLoading = customerQuery.isFetching;
+	const customerResult =
+		customerQuery.error ?? (customerQuery.data !== undefined ? { success: true as const, data: customerQuery.data } : null);
+	const customer = (customerQuery.error ? null : (customerQuery.data ?? null))?.data ?? null;
 
 	const toggleHandler = async () => {
 		if (!customer) return;
-		const res = await toggle.fetchDataResult(customer.customerId, customer.isActive);
-		if (res.success) {
+		try {
+			await toggle({ id: customer.customerId, isActive: customer.isActive });
 			showNotification({ type: "success", message: customer.isActive ? "مشتری غیرفعال شد" : "مشتری فعال شد" });
 			setStatusModalOpen(false);
-			fetchData(params.customerId);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "تغییر وضعیت با خطا مواجه شد" });
+			customerQuery.refetch();
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "تغییر وضعیت با خطا مواجه شد" });
 		}
 	};
 
-	if (loading && !result) {
+	if (customerLoading && !customerResult) {
 		return (
 			<div className="flex items-center justify-center py-16 gap-2 text-sm text-neutral-500">
 				<TabanLoading size={28} />
@@ -52,10 +55,10 @@ export default function Page({ params }: { params: { customerId: string } }) {
 		);
 	}
 
-	if (!!result && !result.success && isRetryAble(result.code)) {
+	if (!!customerResult && !customerResult.success && isRetryAble(customerResult.code)) {
 		return (
 			<div className="flex justify-center mt-4">
-				<ErrorComponent executeFunction={() => fetchData(params.customerId)} callAble errorText="دریافت اطلاعات مشتری با خطا مواجه شد" />
+				<ErrorComponent executeFunction={() => customerQuery.refetch()} callAble errorText="دریافت اطلاعات مشتری با خطا مواجه شد" />
 			</div>
 		);
 	}
@@ -154,10 +157,10 @@ export default function Page({ params }: { params: { customerId: string } }) {
 						آیا از {customer.isActive ? "غیرفعال" : "فعال"} کردن مشتری «{customer.fullName}» اطمینان دارید؟
 					</div>
 					<div className="flex justify-end gap-3">
-						<TabanButton variant="bordered" onClick={() => setStatusModalOpen(false)} disabled={toggle.loading}>
+						<TabanButton variant="bordered" onClick={() => setStatusModalOpen(false)} disabled={togglePending}>
 							انصراف
 						</TabanButton>
-						<TabanButton onClick={toggleHandler} isLoading={toggle.loading}>
+						<TabanButton onClick={toggleHandler} isLoading={togglePending}>
 							بله، مطمئنم
 						</TabanButton>
 					</div>

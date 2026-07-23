@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useEnterpriseStore } from "@/stores/enterprise";
 import { TabanEndpoints } from "@/app/_api/endpoints";
@@ -28,8 +28,17 @@ export default function EnterpriseRegisterPage() {
 	const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
 	const [registered, setRegistered] = useState<boolean>(false);
 
-	const getMine = useApi(async () => await EnterpriseCustomerEndpoints.getMyEnterpriseCustomer(), true);
-	const register = useApi(async (payload: EnterpriseCustomerPayload) => await EnterpriseCustomerEndpoints.register(payload));
+	const getMineQuery = useQuery({
+		queryKey: ["enterpriseCustomer", "mine"],
+		queryFn: () => withMappedError(() => EnterpriseCustomerEndpoints.getMyEnterpriseCustomer()),
+		retry: false,
+	});
+	const { mutateAsync: register, isPending: registerPending } = useMutation({
+		mutationFn: (payload: EnterpriseCustomerPayload) => withMappedError(() => EnterpriseCustomerEndpoints.register(payload)),
+	});
+	const getMineResult =
+		getMineQuery.error ?? (getMineQuery.data !== undefined ? { success: true as const, data: getMineQuery.data } : null);
+	const getMineLoading = getMineQuery.isFetching;
 
 	const completionQuery = useQuery({
 		queryKey: ["profile", "completion"],
@@ -38,14 +47,10 @@ export default function EnterpriseRegisterPage() {
 		meta: { showNotification: true },
 	});
 
-	useEffect(() => {
-		getMine.fetchData();
-	}, []);
-
-	const alreadyEnterprise = getMine.result?.success && !!getMine.resultData?.data;
+	const alreadyEnterprise = getMineResult?.success && !!getMineResult.data?.data;
 	const completion = completionQuery.data?.data;
 	const profileCompleted = completion?.isCompleted ?? false;
-	const loading = (getMine.loading && !getMine.result) || completionQuery.isPending;
+	const loading = (getMineLoading && !getMineResult) || completionQuery.isPending;
 
 	useEffect(() => {
 		if (formSubmitted) formValidator();
@@ -66,16 +71,16 @@ export default function EnterpriseRegisterPage() {
 			showNotification({ type: "error", message: "لطفا موارد لازم را تکمیل کنید" });
 			return;
 		}
-		const res = await register.fetchDataResult({
-			institutionName: formValues.institutionName!.trim(),
-			institutionAddress: formValues.institutionAddress!.trim(),
-			registrationId: formValues.registrationId?.trim() || null,
-		});
-		if (res.success) {
-			setEnterpriseCustomer(res.data?.data ?? null);
+		try {
+			const data = await register({
+				institutionName: formValues.institutionName!.trim(),
+				institutionAddress: formValues.institutionAddress!.trim(),
+				registrationId: formValues.registrationId?.trim() || null,
+			});
+			setEnterpriseCustomer(data?.data ?? null);
 			setRegistered(true);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "ثبت درخواست با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "ثبت درخواست با خطا مواجه شد" });
 		}
 	};
 
@@ -148,7 +153,7 @@ export default function EnterpriseRegisterPage() {
 						groupMode
 						setValue={setFormValues}
 						value={formValues.institutionName}
-						disabled={register.loading}
+						disabled={registerPending}
 						isHandleError
 						hasError={!!findError(formErrors, "institutionName")}
 						errorText={findError(formErrors, "institutionName")?.message}
@@ -160,7 +165,7 @@ export default function EnterpriseRegisterPage() {
 						minHeight={90}
 						setValue={setFormValues}
 						value={formValues.institutionAddress}
-						disabled={register.loading}
+						disabled={registerPending}
 						isHandleError
 						hasError={!!findError(formErrors, "institutionAddress")}
 						errorText={findError(formErrors, "institutionAddress")?.message}
@@ -172,10 +177,10 @@ export default function EnterpriseRegisterPage() {
 						isLtr
 						setValue={setFormValues}
 						value={formValues.registrationId}
-						disabled={register.loading}
+						disabled={registerPending}
 					/>
 					<div className="flex justify-end pt-2">
-						<TabanButton onClick={submitHandler} isLoading={register.loading} loadingText="در حال ثبت...">
+						<TabanButton onClick={submitHandler} isLoading={registerPending} loadingText="در حال ثبت...">
 							ثبت درخواست مشتری سازمانی
 						</TabanButton>
 					</div>

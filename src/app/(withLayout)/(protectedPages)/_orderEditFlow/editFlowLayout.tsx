@@ -7,7 +7,8 @@ import { motion } from "framer-motion";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { IconArrowLine } from "@/app/_components/icon/icons";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { AddDocumentToCartPayload } from "@/types/cart.type";
 import { useProfile } from "@/hooks/useProfile";
@@ -68,7 +69,15 @@ export default function EditFlowLayout({
 	const [wantEmbassyByDoc, setWantEmbassyByDoc] = useState<Record<string, boolean>>({});
 
 	const rates = useOrderRates();
-	const translationItem = useApi(async (id: string) => await TranslationEndpoints.getTranslationItem(id));
+	const translationItemQuery = useQuery({
+		queryKey: ["translationItem", editState?.translationItemId],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getTranslationItem(editState!.translationItemId)),
+		enabled: !!editState?.translationItemId,
+		retry: false,
+	});
+	const translationItemResult =
+		translationItemQuery.error ??
+		(translationItemQuery.data !== undefined ? { success: true as const, data: translationItemQuery.data } : null);
 
 	const currentStep = useMemo<StepKey | null>(() => slugToStep(pathname.split("/").pop()), [pathname]);
 
@@ -90,10 +99,6 @@ export default function EditFlowLayout({
 		const languageId = editState?.languageId;
 		if (itemId && languageId) rates.fetchAll(itemId, languageId);
 	}, [editState?.translationItemId, editState?.languageId]);
-
-	useEffect(() => {
-		if (editState?.translationItemId) translationItem.fetchData(editState.translationItemId);
-	}, [editState?.translationItemId]);
 
 	useEffect(() => {
 		if (!editState) return;
@@ -234,8 +239,8 @@ export default function EditFlowLayout({
 		return <FlowLoading />;
 	}
 
-	const uploadDescription = (translationItem.result?.success ? translationItem.result.data?.data?.uploadDescription ?? "" : "").trim();
-	const namePlaceholder = (translationItem.result?.success ? translationItem.result.data?.data?.namePlaceholder ?? "" : "").trim() || undefined;
+	const uploadDescription = (translationItemResult?.success ? translationItemResult.data?.data?.uploadDescription ?? "" : "").trim();
+	const namePlaceholder = (translationItemResult?.success ? translationItemResult.data?.data?.namePlaceholder ?? "" : "").trim() || undefined;
 
 	return (
 		<EditFlowProvider

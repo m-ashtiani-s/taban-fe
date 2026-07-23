@@ -27,12 +27,15 @@
 ## معماری کلی (بالا به پایین)
 
 ```
-Component  →  useApi/useQuery-like hook  →  Endpoint module  →  HTTP client (transport)
-   |                    |                          |                      |
-  فقط UI          state: loading/error/data   فقط تعریف request     فقط ارسال درخواست
-                                                (url/method/params)   (auth header, base url,
-                                                                       error normalization)
+Component  →  TanStack Query (useQuery/useMutation)  →  Endpoint module  →  HTTP client (transport)
+   |                    |                                     |                      |
+  فقط UI          state: loading/error/data              فقط تعریف request     فقط ارسال درخواست
+ (شرط رندر درجا)  (نرمال‌سازی خطا با withMappedError)       (url/method/params)   (auth header, base url,
+                                                                                 error normalization)
 ```
+
+> جزئیات کامل استانداردِ لایه‌ی ۳ (React Query) در اسکیل `data-fetching` است؛ این
+> فایل فقط اصولِ لایه‌ای و مرزهای بین لایه‌ها را می‌گوید.
 
 ### لایه‌ی ۱ — Transport Client (پایین‌ترین لایه)
 
@@ -103,59 +106,56 @@ export const CartEndpoints = {
   داری چیزی را کپی می‌کنی، یعنی جایش اشتباه انتخاب شده — آن را به یک ماژول
   مشترک ببر.
 
-### لایه‌ی ۳ — Data-fetching Hook (پل بین UI و Endpoint)
+### لایه‌ی ۳ — Data-fetching (پل بین UI و Endpoint)
 
-یک هوک عمومی (مثل `useApi`, `useQuery`, `useMutation` — نامش مهم نیست، نقشش
-مهم است) که یک تابع از لایه‌ی Endpoint می‌گیرد و مدیریت می‌کند:
+نقش این لایه: گرفتن یک تابع از لایه‌ی Endpoint و مدیریت وضعیتِ `loading`/`data`/خطا
+به‌صورت **نرمال‌شده و یکدست**. **در این پروژه این لایه دقیقاً TanStack Query (React
+Query) است** و مستقیم در همان کامپوننتی که داده را مصرف می‌کند نوشته می‌شود — نه پشت
+یک هوک سفارشی. جزئیات کامل در اسکیل `data-fetching`؛ اینجا فقط اصولِ لایه‌ای:
 
-- `loading` — وضعیت در حال انجام بودن درخواست.
-- `result`/`data` — نتیجه‌ی موفق.
-- خطا — به‌صورت **نرمال‌شده و یکدست**، نه خطای خام axios/fetch.
-- (اختیاری) توابع کمکی برای الگوهای مختلف: نسخه‌ای که throw می‌کند (برای
-  کدی که می‌خواهد با try/catch کار کند)، نسخه‌ای که فقط result برمی‌گرداند
-  (برای کدی که می‌خواهد UI را بر اساس success/failure شاخه‌بندی کند).
-
-نکته‌ی کلیدی: **نرمال‌سازی خطا (error mapping) باید در یک تابع مرکزی واحد
-باشد**، نه در خود هوک به‌صورت پراکنده. این تابع مرکزی مسئول چیزهایی مثل:
-
-- تشخیص ۴۰۱ → پاک‌کردن session/توکن → ریدایرکت به صفحه‌ی لاگین.
-- تبدیل کدهای HTTP (۴۰۴, ۵۰۲, ۵۰۳, timeout, network error) به پیام‌های
-  قابل‌فهم برای کاربر.
-- استخراج پیام خطای اعتبارسنجی (validation) از پاسخ سرور به یک شکل یکدست.
+- **خواندن داده → `useQuery`** (اعلانی؛ با mount و تغییر `queryKey` اجرا می‌شود).
+- **انجام یک کار (POST/PUT/DELETE/دانلود) → `useMutation`** (دستوری؛ فقط با
+  `mutate()`/`mutateAsync()`). فعل HTTP ملاک نیست؛ نقشِ عملیات ملاک است.
+- **نرمال‌سازی خطا در یک تابع مرکزی واحد است: `mapError`.** هر `queryFn`/`mutationFn`
+  باید در `withMappedError` پیچیده شود تا خطای خام به `ResultError` نگاشت و **دوباره
+  throw** شود (React Query موفقیت/شکست را از throw شدن promise تشخیص می‌دهد، نه از
+  فیلد `success`). این تابع مرکزی مسئول تشخیص ۴۰۱ → پاک‌کردن session → ریدایرکت
+  لاگین، تبدیل کدهای HTTP (۴۰۴/۵۰۲/۵۰۳/timeout/network) به پیام فارسی، و استخراج
+  خطای اعتبارسنجی است.
+- **توست خطا سراسری و opt-in است:** `meta: { showNotification: true }` روی کوئری/
+  میوتیشن. هرگز توست را داخل `queryFn`/`withMappedError` نگذار.
 
 ```ts
-function useApi<T, A extends any[]>(apiCall: (...args: A) => Promise<T>) {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Result<T> | null>(null);
+// خواندن — مستقیم در کامپوننت
+const cartQuery = useQuery({
+  queryKey: ["cart", "detail"],
+  queryFn: () => withMappedError(() => CartEndpoints.getCart()),
+  meta: { showNotification: true },
+});
 
-  const fetchData = useCallback(async (...args: A) => {
-    setLoading(true);
-    try {
-      const data = await apiCall(...args);
-      setResult({ success: true, data });
-    } catch (err) {
-      setResult(mapError<T>(err)); // ← نرمال‌سازی مرکزی خطا، نه اینجا پراکنده
-    } finally {
-      setLoading(false);
-    }
-  }, [apiCall]);
-
-  return { loading, result, fetchData };
-}
+// انجام کار — میوتیشن
+const { mutate: addToCart, isPending } = useMutation({
+  mutationFn: (payload: AddItemPayload) => withMappedError(() => CartEndpoints.addToCart(payload)),
+  meta: { showNotification: true },
+});
 ```
+
+> ⚠️ هوک قدیمی `useApi` **حذف شده** و دیگر در هیچ کدی استفاده نمی‌شود. کد جدید فقط با
+> `useQuery`/`useMutation` نوشته می‌شود. برای فچ imperative (مثلاً داده برای منطق نه
+> رندر، یا لیستِ accumulate) از `queryClient.fetchQuery(...)` استفاده کن.
 
 ### لایه‌ی ۴ (کامپوننت) — فقط مصرف‌کننده
 
-کامپوننت فقط این را می‌نویسد:
-
-```ts
-const { loading, result, fetchData } = useApi(CartEndpoints.addToCart);
-```
-
-و بر اساس `loading`/`result` رندر می‌کند. کامپوننت هرگز:
+کامپوننت `useQuery`/`useMutation` را **مستقیم** می‌نویسد و بر اساس فلگ‌هایش
+(`isPending`/`isFetching`/`error`/`data`، یا `isPending` میوتیشن) رندر می‌کند؛
+شرط‌های loading/error/data **درجا و صریح** در JSX (خطا قبل از data چک می‌شود).
+کامپوننت هرگز:
 - مستقیم `httpClient` یا `axios`/`fetch` را import نمی‌کند.
-- هرگز خودش try/catch برای خطای شبکه نمی‌نویسد.
-- هرگز هدر Authorization یا base URL را نمی‌داند.
+- خودش try/catch برای خطای شبکه نمی‌نویسد (مگر جایی که عمداً با
+  `mutateAsync`/`fetchQuery` نتیجه را دستی هندل می‌کند).
+- هدر Authorization یا base URL را نمی‌داند.
+- `useQuery`/`useMutation` را پشت یک هوک سفارشی یا کامپوننتِ wrapper (مثل
+  `<QueryBoundary>`) قایم نمی‌کند — کوئری همان‌جا در کامپوننت زندگی می‌کند.
 
 ---
 
@@ -164,14 +164,15 @@ const { loading, result, fetchData } = useApi(CartEndpoints.addToCart);
 هنگام نوشتن یا ریویو کردن کدی که با بک‌اند حرف می‌زند، این‌ها را چک کن:
 
 1. **هیچ کامپوننتی مستقیماً `axios`/`fetch`/`XMLHttpRequest` صدا نمی‌زند.**
-   همیشه از پشت لایه‌ی هوک (لایه‌ی ۳) که از پشت لایه‌ی Endpoint (لایه‌ی ۲) رد
-   می‌شود.
+   همیشه با `useQuery`/`useMutation` که از پشت لایه‌ی Endpoint (لایه‌ی ۲) رد
+   می‌شود؛ و کوئری/میوتیشن پشت هیچ هوک سفارشی یا wrapper قایم نمی‌شود.
 2. **هر endpoint دقیقاً یک‌بار تعریف می‌شود.** قبل از نوشتن یک تابع جدید در
    لایه‌ی Endpoint، جست‌وجو کن که آیا از قبل چیزی مشابه (همان url/method) وجود
    دارد یا نه.
-3. **منطق نرمال‌سازی خطا فقط در یک جا زندگی می‌کند** (مثلاً `mapError`). هیچ
-   کامپوننت یا endpoint دیگری نباید دوباره منطق تشخیص ۴۰۱/۵۰۲/timeout را از
-   نو بنویسد.
+3. **منطق نرمال‌سازی خطا فقط در یک جا زندگی می‌کند** (`mapError`)، و هر
+   `queryFn`/`mutationFn` در `withMappedError` پیچیده می‌شود. هیچ کامپوننت یا
+   endpoint دیگری نباید دوباره منطق تشخیص ۴۰۱/۵۰۲/timeout را از نو بنویسد،
+   و `endpoints.ts` باید کاملاً از مفاهیم React Query (queryKey/useQuery) پاک بماند.
 4. **توکن/session فقط در لایه‌ی transport تزریق می‌شود** (interceptor)، نه در
    endpoint و نه در کامپوننت.
 5. **آپلود فایل هم از همین مسیر رد می‌شود** — یعنی حتی برای `multipart/form-data`
@@ -204,6 +205,8 @@ const { loading, result, fetchData } = useApi(CartEndpoints.addToCart);
 
 ## خلاصه‌ی یک‌خطی برای یادآوری سریع
 
-> **کامپوننت → هوک (state) → Endpoint (request) → httpClient (transport+auth+error).**
-> هر کدی که این زنجیره را دور بزند یا لایه‌ای را قاطی لایه‌ی دیگر کند، باید در
+> **کامپوننت (`useQuery`/`useMutation`) → Endpoint (request) → httpClient (transport+auth).**
+> نرمال‌سازی خطا در `mapError`، اعمال‌شده با `withMappedError` دورِ هر
+> `queryFn`/`mutationFn`. هوک قدیمی `useApi` حذف شده. هر کدی که این زنجیره را دور
+> بزند، کوئری را پشت wrapper قایم کند، یا لایه‌ای را قاطی لایه‌ی دیگر کند، باید در
 > کد ریویو رد شود.

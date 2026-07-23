@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ResultError } from "@/types/result";
 import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
 import { CartEndpoints } from "@/app/_api/cartEndpoints";
@@ -30,6 +30,7 @@ export default function CheckoutPage() {
 	const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
 	const [addrPage, setAddrPage] = useState<number>(1);
 	const [addrTotalPages, setAddrTotalPages] = useState<number>(1);
+	const [addressesLoading, setAddressesLoading] = useState<boolean>(false);
 	const [selectedAddressId, setSelectedAddressId] = useState<string>("");
 	const [remarks, setRemarks] = useState<string>("");
 	const [formErrors, setFormErrors] = useState<FormErrors[]>([]);
@@ -50,10 +51,10 @@ export default function CheckoutPage() {
 		meta: { showNotification: true },
 	});
 
-	const getAddresses = useApi(async (page: number) => await ShippingAddressEndpoints.getShippingAddresses({ isActive: true }, page, PAGE_SIZE));
-	const createOrder = useApi(
-		async () => await OrderEndpoints.createOrder({ shippingAddressId: selectedAddressId, remarks: remarks.trim() || undefined }),
-	);
+	const { mutateAsync: createOrder, isPending: createOrderPending } = useMutation({
+		mutationFn: () =>
+			withMappedError(() => OrderEndpoints.createOrder({ shippingAddressId: selectedAddressId, remarks: remarks.trim() || undefined })),
+	});
 
 	useEffect(() => {
 		loadAddresses(1);
@@ -64,15 +65,22 @@ export default function CheckoutPage() {
 	}, [selectedAddressId]);
 
 	const loadAddresses = async (page: number) => {
-		const res = await getAddresses.fetchDataResult(page);
-		if (res.success) {
-			const data = res.data?.data;
+		setAddressesLoading(true);
+		try {
+			const res = await queryClient.fetchQuery({
+				queryKey: ["shippingAddresses", "list", { isActive: true, page, pageSize: PAGE_SIZE }],
+				queryFn: () => withMappedError(() => ShippingAddressEndpoints.getShippingAddresses({ isActive: true }, page, PAGE_SIZE)),
+				retry: false,
+			});
+			const data = res?.data;
 			const elements = (data?.elements ?? []) as ShippingAddress[];
 			setAddresses((prev) => (page === 1 ? elements : [...prev, ...elements]));
 			setAddrPage(data?.page ?? page);
 			setAddrTotalPages(data?.totalPages ?? 1);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "دریافت آدرس‌ها با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "دریافت آدرس‌ها با خطا مواجه شد" });
+		} finally {
+			setAddressesLoading(false);
 		}
 	};
 
@@ -94,17 +102,17 @@ export default function CheckoutPage() {
 			setCompleteModalOpen(true);
 			return;
 		}
-		const res = await createOrder.fetchDataResult();
-		if (res.success) {
-			showNotification({ type: "success", message: res.data?.message ?? "سفارش با موفقیت ثبت شد" });
+		try {
+			const data = await createOrder();
+			showNotification({ type: "success", message: data?.message ?? "سفارش با موفقیت ثبت شد" });
 			// باطل‌کردن با تأخیر تا کاربر قبلش از این صفحه رفته باشد، وگرنه سبدِ خالی‌شده یک لحظه فلش می‌زند
 			setTimeout(() => {
 				queryClient.invalidateQueries({ queryKey: ["cart", "detail"] });
 			}, 1000);
-			const orderId = res.data?.data?.orderId;
+			const orderId = data?.data?.orderId;
 			router.push(orderId ? `/profile/orders/${orderId}` : "/profile/orders");
-		} else {
-			showNotification({ type: "error", message: res.description ?? "ثبت سفارش با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "ثبت سفارش با خطا مواجه شد" });
 		}
 	};
 
@@ -120,7 +128,7 @@ export default function CheckoutPage() {
 		);
 	}
 
-	if (items.length === 0 && !createOrder.loading) {
+	if (items.length === 0 && !createOrderPending) {
 		return (
 			<div className="flex flex-col items-center justify-center gap-6 py-20 bg-white border border-neutral-200 rounded-2xl mt-16 max-lg:px-4">
 				<div className="w-20 h-20 rounded-full bg-neutral-100 flex items-center justify-center">
@@ -188,7 +196,7 @@ export default function CheckoutPage() {
 							</TabanButton>
 						</div>
 
-						{getAddresses.loading && addresses.length === 0 ? (
+						{addressesLoading && addresses.length === 0 ? (
 							<div className="flex items-center justify-center gap-2 py-10 text-sm text-neutral-500">
 								<TabanLoading size={22} />
 								در حال دریافت آدرس‌ها...
@@ -248,7 +256,7 @@ export default function CheckoutPage() {
 										<TabanButton
 											variant="bordered"
 											onClick={() => loadAddresses(addrPage + 1)}
-											isLoading={getAddresses.loading}
+											isLoading={addressesLoading}
 											loadingText="در حال دریافت..."
 										>
 											نمایش آدرس‌های بیشتر
@@ -340,7 +348,7 @@ export default function CheckoutPage() {
 							<TabanButton
 								className="!w-full justify-center"
 								onClick={submitHandler}
-								isLoading={createOrder.loading}
+								isLoading={createOrderPending}
 								loadingText="در حال ثبت سفارش..."
 							>
 							ثبت پرونده جهت بررسی

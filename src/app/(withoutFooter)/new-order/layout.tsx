@@ -7,7 +7,8 @@ import { IconArrowLine } from "@/app/_components/icon/icons";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { TranslationEndpoints } from "@/app/_api/translationEndpoints";
 import { Language } from "@/types/language.type";
 import { TranslationItem } from "@/types/translationItem.type";
@@ -100,13 +101,34 @@ function NewOrderFlow({ children }: { children: React.ReactNode }) {
 	const [initializing, setInitializing] = useState(hasHandoff);
 	const bootstrapped = useRef(false);
 	const validityArmed = useRef(false);
-	const handoffStarted = useRef(false);
 	const handoffApplied = useRef(false);
 	// وقتی زبان از هوم‌پیج آمده، پس از آماده‌شدن نرخ‌ها یک‌بار از مرحله‌ی زبان عبور می‌کنیم
 	const pendingLanguageSkip = useRef(false);
 
-	const handoffItems = useApi(async () => await TranslationEndpoints.getTranslationItems());
-	const handoffLanguages = useApi(async () => await TranslationEndpoints.getLanguages());
+	const handoffItemsQuery = useQuery({
+		queryKey: ["newOrderHandoff", "items"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getTranslationItems()),
+		enabled: hasHandoff,
+		retry: false,
+	});
+	const handoffLanguagesQuery = useQuery({
+		queryKey: ["newOrderHandoff", "languages"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getLanguages()),
+		enabled: hasHandoff && !!handoffLanguageId,
+		retry: false,
+	});
+	const handoffItemsResult = useMemo(
+		() =>
+			handoffItemsQuery.error ??
+			(handoffItemsQuery.data !== undefined ? { success: true as const, data: handoffItemsQuery.data } : null),
+		[handoffItemsQuery.data, handoffItemsQuery.error],
+	);
+	const handoffLanguagesResult = useMemo(
+		() =>
+			handoffLanguagesQuery.error ??
+			(handoffLanguagesQuery.data !== undefined ? { success: true as const, data: handoffLanguagesQuery.data } : null),
+		[handoffLanguagesQuery.data, handoffLanguagesQuery.error],
+	);
 
 	// اولین مونتِ لایوت: اگر مستقیم روی یک روتِ مرحله فرود آمدیم (رفرش/دیپ‌لینک) و handoff نیست،
 	// استور in-memory خالی است؛ استیت‌ها را ریست و فلو را از اول شروع می‌کنیم.
@@ -136,27 +158,19 @@ function NewOrderFlow({ children }: { children: React.ReactNode }) {
 		setOrder((prev) => ({ ...prev, customerId: handoffCustomerId || null }));
 	}, [handoffCustomerId]);
 
-	// شروع واکشیِ داده‌های لازم برای بازسازی مدرک/زبان از روی آی‌دی‌های URL
-	useEffect(() => {
-		if (!hasHandoff || handoffStarted.current) return;
-		handoffStarted.current = true;
-		handoffItems.fetchData();
-		if (handoffLanguageId) handoffLanguages.fetchData();
-	}, [hasHandoff, handoffLanguageId]);
-
 	// پس از آماده‌شدن داده‌ها: ست‌کردن سفارش و پرش به مرحله‌ی نام‌گذاری
 	useEffect(() => {
 		if (!hasHandoff || !initializing || handoffApplied.current) return;
-		const itemsReady = !!handoffItems.result;
-		const languagesReady = handoffLanguageId ? !!handoffLanguages.result : true;
+		const itemsReady = !!handoffItemsResult;
+		const languagesReady = handoffLanguageId ? !!handoffLanguagesResult : true;
 		if (!itemsReady || !languagesReady) return;
 
-		const item = handoffItems.result?.success
-			? handoffItems.result.data?.data?.find((it) => it.translationItemId === handoffItemId) ?? null
+		const item = handoffItemsResult?.success
+			? handoffItemsResult.data?.data?.find((it) => it.translationItemId === handoffItemId) ?? null
 			: null;
 		const language =
-			handoffLanguageId && handoffLanguages.result?.success
-				? handoffLanguages.result.data?.data?.find((l) => l.languageId === handoffLanguageId) ?? null
+			handoffLanguageId && handoffLanguagesResult?.success
+				? handoffLanguagesResult.data?.data?.find((l) => l.languageId === handoffLanguageId) ?? null
 				: null;
 
 		if (item) {
@@ -196,7 +210,7 @@ function NewOrderFlow({ children }: { children: React.ReactNode }) {
 			goToStep("selectItem", { replace: true });
 		}
 		setInitializing(false);
-	}, [hasHandoff, initializing, handoffItemId, handoffLanguageId, handoffCount, handoffItems.result, handoffLanguages.result]);
+	}, [hasHandoff, initializing, handoffItemId, handoffLanguageId, handoffCount, handoffItemsResult, handoffLanguagesResult]);
 
 	// عبور خودکار از مرحله‌ی زبان وقتی زبان از هوم‌پیج آمده و برای آن ترکیب نرخ وجود دارد.
 	// اگر نرخی برای ترکیب نباشد، روی مرحله‌ی زبان می‌مانیم تا کاربر زبان دیگری انتخاب کند.

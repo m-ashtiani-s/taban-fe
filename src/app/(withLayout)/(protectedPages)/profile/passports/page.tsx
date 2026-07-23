@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { PassportEndpoints } from "@/app/_api/passportEndpoints";
@@ -22,25 +24,27 @@ export default function Page() {
 	const [statusModalOpen, setStatusModalOpen] = useState<boolean>(false);
 	const [statusTarget, setStatusTarget] = useState<Passport | null>(null);
 
-	const list = useApi(async () => await PassportEndpoints.getPassports(null, 1, PAGE_SIZE), true);
-	const { fetchDataResult: executeToggleStatus, loading: toggleLoading } = useApi(async (passport: Passport) =>
-		passport.isActive
-			? await PassportEndpoints.deactivatePassport(passport.passportId)
-			: await PassportEndpoints.activatePassport(passport.passportId)
-	);
+	const listQuery = useQuery({
+		queryKey: ["passports", "list", { page: 1, pageSize: PAGE_SIZE }],
+		queryFn: () => withMappedError(() => PassportEndpoints.getPassports(null, 1, PAGE_SIZE)),
+		retry: false,
+		meta: { showNotification: true },
+	});
+	const { mutateAsync: executeToggleStatus, isPending: toggleLoading } = useMutation({
+		mutationFn: (passport: Passport) =>
+			withMappedError(() =>
+				passport.isActive
+					? PassportEndpoints.deactivatePassport(passport.passportId)
+					: PassportEndpoints.activatePassport(passport.passportId),
+			),
+	});
 
-	useEffect(() => {
-		list.fetchData();
-	}, []);
+	const listLoading = listQuery.isFetching;
+	const listResult =
+		listQuery.error ?? (listQuery.data !== undefined ? { success: true as const, data: listQuery.data } : null);
 
-	useEffect(() => {
-		if (list.result && !list.result.success) {
-			showNotification({ type: "error", message: list.result.description ?? "دریافت لیست پاسپورت‌ها با خطا مواجه شد" });
-		}
-	}, [list.result]);
-
-	const refetch = () => list.fetchData();
-	const passports: Passport[] = list.result?.success ? list.result.data?.data?.elements ?? [] : [];
+	const refetch = () => listQuery.refetch();
+	const passports: Passport[] = listResult?.success ? listResult.data?.data?.elements ?? [] : [];
 
 	const askToggleStatus = (passport: Passport) => {
 		setStatusTarget(passport);
@@ -49,14 +53,14 @@ export default function Page() {
 
 	const confirmToggleStatus = async () => {
 		if (!statusTarget) return;
-		const result = await executeToggleStatus(statusTarget);
-		if (result.success) {
+		try {
+			await executeToggleStatus(statusTarget);
 			showNotification({ type: "success", message: statusTarget.isActive ? "پاسپورت غیرفعال شد" : "پاسپورت فعال شد" });
 			setStatusModalOpen(false);
 			setStatusTarget(null);
 			refetch();
-		} else {
-			showNotification({ type: "error", message: result.description ?? "تغییر وضعیت پاسپورت با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "تغییر وضعیت پاسپورت با خطا مواجه شد" });
 		}
 	};
 
@@ -70,12 +74,12 @@ export default function Page() {
 				<TabanButton onClick={() => setCreateOpen(true)}>افزودن پاسپورت جدید</TabanButton>
 			</div>
 
-			{list.loading && !list.result ? (
+			{listLoading && !listResult ? (
 				<div className="flex items-center justify-center py-16 gap-2 text-sm text-neutral-500">
 					<TabanLoading size={28} />
 					در حال دریافت پاسپورت‌ها...
 				</div>
-			) : list.result?.success ? (
+			) : listResult?.success ? (
 				passports.length > 0 ? (
 					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 						{passports.map((passport) => (
@@ -91,7 +95,7 @@ export default function Page() {
 						<TabanButton onClick={() => setCreateOpen(true)}>افزودن اولین پاسپورت</TabanButton>
 					</div>
 				)
-			) : !!list.result && !list.result.success && isRetryAble(list.result.code) ? (
+			) : !!listResult && !listResult.success && isRetryAble(listResult.code) ? (
 				<div className="flex justify-center mt-4">
 					<ErrorComponent executeFunction={refetch} callAble errorText="دریافت لیست پاسپورت‌ها با خطا مواجه شد." />
 				</div>

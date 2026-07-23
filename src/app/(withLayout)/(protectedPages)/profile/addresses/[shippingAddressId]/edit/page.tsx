@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -13,18 +13,16 @@ import AddressForm from "../../_components/addressForm/addressForm";
 export default function Page({ params }: { params: { shippingAddressId: string } }) {
 	const router = useRouter();
 
-	const {
-		result: addressResult,
-		resultData: addressData,
-		fetchData: executeAddress,
-		loading: addressLoading,
-	} = useApi(async (id: string) => await ShippingAddressEndpoints.getShippingAddress(id), true);
+	const addressQuery = useQuery({
+		queryKey: ["shippingAddresses", "detail", params?.shippingAddressId],
+		queryFn: () => withMappedError(() => ShippingAddressEndpoints.getShippingAddress(params.shippingAddressId)),
+		retry: false,
+	});
+	const addressLoading = addressQuery.isFetching;
+	const addressResult =
+		addressQuery.error ?? (addressQuery.data !== undefined ? { success: true as const, data: addressQuery.data } : null);
 
-	useEffect(() => {
-		executeAddress(params?.shippingAddressId);
-	}, []);
-
-	const address = addressData?.data ?? null;
+	const address = (addressQuery.error ? null : (addressQuery.data ?? null))?.data ?? null;
 
 	if (addressLoading && !addressResult) {
 		return (
@@ -43,7 +41,7 @@ export default function Page({ params }: { params: { shippingAddressId: string }
 		return (
 			<div className="flex justify-center mt-4">
 				<ErrorComponent
-					executeFunction={() => executeAddress(params?.shippingAddressId)}
+					executeFunction={() => addressQuery.refetch()}
 					callAble
 					errorText="دریافت اطلاعات آدرس با خطا مواجه شد."
 				/>

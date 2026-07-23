@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useProfile } from "@/hooks/useProfile";
 import { TabanEndpoints } from "@/app/_api/endpoints";
@@ -69,18 +69,23 @@ export default function CompleteProfileForm() {
 	// envelope خام Res<Profile>؛ نگه داشته شده تا هیدریشن‌های موجود (profileResultData?.data) بی‌تغییر بمانند
 	const profileResultData = profileQuery.data;
 
-	const { resultData: languagesResultData, fetchData: executeLanguages, loading: languagesLoading } =
-		useApi(async () => await ProfileEndpoints.getLanguages());
+	const languagesQuery = useQuery({
+		queryKey: ["profileLanguages"],
+		queryFn: () => withMappedError(() => ProfileEndpoints.getLanguages()),
+		retry: false,
+	});
+	const languagesLoading = languagesQuery.isFetching;
 
-	const {
-		result: updateResult,
-		fetchData: executeUpdate,
-		loading: updateLoading,
-	} = useApi(async (payload: UpdateUserPayload) => await ProfileEndpoints.updateUser(payload));
-
-	useEffect(() => {
-		executeLanguages();
-	}, []);
+	const { mutate: executeUpdate, isPending: updateLoading } = useMutation({
+		mutationFn: (payload: UpdateUserPayload) => withMappedError(() => ProfileEndpoints.updateUser(payload)),
+		meta: { showNotification: true },
+		onSuccess: (data) => {
+			showNotification({ type: "success", message: data?.message ?? "پروفایل با موفقیت ذخیره شد" });
+			// پروفایل و درصد تکمیل هر دو زیرِ کلید ["profile"] هستند؛ یک invalidate هر دو را از سرور تازه می‌کند
+			queryClient.invalidateQueries({ queryKey: ["profile"] });
+			router.push(backUrl || "/profile/info");
+		},
+	});
 
 	// Hydrate the form once the profile is fetched
 	useEffect(() => {
@@ -144,25 +149,7 @@ export default function CompleteProfileForm() {
 		if (formSubmitted) formValidator();
 	}, [formValues, selectedUserType, selectedReferralSource, selectedLanguages, uploadedProfilePic]);
 
-	useEffect(() => {
-		if (!updateResult) return;
-		if (updateResult.success) {
-			showNotification({
-				type: "success",
-				message: updateResult.data?.message ?? "پروفایل با موفقیت ذخیره شد",
-			});
-			// پروفایل و درصد تکمیل هر دو زیرِ کلید ["profile"] هستند؛ یک invalidate هر دو را از سرور تازه می‌کند
-			queryClient.invalidateQueries({ queryKey: ["profile"] });
-			router.push(backUrl || "/profile/info");
-		} else {
-			showNotification({
-				type: "error",
-				message: updateResult.description ?? "به‌روزرسانی پروفایل با خطا مواجه شد",
-			});
-		}
-	}, [updateResult]);
-
-	const languages: Language[] = languagesResultData?.data ?? [];
+	const languages: Language[] = languagesQuery.data?.data ?? [];
 	const availableLanguages = useMemo(() => {
 		const selectedIds = new Set(selectedLanguages.map((l) => l.languageId));
 		return languages.filter((l) => !selectedIds.has(l.languageId));

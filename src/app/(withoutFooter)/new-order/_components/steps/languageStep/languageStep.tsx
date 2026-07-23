@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { IconTranslate } from "@/app/_components/icon/icons";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
@@ -23,13 +23,14 @@ type LanguageStepProps = {
 
 export default function LanguageStep({ rates, onSelectLanguage }: LanguageStepProps) {
 	const { order } = useNewOrderStore();
-	const languages = useApi(async () => await TranslationEndpoints.getLanguages(), true);
 
-	useEffect(() => {
-		languages.fetchData();
-	}, []);
+	const languagesQuery = useQuery({
+		queryKey: ["languages", "list"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getLanguages()),
+		retry: false,
+	});
 
-	const list = languages.result?.success ? languages.result.data?.data ?? [] : [];
+	const list = languagesQuery.data?.data ?? [];
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -38,7 +39,7 @@ export default function LanguageStep({ rates, onSelectLanguage }: LanguageStepPr
 				subtitle="مدارک شما به زبان انتخابی ترجمه خواهد شد"
 			/>
 
-			{languages.loading ? (
+			{languagesQuery.isFetching ? (
 				<CardsSkeleton count={6} />
 			) : list.length > 0 ? (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -67,8 +68,8 @@ export default function LanguageStep({ rates, onSelectLanguage }: LanguageStepPr
 						);
 					})}
 				</div>
-			) : !!languages.result && !languages.result.success && isRetryAble(languages.result.code) ? (
-				<ErrorComponent executeFunction={() => languages.fetchData()} ticketAble errorText="دریافت لیست زبان‌ها با خطا مواجه شد." />
+			) : !!languagesQuery.error && isRetryAble(languagesQuery.error.code) ? (
+				<ErrorComponent executeFunction={() => languagesQuery.refetch()} ticketAble errorText="دریافت لیست زبان‌ها با خطا مواجه شد." />
 			) : (
 				<div className="text-center text-sm text-neutral-400 py-10">داده‌ای موجود نیست</div>
 			)}

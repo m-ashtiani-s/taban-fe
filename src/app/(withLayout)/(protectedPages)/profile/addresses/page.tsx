@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -20,52 +22,33 @@ const PAGE_SIZE = 100;
 export default function Page() {
 	const router = useRouter();
 	const showNotification = useNotificationStore((state) => state.showNotification);
-	const mount = useRef<boolean>(false);
 	const [filters, setFilters] = useState<ShippingAddressFilters>({});
 
 	const [statusModalOpen, setStatusModalOpen] = useState<boolean>(false);
 	const [statusTarget, setStatusTarget] = useState<ShippingAddress | null>(null);
 
-	const {
-		result: addressesResult,
-		resultData: addressesData,
-		fetchData: executeAddresses,
-		loading: addressesLoading,
-	} = useApi(
-		async (currentFilters: ShippingAddressFilters | null) =>
-			await ShippingAddressEndpoints.getShippingAddresses(currentFilters, 1, PAGE_SIZE),
-		true,
-	);
+	const addressesQuery = useQuery({
+		queryKey: ["shippingAddresses", "list", { filters, page: 1, pageSize: PAGE_SIZE }],
+		queryFn: () => withMappedError(() => ShippingAddressEndpoints.getShippingAddresses(filters, 1, PAGE_SIZE)),
+		placeholderData: keepPreviousData,
+		retry: false,
+		meta: { showNotification: true },
+	});
 
-	const { fetchDataResult: executeToggleStatus, loading: toggleLoading } = useApi(
-		async (address: ShippingAddress) =>
-			address.isActive
-				? await ShippingAddressEndpoints.deactivateShippingAddress(address.shippingAddressId)
-				: await ShippingAddressEndpoints.activateShippingAddress(address.shippingAddressId),
-	);
+	const { mutateAsync: executeToggleStatus, isPending: toggleLoading } = useMutation({
+		mutationFn: (address: ShippingAddress) =>
+			withMappedError(() =>
+				address.isActive
+					? ShippingAddressEndpoints.deactivateShippingAddress(address.shippingAddressId)
+					: ShippingAddressEndpoints.activateShippingAddress(address.shippingAddressId),
+			),
+	});
 
-	useEffect(() => {
-		executeAddresses(filters);
-	}, []);
+	const addressesLoading = addressesQuery.isFetching;
+	const addressesResult =
+		addressesQuery.error ?? (addressesQuery.data !== undefined ? { success: true as const, data: addressesQuery.data } : null);
 
-	useEffect(() => {
-		if (mount.current) {
-			executeAddresses(filters);
-		} else {
-			mount.current = true;
-		}
-	}, [filters]);
-
-	useEffect(() => {
-		if (addressesResult && !addressesResult.success) {
-			showNotification({
-				type: "error",
-				message: addressesResult.description ?? "دریافت لیست آدرس‌ها با خطا مواجه شد",
-			});
-		}
-	}, [addressesResult]);
-
-	const refetch = () => executeAddresses(filters);
+	const refetch = () => addressesQuery.refetch();
 
 	const openCreate = () => router.push("/profile/addresses/create");
 
@@ -78,8 +61,8 @@ export default function Page() {
 
 	const confirmToggleStatus = async () => {
 		if (!statusTarget) return;
-		const result = await executeToggleStatus(statusTarget);
-		if (result.success) {
+		try {
+			await executeToggleStatus(statusTarget);
 			showNotification({
 				type: "success",
 				message: statusTarget.isActive ? "آدرس غیرفعال شد" : "آدرس فعال شد",
@@ -87,12 +70,12 @@ export default function Page() {
 			setStatusModalOpen(false);
 			setStatusTarget(null);
 			refetch();
-		} else {
-			showNotification({ type: "error", message: result.description ?? "تغییر وضعیت آدرس با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "تغییر وضعیت آدرس با خطا مواجه شد" });
 		}
 	};
 
-	const addresses: ShippingAddress[] = addressesData?.data?.elements ?? [];
+	const addresses: ShippingAddress[] = (addressesQuery.error ? null : (addressesQuery.data ?? null))?.data?.elements ?? [];
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -135,7 +118,7 @@ export default function Page() {
 			) : !!addressesResult && !addressesResult.success && isRetryAble(addressesResult.code) ? (
 				<div className="flex justify-center mt-4">
 					<ErrorComponent
-						executeFunction={() => executeAddresses(filters)}
+						executeFunction={() => refetch()}
 						callAble
 						errorText="دریافت لیست آدرس‌ها با خطا مواجه شد."
 					/>

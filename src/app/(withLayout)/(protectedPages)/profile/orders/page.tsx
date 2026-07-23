@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useApi } from "@/hooks/useApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { Result, ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { toCurrency } from "@/utils/string";
@@ -33,31 +35,41 @@ export default function OrdersPage() {
 	const [status, setStatus] = useState<OrderStatus | "all">("all");
 	const [reorderOrder, setReorderOrder] = useState<Order | null>(null);
 
-	const getOrders = useApi(
-		async (p: number, st: OrderStatus | "all") =>
-			await OrderEndpoints.getOrders(st === "all" ? null : { status: st }, p, PAGE_SIZE),
-		true,
-	);
+	const queryClient = useQueryClient();
+	const [ordersLoading, setOrdersLoading] = useState<boolean>(true);
+	const [ordersResult, setOrdersResult] = useState<Result<Awaited<ReturnType<typeof OrderEndpoints.getOrders>>> | null>(null);
 
 	useEffect(() => {
 		loadOrders(1, status);
 	}, [status]);
 
 	const loadOrders = async (p: number, st: OrderStatus | "all") => {
-		const res = await getOrders.fetchDataResult(p, st);
-		if (res.success) {
-			const data = res.data?.data;
-			const elements = (data?.elements ?? []) as Order[];
+		setOrdersLoading(true);
+		try {
+			const data = await queryClient.fetchQuery({
+				queryKey: ["orders", "list", { status: st, page: p, pageSize: PAGE_SIZE }],
+				queryFn: () => withMappedError(() => OrderEndpoints.getOrders(st === "all" ? null : { status: st }, p, PAGE_SIZE)),
+				retry: false,
+			});
+			setOrdersResult({ success: true, data });
+			const inner = data?.data;
+			const elements = (inner?.elements ?? []) as Order[];
 			setOrders((prev) => (p === 1 ? elements : [...prev, ...elements]));
-			setPage(data?.page ?? p);
-			setTotalPages(data?.totalPages ?? 1);
-			setTotalElements(data?.totalElements ?? 0);
-		} else if (!isRetryAble(res.code)) {
-			showNotification({ type: "error", message: res.description ?? "دریافت سفارش‌ها با خطا مواجه شد" });
+			setPage(inner?.page ?? p);
+			setTotalPages(inner?.totalPages ?? 1);
+			setTotalElements(inner?.totalElements ?? 0);
+		} catch (err) {
+			const e = err as ResultError;
+			setOrdersResult(e);
+			if (!isRetryAble(e.code)) {
+				showNotification({ type: "error", message: e?.description ?? "دریافت سفارش‌ها با خطا مواجه شد" });
+			}
+		} finally {
+			setOrdersLoading(false);
 		}
 	};
 
-	const initialLoading = getOrders.loading && orders.length === 0 && page === 1;
+	const initialLoading = ordersLoading && orders.length === 0 && page === 1;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -96,7 +108,7 @@ export default function OrdersPage() {
 					<TabanLoading size={24} />
 					در حال دریافت سفارش‌ها...
 				</div>
-			) : !!getOrders.result && !getOrders.result.success && isRetryAble(getOrders.result.code) ? (
+			) : !!ordersResult && !ordersResult.success && isRetryAble(ordersResult.code) ? (
 				<div className="flex justify-center mt-4">
 					<ErrorComponent executeFunction={() => loadOrders(1, status)} callAble errorText="دریافت سفارش‌ها با خطا مواجه شد" />
 				</div>
@@ -123,7 +135,7 @@ export default function OrdersPage() {
 							<TabanButton
 								variant="bordered"
 								onClick={() => loadOrders(page + 1, status)}
-								isLoading={getOrders.loading}
+								isLoading={ordersLoading}
 								loadingText="در حال دریافت..."
 							>
 								نمایش سفارش‌های بیشتر

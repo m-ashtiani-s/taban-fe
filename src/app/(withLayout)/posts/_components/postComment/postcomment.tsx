@@ -1,6 +1,7 @@
 "use client";
 import { TabanEndpoints } from "@/app/_api/endpoints";
-import { useApi } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { useEffect, useState } from "react";
 import { SuccessPopup } from "./successPopup";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
@@ -19,15 +20,11 @@ export default function PostComment({ id }: { id: number }) {
 	const [disabled, setDisabled] = useState<boolean>(false);
 	const [open, setOpen] = useState<boolean>(false);
 
-	const submitComment = useApi(async (data: { post_id: number; author_name: string; author_email?: string; content: string }) => await TabanEndpoints.submitComment(data));
-
-	useEffect(() => {
-		if (submitComment.result) {
-			if (submitComment.result.success) {
-				setOpen(true);
-			}
-		}
-	}, [submitComment.result]);
+	const { mutate: submitComment, isPending: submitLoading } = useMutation({
+		mutationFn: (data: { post_id: number; author_name: string; author_email?: string; content: string }) =>
+			withMappedError(() => TabanEndpoints.submitComment(data)),
+		onSuccess: () => setOpen(true),
+	});
 
 	const compliantSubmitHandler = () => {
 		setSubmited(true);
@@ -35,7 +32,7 @@ export default function PostComment({ id }: { id: number }) {
 		!formValues?.fullName && newErrors.push({ item: `fullName`, message: "نام و نام خانوادگی الزامی است" });
 		setErrors(newErrors);
 		if (newErrors?.length === 0) {
-			submitComment.fetchData({
+			submitComment({
 				post_id: id,
 				author_name: formValues?.fullName,
 				author_email: formValues?.email,
@@ -81,7 +78,7 @@ export default function PostComment({ id }: { id: number }) {
 				<TabanTextarea value={formValues?.remarks} setValue={setFormValues} name="remarks" groupMode className="w-full p-2 border rounded-lg" placeholder="توضیحات تکمیلی" />
 			</div>
 			<div className="flex justify-end w-full mt-6">
-				<TabanButton disabled={submitComment.loading || disabled} isLoading={submitComment.loading} onClick={compliantSubmitHandler} loadingText="ثبت فرم">
+				<TabanButton disabled={submitLoading || disabled} isLoading={submitLoading} onClick={compliantSubmitHandler} loadingText="ثبت فرم">
 					ثبت نظر
 				</TabanButton>
 			</div>

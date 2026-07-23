@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { IconArrow, IconDocument } from "@/app/_components/icon/icons";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
@@ -24,19 +25,16 @@ export default function SelectItemStep({ onSelectItem }: SelectItemStepProps) {
 	const { order, setOrder } = useNewOrderStore();
 	const [selectedCategory, setSelectedCategory] = useState<TranslationItemCategory | null>(null);
 
-	const categories = useApi(async () => await TranslationEndpoints.getCategories());
-	const items = useApi(
-		async (categoryId?: string) => await TranslationEndpoints.getTranslationItems(categoryId),
-		true
-	);
-
-	useEffect(() => {
-		categories.fetchData();
-	}, []);
-
-	useEffect(() => {
-		items.fetchData(selectedCategory?.translationItemCategoryId ?? undefined);
-	}, [selectedCategory]);
+	const categoriesQuery = useQuery({
+		queryKey: ["translationCategories", "list"],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getCategories()),
+		retry: false,
+	});
+	const itemsQuery = useQuery({
+		queryKey: ["translationItems", "list", selectedCategory?.translationItemCategoryId ?? null],
+		queryFn: () => withMappedError(() => TranslationEndpoints.getTranslationItems(selectedCategory?.translationItemCategoryId ?? undefined)),
+		retry: false,
+	});
 
 	const changeCount = (delta: number) => {
 		setOrder((prev) => ({
@@ -45,7 +43,7 @@ export default function SelectItemStep({ onSelectItem }: SelectItemStepProps) {
 		}));
 	};
 
-	const itemsList = items.result?.success ? items.result.data?.data ?? [] : [];
+	const itemsList = itemsQuery.data?.data ?? [];
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -66,8 +64,7 @@ export default function SelectItemStep({ onSelectItem }: SelectItemStepProps) {
 				>
 					همه مدارک
 				</button>
-				{categories.result?.success &&
-					categories.result.data?.data?.map((cat) => (
+				{categoriesQuery.data?.data?.map((cat) => (
 						<button
 							key={cat.translationItemCategoryId}
 							onClick={() => setSelectedCategory(cat)}
@@ -83,7 +80,7 @@ export default function SelectItemStep({ onSelectItem }: SelectItemStepProps) {
 			</div>
 
 			{/* گرید مدارک */}
-			{items.loading ? (
+			{itemsQuery.isFetching ? (
 				<CardsSkeleton count={8} />
 			) : itemsList.length > 0 ? (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -131,9 +128,9 @@ export default function SelectItemStep({ onSelectItem }: SelectItemStepProps) {
 						);
 					})}
 				</div>
-			) : !!items.result && !items.result.success && isRetryAble(items.result.code) ? (
+			) : !!itemsQuery.error && isRetryAble(itemsQuery.error.code) ? (
 				<ErrorComponent
-					executeFunction={() => items.fetchData(selectedCategory?.translationItemCategoryId ?? undefined)}
+					executeFunction={() => itemsQuery.refetch()}
 					ticketAble
 					errorText="دریافت لیست مدارک با خطا مواجه شد."
 				/>

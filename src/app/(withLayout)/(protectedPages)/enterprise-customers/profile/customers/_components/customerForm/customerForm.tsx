@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { FormErrors } from "@/types/formErrors.type";
 import { findError } from "@/utils/formErrorsFinder";
@@ -48,43 +50,43 @@ export default function CustomerForm({ mode, customer }: CustomerFormProps) {
 	const [isActive, setIsActive] = useState<boolean>(isEdit && customer ? customer.isActive : true);
 	const isInitialMount = useRef<boolean>(true);
 
-	const { resultData: provincesData, fetchData: executeProvinces, loading: provincesLoading } = useApi(
-		async () => await CustomerEndpoints.getProvinces(""),
-	);
-	const {
-		resultData: citiesData,
-		fetchData: executeCities,
-		loading: citiesLoading,
-		setResult: setCitiesResult,
-	} = useApi(async (provinceId: number) => await CustomerEndpoints.getCities("", provinceId));
+	const provincesQuery = useQuery({
+		queryKey: ["enterpriseCustomers", "provinces", ""],
+		queryFn: () => withMappedError(() => CustomerEndpoints.getProvinces("")),
+		retry: false,
+	});
+	const citiesQuery = useQuery({
+		queryKey: ["enterpriseCustomers", "cities", selectedProvince?.id ?? null],
+		queryFn: () => withMappedError(() => CustomerEndpoints.getCities("", selectedProvince!.id)),
+		enabled: !!selectedProvince,
+		retry: false,
+	});
+	const provincesLoading = provincesQuery.isFetching;
+	const citiesLoading = citiesQuery.isFetching;
 
-	const { fetchDataResult: executeSubmit, loading: submitLoading } = useApi(async (payload: CustomerPayload) =>
-		isEdit && customer
-			? await CustomerEndpoints.updateCustomer(customer.customerId, payload)
-			: await CustomerEndpoints.createCustomer(payload),
-	);
-
-	useEffect(() => {
-		executeProvinces();
-		if (isEdit && customer) executeCities(customer.provinceCode);
-	}, []);
+	const { mutateAsync: executeSubmit, isPending: submitLoading } = useMutation({
+		mutationFn: (payload: CustomerPayload) =>
+			withMappedError(() =>
+				isEdit && customer
+					? CustomerEndpoints.updateCustomer(customer.customerId, payload)
+					: CustomerEndpoints.createCustomer(payload),
+			),
+	});
 
 	useEffect(() => {
 		if (isInitialMount.current) {
 			isInitialMount.current = false;
 			return;
 		}
-		setCitiesResult(null);
 		setSelectedCity(null);
-		if (selectedProvince) executeCities(selectedProvince.id);
 	}, [selectedProvince]);
 
 	useEffect(() => {
 		if (formSubmitted) formValidator();
 	}, [formValues, selectedProvince, selectedCity]);
 
-	const provinceOptions: LocationOption[] = (provincesData?.data?.elements ?? []) as LocationOption[];
-	const cityOptions: LocationOption[] = (citiesData?.data?.elements ?? []) as LocationOption[];
+	const provinceOptions: LocationOption[] = (provincesQuery.data?.data?.elements ?? []) as LocationOption[];
+	const cityOptions: LocationOption[] = (citiesQuery.data?.data?.elements ?? []) as LocationOption[];
 
 	const formValidator = (): FormErrors[] => {
 		const errors: FormErrors[] = [];
@@ -118,12 +120,12 @@ export default function CustomerForm({ mode, customer }: CustomerFormProps) {
 			cityCode: selectedCity!.id,
 			isActive,
 		};
-		const res = await executeSubmit(payload);
-		if (res.success) {
-			showNotification({ type: "success", message: res.data?.message ?? (isEdit ? "مشتری ویرایش شد" : "مشتری ایجاد شد") });
+		try {
+			const data = await executeSubmit(payload);
+			showNotification({ type: "success", message: data?.message ?? (isEdit ? "مشتری ویرایش شد" : "مشتری ایجاد شد") });
 			router.push(BACK);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "ثبت اطلاعات مشتری با خطا مواجه شد" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "ثبت اطلاعات مشتری با خطا مواجه شد" });
 		}
 	};
 

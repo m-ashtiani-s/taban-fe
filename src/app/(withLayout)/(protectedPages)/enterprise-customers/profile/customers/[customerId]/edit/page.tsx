@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -10,18 +10,17 @@ import { CustomerEndpoints } from "../../../../_api/endpoint";
 import CustomerForm from "../../_components/customerForm/customerForm";
 
 export default function Page({ params }: { params: { customerId: string } }) {
-	const { result, resultData, fetchData, loading } = useApi(
-		async (id: string) => await CustomerEndpoints.getCustomer(id),
-		true,
-	);
+	const customerQuery = useQuery({
+		queryKey: ["enterpriseCustomers", "detail", params.customerId],
+		queryFn: () => withMappedError(() => CustomerEndpoints.getCustomer(params.customerId)),
+		retry: false,
+	});
+	const customerLoading = customerQuery.isFetching;
+	const customerResult =
+		customerQuery.error ?? (customerQuery.data !== undefined ? { success: true as const, data: customerQuery.data } : null);
+	const customer = (customerQuery.error ? null : (customerQuery.data ?? null))?.data ?? null;
 
-	useEffect(() => {
-		fetchData(params.customerId);
-	}, []);
-
-	const customer = resultData?.data ?? null;
-
-	if (loading && !result) {
+	if (customerLoading && !customerResult) {
 		return (
 			<div className="flex items-center justify-center py-16 gap-2 text-sm text-neutral-500">
 				<TabanLoading size={28} />
@@ -30,12 +29,12 @@ export default function Page({ params }: { params: { customerId: string } }) {
 		);
 	}
 
-	if (result?.success && customer) return <CustomerForm mode="edit" customer={customer} />;
+	if (customerResult?.success && customer) return <CustomerForm mode="edit" customer={customer} />;
 
-	if (!!result && !result.success && isRetryAble(result.code)) {
+	if (!!customerResult && !customerResult.success && isRetryAble(customerResult.code)) {
 		return (
 			<div className="flex justify-center mt-4">
-				<ErrorComponent executeFunction={() => fetchData(params.customerId)} callAble errorText="دریافت اطلاعات مشتری با خطا مواجه شد" />
+				<ErrorComponent executeFunction={() => customerQuery.refetch()} callAble errorText="دریافت اطلاعات مشتری با خطا مواجه شد" />
 			</div>
 		);
 	}

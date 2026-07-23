@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useApi } from "@/hooks/useApi";
+import { useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
@@ -18,24 +19,34 @@ const fa = (n: number | string) => convertToPersianNumber(String(n));
 export default function ClubPage() {
 	const showNotification = useNotificationStore((s) => s.showNotification);
 
-	const status = useApi(async () => await ClubEndpoints.getMyStatus(), true);
-	const history = useApi(async () => await ClubEndpoints.getMyHistory(1, 20));
+	const statusQuery = useQuery({
+		queryKey: ["club", "status"],
+		queryFn: () => withMappedError(() => ClubEndpoints.getMyStatus()),
+		retry: false,
+	});
+	const historyQuery = useQuery({
+		queryKey: ["club", "history", { page: 1, pageSize: 20 }],
+		queryFn: () => withMappedError(() => ClubEndpoints.getMyHistory(1, 20)),
+		retry: false,
+	});
+
+	const statusLoading = statusQuery.isFetching;
+	const statusResult =
+		statusQuery.error ?? (statusQuery.data !== undefined ? { success: true as const, data: statusQuery.data } : null);
+	const historyLoading = historyQuery.isFetching;
+	const historyResult =
+		historyQuery.error ?? (historyQuery.data !== undefined ? { success: true as const, data: historyQuery.data } : null);
 
 	useEffect(() => {
-		status.fetchData();
-		history.fetchData();
-	}, []);
-
-	useEffect(() => {
-		if (status.result && !status.result.success && !isRetryAble(status.result.code)) {
-			showNotification({ type: "error", message: status.result.description ?? "دریافت وضعیت باشگاه با خطا مواجه شد" });
+		if (statusQuery.error && !isRetryAble(statusQuery.error.code)) {
+			showNotification({ type: "error", message: statusQuery.error.description ?? "دریافت وضعیت باشگاه با خطا مواجه شد" });
 		}
-	}, [status.result]);
+	}, [statusQuery.error]);
 
-	const data = status.resultData?.data as ClubStatus | undefined;
-	const transactions = history.resultData?.data?.elements ?? [];
+	const data = statusQuery.error ? undefined : (statusQuery.data?.data as ClubStatus | undefined);
+	const transactions = (historyQuery.error ? null : historyQuery.data)?.data?.elements ?? [];
 
-	if (status.loading && !status.result) {
+	if (statusLoading && !statusResult) {
 		return (
 			<div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
 				<TabanLoading size={26} />
@@ -44,10 +55,10 @@ export default function ClubPage() {
 		);
 	}
 
-	if (!!status.result && !status.result.success && isRetryAble(status.result.code)) {
+	if (!!statusResult && !statusResult.success && isRetryAble(statusResult.code)) {
 		return (
 			<div className="flex justify-center mt-4">
-				<ErrorComponent executeFunction={() => status.fetchData()} callAble errorText="دریافت باشگاه مشتریان با خطا مواجه شد" />
+				<ErrorComponent executeFunction={() => statusQuery.refetch()} callAble errorText="دریافت باشگاه مشتریان با خطا مواجه شد" />
 			</div>
 		);
 	}
@@ -156,7 +167,7 @@ export default function ClubPage() {
 			{/* history */}
 			<div className="bg-white border border-neutral-200 rounded-2xl p-5">
 				<div className="peyda font-bold text-primary mb-4">تاریخچه‌ی امتیازها</div>
-				{history.loading && !history.result ? (
+				{historyLoading && !historyResult ? (
 					<div className="flex items-center justify-center gap-2 py-6 text-sm text-neutral-500">
 						<TabanLoading size={20} />
 						در حال بارگذاری...

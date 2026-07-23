@@ -103,7 +103,9 @@ type FormValues = { firstName?: string; lastName?: string; phoneNumber?: string 
    `useCartStore`).
 3. **هوک‌هایی که به‌عنوان متغیر استفاده می‌شوند** — مثل `useRouter`,
    `useReadSearchParams`, `useUpdateSearchParams`, `useRef`.
-4. **هوک `useApi`** — تعریف درخواست‌ها (هوکی که request می‌سازد).
+4. **کوئری‌ها و میوتیشن‌ها** — `useQuery`/`useMutation` (React Query) مستقیم در
+   همان کامپوننت (طبق اسکیل `data-fetching`). هوک قدیمی `useApi` حذف شده و دیگر
+   استفاده نمی‌شود.
 5. **`useEffect`ها** — تمام افکت‌ها اینجا.
 6. **مقادیر مشتق‌شده / محاسبه‌شده** — متغیرهایی که از state/props ساخته می‌شوند
    (مثل `provinceOptions = ...`).
@@ -123,10 +125,10 @@ export default function CustomerForm({ mode, customer }: CustomerFormProps) {
 	const router = useRouter();
 	const isInitialMount = useRef<boolean>(true);
 
-	// 4) useApi
-	const { fetchDataResult: executeSubmit, loading: submitLoading } = useApi(
-		async (payload: CustomerPayload) => await CustomerEndpoints.createCustomer(payload),
-	);
+	// 4) کوئری‌ها / میوتیشن‌ها (useQuery / useMutation)
+	const { mutateAsync: executeSubmit, isPending: submitLoading } = useMutation({
+		mutationFn: (payload: CustomerPayload) => withMappedError(() => CustomerEndpoints.createCustomer(payload)),
+	});
 
 	// 5) useEffect
 	useEffect(() => {
@@ -197,8 +199,8 @@ const apiPage = page - 1;
 1. **فایل فقط یک کامپوننت export می‌کند؟** (قانون ۱)
 2. **همه‌ی تایپ‌ها اسم واضح و معنادار دارند؟ هیچ `Props`ِ بدون prefix، هیچ
    `T1/Data2`، هیچ `any`ِ بی‌دلیل؟** (قانون ۲)
-3. **ترتیب اجزا رعایت شده؟** useState → stores → هوک‌های متغیری → useApi →
-   useEffect → مقادیر مشتق‌شده → فانکشن‌ها → JSX. (قانون ۳)
+3. **ترتیب اجزا رعایت شده؟** useState → stores → هوک‌های متغیری →
+   کوئری/میوتیشن → useEffect → مقادیر مشتق‌شده → فانکشن‌ها → JSX. (قانون ۳)
 4. **فانکشن‌های خالص در `_utils/` قرار گرفته‌اند، نه داخل کامپوننت؟** (قانون ۳)
 5. **هیچ کامنت بیهوده‌ای (توضیح «چه») در فایل نیست؛ فقط «چرا»ی غیرواضح کامنت
    شده؟** (قانون ۴)
@@ -208,6 +210,6 @@ const apiPage = page - 1;
 ## خلاصه‌ی یک‌خطی برای یادآوری سریع
 
 > **یک فایل = یک کامپوننت؛ تایپ‌ها اسم معنادار؛ ترتیب ثابت
-> (state → store → hook → useApi → effect → derived → fn → JSX)؛ یوتیل خالص در
-> `_utils/`؛ کامنت فقط برای «چرا»ی غیرواضح.** هر فایل کامپوننتی که این‌ها را نقض
-> کند باید در کد ریویو رد شود.
+> (state → store → hook → query/mutation → effect → derived → fn → JSX)؛ یوتیل
+> خالص در `_utils/`؛ کامنت فقط برای «چرا»ی غیرواضح.** هر فایل کامپوننتی که این‌ها
+> را نقض کند باید در کد ریویو رد شود.

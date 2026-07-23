@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { Result, ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -37,21 +39,39 @@ export default function CustomersPage() {
 	const [statusTarget, setStatusTarget] = useState<Customer | null>(null);
 	const [columns, setColumns] = useState<TabanColumn<Customer>[]>([]);
 
-	const getCustomers = useApi(
-		async (f: CustomerFilters, p: number) => await CustomerEndpoints.getCustomers(f, p, PAGE_SIZE),
-		true,
-	);
-	const toggle = useApi(async (id: string, isActive: boolean) =>
-		isActive ? await CustomerEndpoints.deactivateCustomer(id) : await CustomerEndpoints.activateCustomer(id),
-	);
+	const queryClient = useQueryClient();
+	const [customersLoading, setCustomersLoading] = useState<boolean>(true);
+	const [customersResult, setCustomersResult] =
+		useState<Result<Awaited<ReturnType<typeof CustomerEndpoints.getCustomers>>> | null>(null);
+
+	const { mutateAsync: toggle, isPending: toggleLoading } = useMutation({
+		mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+			withMappedError(() => (isActive ? CustomerEndpoints.deactivateCustomer(id) : CustomerEndpoints.activateCustomer(id))),
+	});
+
+	const loadCustomers = async (f: CustomerFilters, p: number) => {
+		setCustomersLoading(true);
+		try {
+			const data = await queryClient.fetchQuery({
+				queryKey: ["enterpriseCustomers", "list", { filters: f, page: p, pageSize: PAGE_SIZE }],
+				queryFn: () => withMappedError(() => CustomerEndpoints.getCustomers(f, p, PAGE_SIZE)),
+				retry: false,
+			});
+			setCustomersResult({ success: true, data });
+		} catch (err) {
+			setCustomersResult(err as ResultError);
+		} finally {
+			setCustomersLoading(false);
+		}
+	};
 
 	useEffect(() => {
-		getCustomers.fetchData(filters, page);
+		loadCustomers(filters, page);
 	}, [page]);
 
 	useEffect(() => {
 		if (page > 1) setPage(1);
-		else if (mount.current) getCustomers.fetchData(filters, 1);
+		else if (mount.current) loadCustomers(filters, 1);
 		else mount.current = true;
 	}, [filters]);
 
@@ -66,13 +86,13 @@ export default function CustomersPage() {
 
 	const toggleHandler = async () => {
 		if (!statusTarget) return;
-		const res = await toggle.fetchDataResult(statusTarget.customerId, statusTarget.isActive);
-		if (res.success) {
+		try {
+			await toggle({ id: statusTarget.customerId, isActive: statusTarget.isActive });
 			showNotification({ type: "success", message: statusTarget.isActive ? "مشتری غیرفعال شد" : "مشتری فعال شد" });
 			setStatusTarget(null);
-			getCustomers.fetchData(filters, page);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "تغییر وضعیت با خطا مواجه شد" });
+			loadCustomers(filters, page);
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "تغییر وضعیت با خطا مواجه شد" });
 		}
 	};
 
@@ -112,9 +132,9 @@ export default function CustomersPage() {
 				),
 			},
 		]);
-	}, [getCustomers.result]);
+	}, [customersResult]);
 
-	const data = getCustomers.resultData?.data;
+	const data = customersResult?.success ? customersResult.data?.data : undefined;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -138,7 +158,7 @@ export default function CustomersPage() {
 						label="جستجو (نام، کد ملی، تماس)"
 						value={term}
 						setValue={setTerm}
-						disabled={getCustomers.loading}
+						disabled={customersLoading}
 						onKeyDown={(e) => {
 							if (e?.key === "Enter") searchHandler();
 						}}
@@ -153,25 +173,25 @@ export default function CustomersPage() {
 						valueField="value"
 						displayField="label"
 						loading={false}
-						disabled={getCustomers.loading}
+						disabled={customersLoading}
 						wrapperErrorText=""
 						resultStatus={true}
 					/>
 				</div>
-				<TabanButton onClick={searchHandler} disabled={getCustomers.loading} isLoading={getCustomers.loading} loadingText="در حال جستجو">
+				<TabanButton onClick={searchHandler} disabled={customersLoading} isLoading={customersLoading} loadingText="در حال جستجو">
 					جستجو
 				</TabanButton>
-				<TabanButton variant="bordered" onClick={resetHandler} disabled={getCustomers.loading}>
+				<TabanButton variant="bordered" onClick={resetHandler} disabled={customersLoading}>
 					پاک کردن
 				</TabanButton>
 			</div>
 
-			{getCustomers.loading && !getCustomers.result ? (
+			{customersLoading && !customersResult ? (
 				<div className="flex justify-center gap-2 items-center py-12 text-sm text-neutral-500">
 					<TabanLoading size={30} />
 					در حال دریافت...
 				</div>
-			) : getCustomers.result?.success ? (
+			) : customersResult?.success ? (
 				<div className="bg-white border border-neutral-200 p-4 rounded-2xl">
 					<TabanTable
 						uniqueId="customerId"
@@ -185,12 +205,12 @@ export default function CustomersPage() {
 						rowPerPage={data?.pageSize ?? PAGE_SIZE}
 						paginationMode="server"
 						sortingMode="server"
-						loading={getCustomers.loading}
+						loading={customersLoading}
 					/>
 				</div>
-			) : !!getCustomers.result && !getCustomers.result.success && isRetryAble(getCustomers.result.code) ? (
+			) : !!customersResult && !customersResult.success && isRetryAble(customersResult.code) ? (
 				<div className="flex justify-center mt-4">
-					<ErrorComponent executeFunction={() => getCustomers.fetchData(filters, page)} callAble errorText="دریافت لیست مشتریان با خطا مواجه شد" />
+					<ErrorComponent executeFunction={() => loadCustomers(filters, page)} callAble errorText="دریافت لیست مشتریان با خطا مواجه شد" />
 				</div>
 			) : (
 				<div className="text-sm text-neutral-500 text-center py-10">داده‌ای موجود نیست</div>
@@ -207,10 +227,10 @@ export default function CustomersPage() {
 						آیا از {statusTarget?.isActive ? "غیرفعال" : "فعال"} کردن مشتری «{statusTarget?.fullName}» اطمینان دارید؟
 					</div>
 					<div className="flex justify-end gap-3">
-						<TabanButton variant="bordered" onClick={() => setStatusTarget(null)} disabled={toggle.loading}>
+						<TabanButton variant="bordered" onClick={() => setStatusTarget(null)} disabled={toggleLoading}>
 							انصراف
 						</TabanButton>
-						<TabanButton onClick={toggleHandler} isLoading={toggle.loading}>
+						<TabanButton onClick={toggleHandler} isLoading={toggleLoading}>
 							بله، مطمئنم
 						</TabanButton>
 					</div>

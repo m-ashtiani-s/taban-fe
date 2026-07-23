@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { withMappedError } from "@/utils/withMappedError";
+import { ResultError } from "@/types/result";
 import { useNotificationStore } from "@/stores/notification.store";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { toCurrency } from "@/utils/string";
@@ -58,42 +60,54 @@ const statusGuideIcon: Record<OrderStatus, React.FC<svgIcon>> = {
 export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
 	const router = useRouter();
 	const showNotification = useNotificationStore((s) => s.showNotification);
-	const { result, resultData, fetchData, loading } = useApi(async (id: string) => await OrderEndpoints.getOrder(id), true);
-	const pay = useApi(async (id: string, backUrl: string) => await PaymentEndpoints.initiate(id, backUrl));
-	const removeCoupon = useApi(async (id: string) => await OrderEndpoints.removeCoupon(id));
+	const orderQuery = useQuery({
+		queryKey: ["orders", "detail", params.orderId],
+		queryFn: () => withMappedError(() => OrderEndpoints.getOrder(params.orderId)),
+		retry: false,
+	});
+	const { mutateAsync: pay, isPending: payPending } = useMutation({
+		mutationFn: ({ id, backUrl }: { id: string; backUrl: string }) => withMappedError(() => PaymentEndpoints.initiate(id, backUrl)),
+	});
+	const { mutateAsync: removeCoupon, isPending: removeCouponPending } = useMutation({
+		mutationFn: (id: string) => withMappedError(() => OrderEndpoints.removeCoupon(id)),
+	});
 	const [removeCouponModalOpen, setRemoveCouponModalOpen] = useState<boolean>(false);
 	const [invoiceLoading, setInvoiceLoading] = useState<boolean>(false);
 
-	useEffect(() => {
-		fetchData(params.orderId);
-	}, []);
+	const orderLoading = orderQuery.isFetching;
+	const orderResult =
+		orderQuery.error ?? (orderQuery.data !== undefined ? { success: true as const, data: orderQuery.data } : null);
 
 	// شروع پرداخت: از بک‌اند لینک درگاه زرین‌پال را می‌گیریم و کاربر را به آن هدایت می‌کنیم.
 	// بعد از پرداخت، درگاه کاربر را به backUrl (صفحه‌ی نتیجه) برمی‌گرداند.
 	const payHandler = async () => {
 		const backUrl = `${window.location.origin}/payment/result`;
-		const res = await pay.fetchDataResult(params.orderId, backUrl);
-		if (res.success && res.data?.data?.redirectUrl) {
-			window.location.href = res.data.data.redirectUrl;
-			return;
+		try {
+			const data = await pay({ id: params.orderId, backUrl });
+			if (data?.data?.redirectUrl) {
+				window.location.href = data.data.redirectUrl;
+				return;
+			}
+			showNotification({ type: "error", message: "اتصال به درگاه پرداخت ناموفق بود" });
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "اتصال به درگاه پرداخت ناموفق بود" });
 		}
-		showNotification({ type: "error", message: !res.success ? res.description ?? "اتصال به درگاه پرداخت ناموفق بود" : "اتصال به درگاه پرداخت ناموفق بود" });
 	};
 
 	const removeCouponHandler = async () => {
-		const res = await removeCoupon.fetchDataResult(params.orderId);
-		if (res.success) {
-			showNotification({ type: "success", message: res.data?.message ?? "کد تخفیف از سفارش حذف شد" });
+		try {
+			const data = await removeCoupon(params.orderId);
+			showNotification({ type: "success", message: data?.message ?? "کد تخفیف از سفارش حذف شد" });
 			setRemoveCouponModalOpen(false);
-			fetchData(params.orderId);
-		} else {
-			showNotification({ type: "error", message: res.description ?? "حذف کد تخفیف با خطا مواجه شد" });
+			orderQuery.refetch();
+		} catch (err) {
+			showNotification({ type: "error", message: (err as ResultError)?.description ?? "حذف کد تخفیف با خطا مواجه شد" });
 		}
 	};
 
-	const order = resultData?.data ?? null;
+	const order = (orderQuery.error ? null : (orderQuery.data ?? null))?.data ?? null;
 
-	if (loading && !result) {
+	if (orderLoading && !orderResult) {
 		return (
 			<div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
 				<TabanLoading size={26} />
@@ -102,10 +116,10 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 		);
 	}
 
-	if (!!result && !result.success && isRetryAble(result.code)) {
+	if (!!orderResult && !orderResult.success && isRetryAble(orderResult.code)) {
 		return (
 			<div className="flex justify-center mt-4">
-				<ErrorComponent executeFunction={() => fetchData(params.orderId)} callAble errorText="دریافت اطلاعات سفارش با خطا مواجه شد" />
+				<ErrorComponent executeFunction={() => orderQuery.refetch()} callAble errorText="دریافت اطلاعات سفارش با خطا مواجه شد" />
 			</div>
 		);
 	}
@@ -171,10 +185,10 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 						استفاده‌ی مجدد از کد تخفیف باید سفارش جدیدی ثبت کنید. ادامه می‌دهید؟
 					</div>
 					<div className="flex justify-end gap-3 mt-8">
-						<TabanButton variant="bordered" onClick={() => setRemoveCouponModalOpen(false)} disabled={removeCoupon.loading}>
+						<TabanButton variant="bordered" onClick={() => setRemoveCouponModalOpen(false)} disabled={removeCouponPending}>
 							انصراف
 						</TabanButton>
-						<TabanButton onClick={removeCouponHandler} isLoading={removeCoupon.loading} loadingText="در حال حذف...">
+						<TabanButton onClick={removeCouponHandler} isLoading={removeCouponPending} loadingText="در حال حذف...">
 							حذف کد تخفیف
 						</TabanButton>
 					</div>
@@ -211,7 +225,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
 			</div>
 
 			{/* راهنمای وضعیت سفارش */}
-			<StatusGuidance order={order} onPay={payHandler} paying={pay.loading} />
+			<StatusGuidance order={order} onPay={payHandler} paying={payPending} />
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 				{/* ordered docs */}
