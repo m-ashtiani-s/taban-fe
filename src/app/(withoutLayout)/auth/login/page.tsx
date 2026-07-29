@@ -46,22 +46,6 @@ export default function Page() {
 		},
 	});
 
-	const sendLoginOTPMutation = useMutation({
-		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendLoginOTP(username)),
-		meta: { showNotification: true },
-		onSuccess: () => {
-			router.push(`/auth/login/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-		},
-	});
-
-	const sendForgetOTPMutation = useMutation({
-		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendForgetPasswordOTP(username)),
-		meta: { showNotification: true },
-		onSuccess: () => {
-			router.push(`/auth/change-password/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-		},
-	});
-
 	useEffect(() => {
 		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
 	}, []);
@@ -95,14 +79,14 @@ export default function Page() {
 	const forgetPasswordHandler = () => {
 		const errors = validateUsernameOnly();
 		if (errors?.length === 0) {
-			sendForgetOTPMutation.mutate(formValues?.username!);
+			router.push(`/auth/change-password/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
 		}
 	};
 
 	const loginWithOTPHandler = () => {
 		const errors = validateUsernameOnly();
 		if (errors?.length === 0) {
-			sendLoginOTPMutation.mutate(formValues?.username!);
+			router.push(`/auth/login/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
 		}
 	};
 
@@ -150,10 +134,9 @@ export default function Page() {
 					<button
 						type="button"
 						onClick={forgetPasswordHandler}
-						disabled={sendForgetOTPMutation.isPending}
 						className="text-sm font-medium cursor-pointer leading-4 py-2.5 px-3 text-center w-fit text-[#4C8EB0] flex gap-1 items-center hover:gap-1.5 duration-200 disabled:opacity-60"
 					>
-						{sendForgetOTPMutation.isPending ? "در حال ارسال کد..." : "فراموشی رمز عبور"}
+						فراموشی رمز عبور
 						<IconArrowLine />
 					</button>
 				</div>
@@ -171,10 +154,7 @@ export default function Page() {
 						variant="bordered"
 						type="button"
 						onClick={loginWithOTPHandler}
-						isLoading={sendLoginOTPMutation.isPending}
-						loadingText="در حال ارسال کد..."
 						className="!w-full"
-						disabled={sendLoginOTPMutation.isPending}
 					>
 						ورود با رمز یکبار مصرف
 					</TabanButton>

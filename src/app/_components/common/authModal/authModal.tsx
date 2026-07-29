@@ -81,6 +81,21 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		}, 1000);
 	};
 
+	// اگر ارسال کد با خطا مواجه شد: تایمر متوقف و دکمه‌ی «دریافت مجدد کد» فعال می‌شود
+	const stopResendCountdown = () => {
+		if (resendTimer.current) clearInterval(resendTimer.current);
+		setResendIn(0);
+	};
+
+	// ابتدا وارد مرحله‌ی otp می‌شویم و بعد کد ارسال می‌شود؛ کاربر منتظر پاسخ سرویس نمی‌ماند
+	const enterOtpStep = (mode: OtpMode) => {
+		setErrors([]);
+		setOtp("");
+		setOtpMode(mode);
+		stopResendCountdown();
+		setStep("otp");
+	};
+
 	const getProfile = useMutation({
 		mutationFn: () => withMappedError(() => TabanEndpoints.getProfile()),
 	});
@@ -113,11 +128,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		mutationFn: (u: string) => withMappedError(() => AuthEndpoints.sendOTP(u)),
 		meta: { showNotification: true },
 		onSuccess: () => {
-			setErrors([]);
-			setOtp("");
-			setStep("otp");
 			startResendCountdown();
 		},
+		onError: stopResendCountdown,
 	});
 
 	const checkUsername = useMutation({
@@ -128,7 +141,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 				setErrors([]);
 				setStep("login");
 			} else {
-				setOtpMode("signup");
+				enterOtpStep("signup");
 				sendOtp.mutate(username);
 			}
 		},
@@ -144,11 +157,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		mutationFn: (u: string) => withMappedError(() => AuthEndpoints.sendLoginOTP(u)),
 		meta: { showNotification: true },
 		onSuccess: () => {
-			setErrors([]);
-			setOtp("");
-			setStep("otp");
 			startResendCountdown();
 		},
+		onError: stopResendCountdown,
 	});
 
 	const loginWithOtp = useMutation({
@@ -161,11 +172,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		mutationFn: (u: string) => withMappedError(() => AuthEndpoints.sendForgetPasswordOTP(u)),
 		meta: { showNotification: true },
 		onSuccess: () => {
-			setErrors([]);
-			setOtp("");
-			setStep("otp");
 			startResendCountdown();
 		},
+		onError: stopResendCountdown,
 	});
 
 	const checkOtp = useMutation({
@@ -239,19 +248,17 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		login.mutate({ u: username, p: password });
 	};
 
-	// ورود با رمز یکبارمصرف: شماره در مرحله‌ی قبل اعتبارسنجی شده، پس فقط کد ارسال می‌شود
+	// ورود با رمز یکبارمصرف: شماره در مرحله‌ی قبل اعتبارسنجی شده؛ ابتدا وارد مرحله‌ی otp می‌شویم و بعد کد ارسال می‌شود
 	const startLoginWithOtp = () => {
 		if (!username) return;
-		setErrors([]);
-		setOtpMode("login");
+		enterOtpStep("login");
 		sendLoginOtp.mutate(username);
 	};
 
-	// فراموشی رمز عبور: ارسال کد تایید برای بازیابی رمز
+	// فراموشی رمز عبور: ابتدا وارد مرحله‌ی otp می‌شویم و بعد کد بازیابی ارسال می‌شود
 	const startForgotPassword = () => {
 		if (!username) return;
-		setErrors([]);
-		setOtpMode("forgot");
+		enterOtpStep("forgot");
 		sendForgetOtp.mutate(username);
 	};
 
@@ -290,7 +297,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		else setPasswordApi.mutate({ u: username, p: password, ref: referralCode.trim() || undefined });
 	};
 
-	const usernameLoading = checkUsername.isPending || sendOtp.isPending;
+	const usernameLoading = checkUsername.isPending;
 	const otpChecking = otpMode === "login" ? loginWithOtp.isPending : otpMode === "forgot" ? checkForgetOtp.isPending : checkOtp.isPending;
 	const otpResending = otpMode === "login" ? sendLoginOtp.isPending : otpMode === "forgot" ? sendForgetOtp.isPending : sendOtp.isPending;
 	const passwordSubmitting = otpMode === "forgot" ? changePasswordApi.isPending : setPasswordApi.isPending || getProfile.isPending;
@@ -385,10 +392,9 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 					<button
 						type="button"
 						onClick={startForgotPassword}
-						disabled={sendForgetOtp.isPending}
 						className="text-xs text-secondary self-start flex items-center gap-1 hover:gap-1.5 duration-150 disabled:opacity-60"
 					>
-						{sendForgetOtp.isPending ? "در حال ارسال کد..." : "فراموشی رمز عبور"}
+						فراموشی رمز عبور
 						<IconArrowLine width={14} height={14} />
 					</button>
 					<TabanButton
@@ -404,10 +410,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 						variant="bordered"
 						type="button"
 						onClick={startLoginWithOtp}
-						isLoading={sendLoginOtp.isPending}
-						loadingText="در حال ارسال کد..."
 						className="!w-full justify-center"
-						disabled={sendLoginOtp.isPending}
 					>
 						ورود با رمز یکبار مصرف
 					</TabanButton>

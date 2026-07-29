@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -51,6 +52,7 @@ const SummaryRow = ({ label, value, bold }: { label: string; value: number; bold
  * مرحله را رندر می‌کند (معادلِ کامپوننت‌های مرحله در فلوی ثبت سفارش).
  */
 export default function EditStepContent() {
+	const [touchedNames, setTouchedNames] = useState<Record<string, boolean>>({});
 	const {
 		editState,
 		setEditState,
@@ -98,7 +100,8 @@ export default function EditStepContent() {
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7 max-w-3xl mx-auto w-full">
 					{documentKeys.map((key, index) => {
 						const value = editState.translationItemNames[key] ?? "";
-						const hasError = documentKeys.length > 1 && !value.trim();
+						// مثل بقیه‌ی فرم‌ها: تا وقتی کاربر با فیلد تعامل نکرده ارور نشان داده نمی‌شود
+						const hasError = !!touchedNames[key] && !value.trim();
 						return (
 							<motion.div
 								key={key}
@@ -112,6 +115,7 @@ export default function EditStepContent() {
 									value={value}
 									name={key}
 									placeholder={namePlaceholder}
+									onBlur={() => setTouchedNames((prev) => ({ ...prev, [key]: true }))}
 									leadingIcon={<IconDocument width={20} height={20} className="fill-secondary stroke-0" />}
 									setValue={(val: string) =>
 										setEditState((prev) =>

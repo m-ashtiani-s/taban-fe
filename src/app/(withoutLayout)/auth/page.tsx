@@ -28,14 +28,6 @@ export default function Page() {
 	const router = useRouter();
 	const searchParams = useReadSearchParams(["username", "backUrl", "ref"]);
 
-	const sendOTPMutation = useMutation({
-		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.sendOTP(username)),
-		meta: { showNotification: true },
-		onSuccess: () => {
-			router.push(`/auth/sign-up/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
-		},
-	});
-
 	const checkUsernameMutation = useMutation({
 		mutationFn: (username: string) => withMappedError(() => AuthEndpoints.checkUsername(username)),
 		meta: { showNotification: true },
@@ -43,12 +35,12 @@ export default function Page() {
 			if (data?.data) {
 				router.push(`/auth/login?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
 			} else {
-				sendOTPMutation.mutate(formValues?.username!);
+				router.push(`/auth/sign-up/otp?username=${formValues?.username}&backUrl=${searchParams?.backUrl ?? ""}`);
 			}
 		},
 	});
 
-	const submitLoading = checkUsernameMutation.isPending || sendOTPMutation.isPending;
+	const submitLoading = checkUsernameMutation.isPending;
 
 	useEffect(() => {
 		setFormValues({ username: searchParams?.username ?? "" });

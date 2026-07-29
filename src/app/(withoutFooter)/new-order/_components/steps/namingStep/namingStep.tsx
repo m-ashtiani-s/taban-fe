@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import { IconDocument } from "@/app/_components/icon/icons";
@@ -7,8 +8,8 @@ import { useNewOrderStore } from "../../../_store/newOrder.store";
 import StepHeader from "../../stepHeader/stepHeader";
 
 export default function NamingStep() {
+	const [touched, setTouched] = useState<Record<string, boolean>>({});
 	const { order, setOrder } = useNewOrderStore();
-	const count = order?.translationItemCount ?? 1;
 	const names = order?.translationItemNames ?? {};
 	const keys = Object.keys(names);
 	// پلیس‌هولدرِ نام مدرک که ادمین برای این مدرک تعریف کرده است
@@ -31,7 +32,8 @@ export default function NamingStep() {
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7 max-w-3xl mx-auto w-full">
 				{keys.map((key, index) => {
 					const value = names[key] ?? "";
-					const hasError = !value.trim();
+					// مثل بقیه‌ی فرم‌ها: تا وقتی کاربر با فیلد تعامل نکرده ارور نشان داده نمی‌شود
+					const hasError = !!touched[key] && !value.trim();
 					return (
 						<motion.div
 							key={key}
@@ -47,6 +49,7 @@ export default function NamingStep() {
 								setValue={setNames}
 								groupMode
 								placeholder={namePlaceholder}
+								onBlur={() => setTouched((prev) => ({ ...prev, [key]: true }))}
 								leadingIcon={<IconDocument width={20} height={20} className="fill-secondary stroke-0" />}
 								isHandleError
 								hasError={hasError}

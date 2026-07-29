@@ -245,7 +245,7 @@ function NewOrderFlow({ children }: { children: React.ReactNode }) {
 		for (let i = 0; i < count; i++) {
 			const key = existingKeys[i] ?? generateUUID();
 			if (count === 1) {
-				next[key] = existing[key] ?? `${title} شماره ${i + 1}`;
+				next[key] = "";
 			} else {
 				// چندمدرک: نام پیش‌فرض نمایش داده نمی‌شود؛ فقط نام‌های واقعیِ واردشده حفظ می‌شوند.
 				// هنگام گذار از تک‌مدرک به چندمدرک، نامِ پیش‌فرضِ تک‌مدرک هم پاک می‌شود.

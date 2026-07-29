@@ -33,6 +33,7 @@ export default function Page() {
 
 	const router = useRouter();
 	const timerRef = useRef<TimerRef>(null);
+	const initialSendRef = useRef<boolean>(false);
 	const searchParams = useReadSearchParams(["username", "backUrl"]);
 
 	const loginOTPMutation = useMutation({
@@ -63,6 +64,9 @@ export default function Page() {
 			});
 			setShowResendCode(false);
 		},
+		onError: () => {
+			setShowResendCode(true);
+		},
 	});
 
 	const getTwoMinutesFromNow = () => {
@@ -73,6 +77,12 @@ export default function Page() {
 
 	useEffect(() => {
 		setFormValues((prev) => ({ ...prev, username: !!searchParams?.username ? searchParams?.username : undefined }));
+	}, []);
+
+	useEffect(() => {
+		if (initialSendRef.current || !searchParams?.username) return;
+		initialSendRef.current = true;
+		sendOTPMutation.mutate(searchParams.username);
 	}, []);
 
 	useEffect(() => {
