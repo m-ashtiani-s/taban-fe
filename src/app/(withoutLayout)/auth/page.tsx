@@ -89,6 +89,7 @@ export default function Page() {
 				<div className="mt-6">
 					<TabanInput
 						isLtr
+						normalizeDigits
 						disabled={submitLoading}
 						value={formValues?.username}
 						groupMode

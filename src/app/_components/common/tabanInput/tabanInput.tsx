@@ -1,5 +1,6 @@
 "use client";
 
+import { toEnglishDigits } from "@/utils/string";
 import { TabanInputProps } from "./tabanInput.type";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
@@ -22,6 +23,7 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(
 			removeHandler,
 			isLtr = false,
 			isPasswordInput = false,
+			normalizeDigits = false,
 			...rest
 		},
 		ref
@@ -45,10 +47,11 @@ const TabanInput = forwardRef<HTMLInputElement, TabanInputProps>(
 		};
 
 		const changeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+			const val = normalizeDigits ? toEnglishDigits(e?.target?.value) : e?.target?.value;
 			if (groupMode && !!setValue) {
-				setValue((prev: any) => ({ ...prev, [`${rest?.name}`]: e?.target?.value }));
+				setValue((prev: any) => ({ ...prev, [`${rest?.name}`]: val }));
 			} else if (!!setValue) {
-				setValue(e?.target?.value);
+				setValue(val);
 			}
 			!!rest?.onChange && rest?.onChange(e);
 		};

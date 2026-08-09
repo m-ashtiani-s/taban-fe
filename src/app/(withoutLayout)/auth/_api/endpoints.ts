@@ -4,13 +4,16 @@ import { Login } from "../_types/login.type";
 import { Paginate } from "@/types/paginate";
 import { Province } from "@/types/Province.type";
 import { City } from "@/types/city.type";
+import { toEnglishDigits } from "@/utils/string";
 
+// ورودی‌های فلوی احراز هویت ممکن است از URL بیایند (نه از اینپوت)، پس اینجا هم
+// ارقام فارسی/عربی به انگلیسی تبدیل می‌شوند تا بک‌اند همیشه رقم انگلیسی بگیرد.
 export const AuthEndpoints = {
 	checkUsername: async (username: string) => {
 		const res = await httpClient.call<Res<boolean>>({
 			method: "GET",
 			url: `v1/auth/check-username`,
-			params: { username },
+			params: { username: toEnglishDigits(username) },
 		});
 		return res?.data;
 	},
@@ -18,7 +21,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<null>>({
 			method: "POST",
 			url: `v1/auth/sign-up/otp/send`,
-			data: { username },
+			data: { username: toEnglishDigits(username) },
 		});
 		return res?.data;
 	},
@@ -26,7 +29,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<Login>>({
 			method: "POST",
 			url: `v1/auth/login`,
-			data: { username, password },
+			data: { username: toEnglishDigits(username), password: toEnglishDigits(password) },
 		});
 		return res?.data;
 	},
@@ -34,7 +37,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<boolean>>({
 			method: "POST",
 			url: `v1/auth/sign-up/otp/check`,
-			data: { username, otp },
+			data: { username: toEnglishDigits(username), otp: toEnglishDigits(otp) },
 		});
 		return res?.data;
 	},
@@ -42,7 +45,11 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<Login>>({
 			method: "POST",
 			url: `v1/auth/sign-up/set-password`,
-			data: { username, password, ...(referralCode ? { referralCode } : {}) },
+			data: {
+				username: toEnglishDigits(username),
+				password: toEnglishDigits(password),
+				...(referralCode ? { referralCode: toEnglishDigits(referralCode) } : {}),
+			},
 		});
 		return res?.data;
 	},
@@ -51,7 +58,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<null>>({
 			method: "POST",
 			url: `v1/auth/login/otp/send`,
-			data: { username },
+			data: { username: toEnglishDigits(username) },
 		});
 		return res?.data;
 	},
@@ -59,7 +66,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<Login>>({
 			method: "POST",
 			url: `v1/auth/login/otp/check`,
-			data: { username, otp },
+			data: { username: toEnglishDigits(username), otp: toEnglishDigits(otp) },
 		});
 		return res?.data;
 	},
@@ -68,7 +75,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<null>>({
 			method: "POST",
 			url: `v1/auth/forget-password/otp/send`,
-			data: { username },
+			data: { username: toEnglishDigits(username) },
 		});
 		return res?.data;
 	},
@@ -76,7 +83,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<boolean>>({
 			method: "POST",
 			url: `v1/auth/forget-password/otp/check`,
-			data: { username, otp },
+			data: { username: toEnglishDigits(username), otp: toEnglishDigits(otp) },
 		});
 		return res?.data;
 	},
@@ -84,7 +91,7 @@ export const AuthEndpoints = {
 		const res = await httpClient.call<Res<null>>({
 			method: "POST",
 			url: `v1/auth/forget-password/set-password`,
-			data: { username, password },
+			data: { username: toEnglishDigits(username), password: toEnglishDigits(password) },
 		});
 		return res?.data;
 	},

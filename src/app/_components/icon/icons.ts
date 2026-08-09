@@ -25,6 +25,7 @@ export { default as IconKitchen } from './src/kitchen';
 export { default as IconLike } from './src/like';
 export { default as IconLivingRoom } from './src/livingRoom';
 export { default as IconLoadMore } from './src/loadMore';
+export { default as IconLock } from './src/lock';
 export { default as IconLogout } from './src/logout';
 export { default as IconMaximize } from './src/maximize';
 export { default as IconMfa } from './src/mfa';

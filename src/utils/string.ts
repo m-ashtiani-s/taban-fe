@@ -111,6 +111,19 @@ export const generateFailCause = (e?: string) => {
 	}
 };
 
+/**
+ * ارقام فارسی (۰-۹) و عربی (٠-٩) را به ارقام انگلیسی تبدیل می‌کند و بقیه‌ی کاراکترها را دست‌نخورده نگه می‌دارد.
+ * ورودی‌های کاربر باید همیشه با رقم انگلیسی به بک‌اند برسند، چون اعتبارسنجی‌ها فقط رقم انگلیسی را می‌پذیرند.
+ */
+export const toEnglishDigits = (value?: string | null): string => {
+	if (!value) return "";
+	return value.replace(/[۰-۹٠-٩]/g, (digit) => {
+		const code = digit.charCodeAt(0);
+		// ۰ در یونیکد U+06F0 و ٠ در یونیکد U+0660 است
+		return String(code - (code >= 0x06f0 ? 0x06f0 : 0x0660));
+	});
+};
+
 export const convertPersianToEnglish = (persianNumber:string) => {
 	const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 	const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];

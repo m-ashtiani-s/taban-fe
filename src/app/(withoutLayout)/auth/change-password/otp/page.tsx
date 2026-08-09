@@ -125,6 +125,7 @@ export default function Page() {
 					<div className="mt-4">
 						<TabanInput
 							isLtr
+							normalizeDigits
 							disabled={checkOTPMutation.isPending}
 							value={formValues?.otp}
 							groupMode

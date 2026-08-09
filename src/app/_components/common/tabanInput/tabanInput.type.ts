@@ -15,5 +15,7 @@ export type TabanInputProps= InputHTMLAttributes<HTMLInputElement> & {
     isLtr?:boolean;
     isPasswordInput?:boolean;
     isNumber?:boolean;
+    /** ارقام فارسی/عربیِ تایپ‌شده را بلافاصله به ارقام انگلیسی تبدیل می‌کند */
+    normalizeDigits?:boolean;
     ref?:any
 }

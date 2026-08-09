@@ -122,6 +122,7 @@ export default function Page() {
 					<div className="mt-4">
 						<TabanInput
 							isLtr
+							normalizeDigits
 							isPasswordInput
 							disabled={setPasswordMutation.isPending}
 							value={formValues?.password}
@@ -137,6 +138,7 @@ export default function Page() {
 					<div className="mt-2">
 						<TabanInput
 							isLtr
+							normalizeDigits
 							isPasswordInput
 							disabled={setPasswordMutation.isPending}
 							value={formValues?.confirmPassword}
@@ -152,6 +154,7 @@ export default function Page() {
 					<div className="mt-2">
 						<TabanInput
 							isLtr
+							normalizeDigits
 							disabled={setPasswordMutation.isPending}
 							value={formValues?.referralCode}
 							groupMode

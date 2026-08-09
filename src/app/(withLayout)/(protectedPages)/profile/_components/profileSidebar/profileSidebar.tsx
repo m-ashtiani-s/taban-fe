@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { withMappedError } from "@/utils/withMappedError";
 import { TabanEndpoints } from "@/app/_api/endpoints";
 import { useProfile, PROFILE_QUERY_KEY } from "@/hooks/useProfile";
-import { IconCart, IconCircleUser, IconDashboard, IconDocument, IconLogout, IconMoney, IconOrder, IconStar, IconTruck, IconUser } from "@/app/_components/icon/icons";
+import { IconCart, IconCircleUser, IconDashboard, IconDocument, IconLock, IconLogout, IconMoney, IconOrder, IconStar, IconTruck, IconUser } from "@/app/_components/icon/icons";
 import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 
@@ -52,6 +52,12 @@ const menu = [
 		label: "باشگاه مشتریان",
 		href: "/profile/club",
 		icon: <IconStar />,
+		matchExact: false,
+	},
+	{
+		label: "تغییر رمز عبور",
+		href: "/profile/change-password",
+		icon: <IconLock />,
 		matchExact: false,
 	},
 ];
