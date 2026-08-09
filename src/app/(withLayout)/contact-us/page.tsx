@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const channels = [
     {
         label: "تماس تلفنی",
-        value: "۰۲۱ - ۹۱۰۰۱۲۳۴",
+        value: "02126755421",
         hint: "شنبه تا چهارشنبه، ۹ تا ۱۸",
         href: "tel:02191001234",
         icon: (
@@ -43,15 +43,15 @@ const channels = [
     },
     {
         label: "واتساپ",
-        value: "۰۹۱۲ ۰۰۰ ۰۰۰۰",
+        value: "09032009914",
         hint: "پشتیبانی سریع پیام‌رسان",
-        href: "https://wa.me/989120000000",
+        href: "https://wa.me/09032009914",
         icon: <IconWhatsapp className="fill-secondary" strokeWidth={0.8} width={24} height={24} />,
     },
     {
         label: "نشانی دفتر",
-        value: "تهران، خیابان ولیعصر",
-        hint: "بالاتر از میدان ونک، پلاک ۱۲",
+        value: "تهران، محله دروس، خیابان شهید یوسف کلاهدوز، پلاک ۱۲۶، طبقه ۳، واحد ۱۵",
+        hint: "",
         href: "#location",
         icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8a27c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
