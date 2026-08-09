@@ -8,7 +8,7 @@ import { Fragment, useState } from "react";
 import { MobileMenuPopup } from "./_components/mobileMenuPopup/mobileMenuPopup";
 import BottomNav from "./_components/bottomNav/bottomNav";
 import TabanButton from "../common/tabanButton/tabanButton";
-import ProfleMenu from "./_components/profleMenu/profleMenu";
+import ProfleMenu from "./_components/ProfleMenu/ProfleMenu";
 import { IconArrow, IconCircleUser, IconTranslate } from "../icon/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile, PROFILE_QUERY_KEY } from "@/hooks/useProfile";

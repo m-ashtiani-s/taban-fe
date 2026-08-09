@@ -8,7 +8,7 @@ import "swiper/css/pagination";
 import "./style.scss";
 import { useEffect, useState } from "react";
 import BlogPost from "@/app/_components/blogPost/blogPost";
-import { BlogPreviewProps } from "./blogPreview1.type";
+import { BlogPreviewProps } from "./blogPreview.type";
 
 export default function BlogPreview({ posts }: BlogPreviewProps) {
 	const [width, setWidth] = useState<number>(0);
@@ -22,10 +22,12 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
 			};
 		}
 	}, []);
+
+	const isMobile = width <= 768;
+
 	function handleWindowSizeChange() {
 		setWidth(window.innerWidth);
 	}
-	const isMobile = width <= 768;
 
 	return (
 		<div className="blogPreview">
