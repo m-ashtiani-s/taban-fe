@@ -171,7 +171,7 @@ export default function ContactUsPage() {
                                         <h3 className="peyda font-bold text-white">نشانی دفتر مرکزی</h3>
                                     </div>
                                     <p className="relative z-10 text-white/60 leading-8 text-sm">
-                                        تهران، خیابان ولیعصر، بالاتر از میدان ونک، نبش کوچه‌ی والی، ساختمان رسمی‌یاب، پلاک ۱۲، طبقه‌ی سوم.
+                                       تهران، محله دروس، خیابان شهید یوسف کلاهدوز، پلاک ۱۲۶، طبقه ۳، واحد ۱۵
                                     </p>
                                     <div className="relative z-10 h-px bg-white/10" />
                                     <div className="relative z-10 flex items-center gap-3">
