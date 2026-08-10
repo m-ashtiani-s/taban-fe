@@ -164,7 +164,7 @@ export default function EditStepContent() {
 									indicator="none"
 									trailing={
 										<div className="w-9 h-9 rounded-lg overflow-hidden bg-neutral-100 flex items-center justify-center">
-											<Image width={28} height={28} alt={lang.languageName} src={`/images/languages/${lang.languageCode}.png`} />
+											<Image width={28} height={28} alt={lang.languageName} src={`/images/languages/${lang?.languageCode?.toLowerCase()}.png`} />
 										</div>
 									}
 								/>

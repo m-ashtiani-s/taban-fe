@@ -8,7 +8,6 @@ import { Fragment, useState } from "react";
 import { MobileMenuPopup } from "./_components/mobileMenuPopup/mobileMenuPopup";
 import BottomNav from "./_components/bottomNav/bottomNav";
 import TabanButton from "../common/tabanButton/tabanButton";
-import ProfleMenu from "./_components/ProfleMenu/ProfleMenu";
 import { IconArrow, IconCircleUser, IconTranslate } from "../icon/icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile, PROFILE_QUERY_KEY } from "@/hooks/useProfile";
@@ -16,6 +15,7 @@ import TabanModal from "../common/tabanModal/tabanModal";
 import { menuItems } from "./_constant/menuItems";
 import HeaderMenu from "./_components/headerMenu/headerMenu";
 import CartBadge from "./_components/cartBadge/cartBadge";
+import ProfleMenu from "./_components/profleMenu/profleMenu";
 
 export const Header = () => {
 	const [open, setOpen] = useState<boolean>(false);

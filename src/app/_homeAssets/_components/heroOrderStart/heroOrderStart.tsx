@@ -185,7 +185,7 @@ export default function HeroOrderStart() {
 												width={24}
 												height={24}
 												alt={lang.languageName}
-												src={`/images/languages/${lang.languageCode}.png`}
+												src={`/images/languages/${lang.languageCode?.toLowerCase()}.png`}
 											/>
 										</span>
 										{lang.languageName}
