@@ -21,6 +21,8 @@ export default function TabanButton({
 	isEn = false,
 	...rest
 }: TabanButtonProps) {
+	// data-* (مثل data-track-event برای آنالیتیکس) و onClick روی حالت لینک هم باید به المان واقعی برسند
+	const linkPassthrough = Object.fromEntries(Object.entries(rest).filter(([key]) => key.startsWith("data-") || key === "onClick" || key === "aria-label"));
 	const classes = classNames(
 		"btn",
 		className,
@@ -33,7 +35,7 @@ export default function TabanButton({
 	return (
 		<>
 			{isLink && !!href && !rest.disabled ? (
-				<Link target={target} href={href} className={classes}>
+				<Link target={target} href={href} className={classes} {...linkPassthrough}>
 					{!!icon && isEn && icon}
 					{!!isLoading && <TabanLoading color="#a1a1a1" size={24} />}
 

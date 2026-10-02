@@ -6,8 +6,12 @@ import "./globals.css";
 import { Notifications } from "./_components/notification/notification";
 import AppBootstrap from "./_components/appBootstrap/appBootstrap";
 import TopBanner from "./_components/topBanner/topBanner";
-import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/config/site";
+import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_LOCALE, SITE_NAME, SITE_TITLE, buildSiteGraph } from "@/config/site";
+import { ALLOW_INDEXING } from "@/config/global";
 import { QueryProvider } from "./queryProvider";
+import JsonLd from "./_components/jsonLd/jsonLd";
+import Analytics from "./_components/analytics/analytics";
+import { buildGaInitScript, getAnalyticsConfig } from "@/config/analytics";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_BASE_URL),
@@ -17,13 +21,10 @@ export const metadata: Metadata = {
 	},
 	description: SITE_DESCRIPTION,
 	applicationName: SITE_NAME,
-	alternates: { canonical: "/" },
-	icons: { icon: "/images/logo2.svg" },
 	openGraph: {
 		type: "website",
 		siteName: SITE_NAME,
-		locale: "fa_IR",
-		url: SITE_BASE_URL,
+		locale: SITE_LOCALE,
 		title: SITE_TITLE,
 		description: SITE_DESCRIPTION,
 	},
@@ -32,14 +33,12 @@ export const metadata: Metadata = {
 		title: SITE_TITLE,
 		description: SITE_DESCRIPTION,
 	},
-	// نوایندکسِ سراسری: هیچ صفحه‌ای نباید ایندکس یا دنبال شود
-	robots: {
-		index: false,
-		follow: false,
-		googleBot: {
-			index: false,
-			follow: false,
-		},
+	robots: ALLOW_INDEXING
+		? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } }
+		: { index: false, follow: false },
+	verification: {
+		google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+		other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
 	},
 };
 
@@ -48,28 +47,18 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-	const organizationLd = {
-		"@context": "https://schema.org",
-		"@type": "Organization",
-		name: SITE_NAME,
-		url: SITE_BASE_URL,
-		logo: `${SITE_BASE_URL}/images/logo2.svg`,
-	};
-
-	const websiteLd = {
-		"@context": "https://schema.org",
-		"@type": "WebSite",
-		name: SITE_NAME,
-		url: SITE_BASE_URL,
-		inLanguage: "fa-IR",
-	};
+	const analyticsConfig = getAnalyticsConfig();
 
 	return (
 		<html lang="fa" dir="rtl">
-			<head></head>
+			<head>
+				{/* فقط دو وزن: متن پیش‌فرض بدنه (یکان ۴۰۰) و تیتر هیرو/LCP (پیدا ۶۰۰)؛ بقیه‌ی وزن‌ها با swap بعداً می‌رسند */}
+				<link rel="preload" href="/fonts/yekan-bakh/YekanBakh-Regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+				<link rel="preload" href="/fonts/peyda/woff2/PeydaWeb-SemiBold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+				{analyticsConfig?.gaMeasurementId && <script dangerouslySetInnerHTML={{ __html: buildGaInitScript(analyticsConfig.gaMeasurementId) }} />}
+			</head>
 			<body className="content-center bg-white text-primary">
-				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
-				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }} />
+				<JsonLd data={buildSiteGraph()} />
 				<QueryProvider>
 					<Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
 						<NextTopLoader
@@ -89,6 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						<Notifications />
 						<TopBanner />
 						{children}
+						{analyticsConfig && <Analytics config={analyticsConfig} />}
 					</Providers>
 				</QueryProvider>
 			</body>

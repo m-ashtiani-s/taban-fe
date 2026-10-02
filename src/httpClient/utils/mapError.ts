@@ -11,7 +11,7 @@ export enum InternalErrorCode {
 }
 
 export function mapError<T = any>(err: any): ResultError {
-	if (err?.response?.status === 401) {
+	if (err?.response?.status === 401 && typeof window !== "undefined") {
 		localStorage.removeItem(StorageKey.TOKEN);
 		localStorage.removeItem(StorageKey.EXPIRES_AT);
 		localStorage.removeItem(StorageKey.USERNAME);

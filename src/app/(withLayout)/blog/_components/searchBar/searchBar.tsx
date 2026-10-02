@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { blogPageHref } from "../../_utils/blogPageHref";
 
 const TAGS = ["ترجمه رسمی", "ترجمه مدارک", "مهاجرت", "روادید", "دارالترجمه", "تایید وزارت"];
 
@@ -14,11 +15,8 @@ export default function SearchBar() {
     const [value, setValue] = useState(currentTerm);
 
     const doSearch = (q: string) => {
-        const params = new URLSearchParams();
-        if (q.trim()) params.set("term", q.trim());
-        params.set("page", "1");
         startTransition(() => {
-            router.push(`/blog?${params.toString()}`);
+            router.push(blogPageHref(1, q.trim()));
         });
     };
 

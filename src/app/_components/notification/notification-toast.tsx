@@ -45,6 +45,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
       </div>
       <div className="text-sm font-semibold">{message}</div>
       <button
+        aria-label="بستن اعلان"
         className="mr-auto hover:text-white mt-2"
         onClick={() => dismissNotification(id)}
       >

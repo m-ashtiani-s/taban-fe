@@ -6,6 +6,7 @@ import { withMappedError } from "@/utils/withMappedError";
 import { isRetryAble } from "@/httpClient/utils/isRetryAble";
 import { isLoggedIn } from "@/utils/auth";
 import { toCurrency } from "@/utils/string";
+import { tomanToRial, track } from "@/utils/analytics";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { IconCart, IconCheck, IconRequired, IconStar, IconTranslate } from "@/app/_components/icon/icons";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
@@ -111,6 +112,13 @@ export default function CheckoutStep({resetSteps}:CheckoutStepProps) {
 		onSuccess: (data) => {
 			queryClient.setQueryData(["cart", "detail"], data);
 			setSuccessModalOpen(true);
+			const itemId = order?.translationItem?.translationItemId;
+			track("add_to_cart", {
+				item_id: itemId,
+				value: tomanToRial(calculationQuery.data?.data?.summary?.totalPrice),
+				currency: "IRR",
+				items: itemId ? [{ item_id: itemId, item_name: order?.translationItem?.title }] : undefined,
+			});
 		},
 	});
 

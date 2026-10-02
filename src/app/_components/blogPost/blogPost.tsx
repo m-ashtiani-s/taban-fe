@@ -7,7 +7,7 @@ export default function BlogPost({ post }: BlogPostProps) {
 	return (
 		<Link href={`/posts/${post?.slug}`} className="group">
 			<div className="border rounded-xl p-6">
-				<div style={{ background: `url('${post?.image}')` }} className="h-44 rounded-lg relative !bg-center !bg-cover">
+				<div style={post?.image ? { backgroundImage: `url('${post.image}')` } : undefined} className="h-44 rounded-lg relative !bg-center !bg-cover bg-suppliment">
 					<div className="absolute left-6 bottom-0">
 						<Image src="/images/blog/blogbtnBg.svg" width={65} height={26} alt="" />
 					</div>
@@ -20,7 +20,7 @@ export default function BlogPost({ post }: BlogPostProps) {
 						/>
 					</div>
 				</div>
-				<h2 className="peyda text-lg font-semibold mt-6 h-14 overflow-clip">{post?.title}</h2>
+				<h3 className="peyda text-lg font-semibold mt-6 h-14 overflow-clip">{post?.title}</h3>
 				<div className="text-neutral-600 h-12 overflow-clip mt-2" dangerouslySetInnerHTML={{ __html: post?.excerpt }}></div>
 			</div>
 		</Link>

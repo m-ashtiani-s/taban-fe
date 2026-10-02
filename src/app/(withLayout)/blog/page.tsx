@@ -1,45 +1,51 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { SITE_URL } from "@/config/global";
-import { BlogPostDto } from "@/types/blogPost.type";
-import { Paginate } from "@/types/paginate";
+import { notFound } from "next/navigation";
+import { buildMetadata } from "@/config/site";
+import { getPostsPage } from "@/server/wordpress";
+import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import ArticleCard from "./_components/articleCard/articleCard";
 import FeaturedCard from "./_components/featuredCard/featuredCard";
 import SearchBar from "./_components/searchBar/searchBar";
+import { parseBlogPage } from "./_utils/parseBlogPage";
+import { blogPageHref } from "./_utils/blogPageHref";
 
-export async function generateMetadata({ searchParams }: { searchParams: { page?: string; term?: string } }): Promise<Metadata> {
-    const page = parseInt(searchParams?.page || "1", 10);
-    const term = searchParams?.term || "";
-    const canonical = term ? `/blog?term=${encodeURIComponent(term)}` : page > 1 ? `/blog?page=${page}` : "/blog";
-    const description = "جدیدترین اخبار و مقالات در حوزه‌ی ترجمه‌ی رسمی مدارک، مهاجرت و خدمات دارالترجمه‌ی رسمی‌یاب.";
-    return {
-        title: term ? `نتایج جستجو برای «${term}» | مجله رسمی‌یاب` : "مجله رسمی‌یاب | مقالات تخصصی ترجمه",
-        description,
-        alternates: { canonical },
-        openGraph: { title: "مجله رسمی‌یاب", description, url: canonical, type: "website" },
-    };
-}
+type BlogSearchParams = { page?: string; term?: string };
 
-async function getPosts(page: number, perPage: number, term = ""): Promise<Paginate<BlogPostDto> | null> {
-    try {
-        const url =
-            `${SITE_URL}/api/wordpress/posts?page=${page}&pageSize=${perPage}` +
-            (term ? `&term=${encodeURIComponent(term)}` : "");
-        const res = await fetch(url, { next: { revalidate: 1 } });
-        if (!res.ok) return null;
-        return res.json();
-    } catch {
-        return null;
+const PER_PAGE = 9;
+const BLOG_DESCRIPTION = "جدیدترین مقالات و راهنماهای ترجمه رسمی مدارک، تاییدات دادگستری و امور خارجه، مهاجرت و خدمات دارالترجمه‌ی رسمی‌یاب.";
+
+export async function generateMetadata({ searchParams }: { searchParams: BlogSearchParams }): Promise<Metadata> {
+    const page = parseBlogPage(searchParams?.page) ?? 1;
+    const term = searchParams?.term?.trim() || "";
+
+    // نتایج جست‌وجو صفحه‌ی مستقل ایندکس‌شدنی نیستند (محتوای تکراری و بی‌نهایت URL)؛ لینک‌هایشان دنبال می‌شود
+    if (term) {
+        return {
+            title: `نتایج جستجو برای «${term}»`,
+            description: BLOG_DESCRIPTION,
+            robots: { index: false, follow: true },
+        };
     }
+
+    const pageSuffix = page > 1 ? ` — صفحه ${convertToPersianNumber(page)}` : "";
+    return buildMetadata({
+        title: `مجله رسمی‌یاب | مقالات تخصصی ترجمه رسمی${pageSuffix}`,
+        absoluteTitle: true,
+        description: page > 1 ? `${BLOG_DESCRIPTION} صفحه ${convertToPersianNumber(page)}.` : BLOG_DESCRIPTION,
+        path: page > 1 ? `/blog?page=${page}` : "/blog",
+    });
 }
 
-export default async function BlogPage({ searchParams }: { searchParams: { page?: string; term?: string } }) {
-    const currentPage = parseInt(searchParams.page || "1", 10);
-    const term = searchParams.term || "";
-    const PER_PAGE = 9;
+export default async function BlogPage({ searchParams }: { searchParams: BlogSearchParams }) {
+    const currentPage = parseBlogPage(searchParams.page);
+    const term = searchParams.term?.trim() || "";
+    if (currentPage === null) notFound();
 
-    const data = await getPosts(currentPage, PER_PAGE, term);
+    // صفحه‌ی بیشتر از تعداد صفحات = ۴۰۴ واقعی (نه soft 404)؛ خطای موقت وردپرس پرتاب می‌شود و صفحه‌ی خطا می‌دهد
+    const data = await getPostsPage({ page: currentPage, pageSize: PER_PAGE, term });
+    if (!data) notFound();
 
     return (
         <div className="bg-suppliment min-h-[100dvh]">
@@ -102,11 +108,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
                     )}
 
                     <div className="flex items-center gap-8 pt-4 border-t border-white/10 w-full max-w-xl justify-center">
-                        {[
-                            { n: data?.totalElements ? `+${data.totalElements}` : "---", l: "مقاله منتشرشده" },
-                            { n: "+۱۰", l: "سال تجربه" },
-                            { n: "+۵۰۰۰", l: "ترجمه موفق" },
-                        ].map((s) => (
+                        {[{ n: convertToPersianNumber(data.totalElements), l: "مقاله منتشرشده" }].map((s) => (
                             <div key={s.l} className="flex flex-col items-center gap-0.5">
                                 <span className="text-secondary font-extrabold text-xl">{s.n}</span>
                                 <span className="text-white/35 text-xs">{s.l}</span>
@@ -119,17 +121,8 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
             {/* ── Posts ── */}
             <section className="py-16">
                 <div className="container max-lg:px-4 flex flex-col gap-12">
-                    {!data ? (
-                        <div className="bg-white rounded-2xl p-16 text-center flex flex-col items-center gap-4 shadow-sm">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9CA0B0" strokeWidth="1.5">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="12" y1="8" x2="12" y2="12" />
-                                <line x1="12" y1="16" x2="12.01" y2="16" />
-                            </svg>
-                            <p className="text-neutral-5 text-base">خطا در دریافت مقالات. لطفاً دوباره تلاش کنید.</p>
-                            <a href="/blog" className="text-secondary text-sm font-semibold">بازگشت به مجله</a>
-                        </div>
-                    ) : data.elements.length === 0 ? (
+                    <h2 className="sr-only">{term ? `نتایج جستجو برای «${term}»` : "جدیدترین مقالات مجله رسمی‌یاب"}</h2>
+                    {data.elements.length === 0 ? (
                         <div className="bg-white rounded-2xl p-16 text-center flex flex-col items-center gap-4 shadow-sm">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9CA0B0" strokeWidth="1.5">
                                 <circle cx="11" cy="11" r="8" />
@@ -166,10 +159,10 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
                         </>
                     )}
 
-                    {data && data.totalPages > 1 && (
+                    {data.totalPages > 1 && (
                         <div className="flex items-center justify-center gap-2 pt-4">
                             <Link
-                                href={currentPage > 1 ? `/blog?page=${currentPage - 1}${term ? `&term=${encodeURIComponent(term)}` : ""}` : "#"}
+                                href={currentPage > 1 ? blogPageHref(currentPage - 1, term) : "#"}
                                 aria-disabled={currentPage === 1}
                                 className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-all duration-200 ${
                                     currentPage === 1
@@ -206,7 +199,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
                                         ) : (
                                             <Link
                                                 key={pg}
-                                                href={`/blog?page=${pg}${term ? `&term=${encodeURIComponent(term)}` : ""}`}
+                                                href={blogPageHref(pg, term)}
                                                 className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-semibold transition-all duration-200 ${
                                                     pg === cur
                                                         ? "bg-primary text-white shadow-md scale-110"
@@ -221,7 +214,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { page?
                             </div>
 
                             <Link
-                                href={currentPage < data.totalPages ? `/blog?page=${currentPage + 1}${term ? `&term=${encodeURIComponent(term)}` : ""}` : "#"}
+                                href={currentPage < data.totalPages ? blogPageHref(currentPage + 1, term) : "#"}
                                 aria-disabled={currentPage === data.totalPages}
                                 className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-all duration-200 ${
                                     currentPage === data.totalPages

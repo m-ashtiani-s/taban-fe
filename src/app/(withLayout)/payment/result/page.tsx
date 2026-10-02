@@ -1,6 +1,7 @@
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconCheck, IconClose } from "@/app/_components/icon/icons";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
+import PurchaseTracker from "./_components/purchaseTracker/purchaseTracker";
 
 type PaymentResultSearchParams = {
 	status?: string;
@@ -30,6 +31,7 @@ export default function PaymentResultPage({ searchParams }: { searchParams: Paym
 	return (
 		<div className="container mx-auto px-4">
 			<div className="max-w-xl mx-auto flex flex-col items-center text-center gap-6 py-16">
+				{isSuccess && <PurchaseTracker orderId={orderId} orderNumber={orderNumber} />}
 				{isSuccess ? (
 					<div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center">
 						<IconCheck className="stroke-success w-10 h-10" strokeWidth={2.4} />

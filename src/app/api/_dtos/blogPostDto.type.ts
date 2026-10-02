@@ -1,3 +1,5 @@
+import { RankMathSeo } from "@/types/rankMath.type";
+
 export type BlogPostDtoApi = {
 	id: number;
 	date: string;
@@ -47,11 +49,7 @@ export type BlogPostDtoApi = {
 	tags: number[];
 
 	class_list: string[];
-	rank_math:{
-		title:string;
-		description:string;
-		focus_keyword:string
-	},
+	rank_math?: RankMathSeo;
 	post_index?: number,
 
 	_links: {

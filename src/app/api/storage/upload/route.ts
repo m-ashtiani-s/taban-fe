@@ -1,5 +1,5 @@
 
-import { s3 } from "@/core/s3";
+import { MINIO_BUCKET, MINIO_ENDPOINT, s3 } from "@/core/s3";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 	}
 
 	const folder = new URL(req.url).searchParams.get("folder") ?? "uploads";
-	const bucket = process.env.NEXT_PUBLIC_MINIO_BUCKET!;
+	const bucket = MINIO_BUCKET!;
 	const uploadedFiles: string[] = new Array(validated.length);
 
 	await Promise.all(
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
 
 			await s3.send(command);
 
-			uploadedFiles[index] = `${process.env.NEXT_PUBLIC_MINIO_ENDPOINT}/${bucket}/${key}`;
+			uploadedFiles[index] = `${MINIO_ENDPOINT}/${bucket}/${key}`;
 		})
 	);
 

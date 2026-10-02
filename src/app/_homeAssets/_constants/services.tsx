@@ -4,7 +4,7 @@ export const services = [
     {
         icon: <IconTruck width={26} height={26} className="stroke-primary" />,
         title: "تحویل سریع مدارک",
-        desc: "ترجمه و ارسال مدارک شما در کوتاه‌ترین زمان ممکن، با امکان ارسال به سراسر کشور.",
+        desc: "ترجمه و ارسال مدارک بدون نیاز به مراجعه‌ی حضوری، با امکان ارسال به سراسر کشور.",
     },
     {
         icon: <IconGuarantee width={26} height={26} className="stroke-primary" />,
@@ -18,7 +18,7 @@ export const services = [
     },
     {
         icon: <IconSupport24 width={26} height={26} className="stroke-primary" />,
-        title: "پشتیبانی همیشگی",
+        title: "پشتیبانی در همه‌ی مراحل",
         desc: "کارشناسان ما در تمام مراحل ثبت سفارش تا تحویل، کنار شما هستند.",
     },
 ]

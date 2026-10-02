@@ -19,6 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 import { withMappedError } from "@/utils/withMappedError";
 import { AuthEndpoints } from "../../_api/endpoints";
 import Link from "next/link";
+import { track } from "@/utils/analytics";
 
 export default function Page() {
 	const [formValues, setFormValues] = useState<SetPasswordFormValues>({});
@@ -41,6 +42,7 @@ export default function Page() {
 			storage.set(StorageKey?.TOKEN, `${data?.data?.acceeToken}`);
 			storage.set(StorageKey?.USERNAME, JSON.stringify(data?.data?.username));
 			storage.set(StorageKey?.EXPIRES_AT, JSON.stringify(tomorrow));
+			track("sign_up");
 			if (searchParams?.backUrl) {
 				window.location.href = searchParams.backUrl;
 			} else {
@@ -114,7 +116,7 @@ export default function Page() {
 							<IconArrowLine className="rotate-180" height={28} width={28} />
 						</TabanButton>
 						<Link href="/">
-							<Image src="/images/logo2.svg" width={72} height={72} alt="logo" />
+							<Image src="/images/logo2.svg" width={72} height={72} alt="رسمی‌یاب" />
 						</Link>
 					</div>
 					<div className="font-semibold text-xl mt-5 text-center peyda">رمز عبور</div>

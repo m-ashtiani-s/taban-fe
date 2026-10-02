@@ -1,28 +1,39 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import Reveal from "@/app/_components/common/reveal/reveal";
-import { IconInstagram, IconTelegram, IconWhatsapp } from "@/app/_components/icon/icons";
+import { IconWhatsapp } from "@/app/_components/icon/icons";
+import JsonLd from "@/app/_components/jsonLd/jsonLd";
+import SocialLinks from "@/app/_components/socialLinks/socialLinks";
+import {
+    OPENING_HOURS,
+    ORGANIZATION_ID,
+    SITE_BASE_URL,
+    SITE_CONTACT,
+    SITE_LOGO,
+    SITE_NAME,
+    SOCIAL_PROFILES,
+    absoluteUrl,
+    buildMetadata,
+    buildPostalAddress,
+    telHref,
+    whatsappHref,
+} from "@/config/site";
 import ContactForm from "./_components/contactForm/contactForm";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
     title: "تماس با ما",
     description:
         "راه‌های ارتباط با دارالترجمه‌ی رسمی رسمی‌یاب؛ تلفن، ایمیل، آدرس و فرم تماس. کارشناسان ما آماده‌ی پاسخ‌گویی به سوالات شما درباره‌ی ترجمه‌ی رسمی مدارک هستند.",
-    alternates: { canonical: "/contact-us" },
-    openGraph: {
-        title: "تماس با ما | رسمی‌یاب",
-        description: "راه‌های ارتباط با دارالترجمه‌ی رسمی رسمی‌یاب.",
-        url: "/contact-us",
-        type: "website",
-    },
-};
+    path: "/contact-us",
+});
 
 const channels = [
     {
         label: "تماس تلفنی",
-        value: "02126755421",
-        hint: "شنبه تا چهارشنبه، ۹ تا ۱۸",
-        href: "tel:02191001234",
+        value: SITE_CONTACT.phone.display,
+        hint: `${OPENING_HOURS[0].label}، ${OPENING_HOURS[0].display}`,
+        href: telHref(SITE_CONTACT.phone.e164),
+        trackChannel: "phone",
         icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8a27c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />
@@ -31,9 +42,10 @@ const channels = [
     },
     {
         label: "پست الکترونیک",
-        value: "info@rasmiyab.com",
+        value: SITE_CONTACT.email,
         hint: "پاسخ در کمتر از یک روز کاری",
-        href: "mailto:info@rasmiyab.com",
+        href: `mailto:${SITE_CONTACT.email}`,
+        trackChannel: "email",
         icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8a27c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -43,16 +55,18 @@ const channels = [
     },
     {
         label: "واتساپ",
-        value: "09032009914",
+        value: SITE_CONTACT.whatsapp.display,
         hint: "پشتیبانی سریع پیام‌رسان",
-        href: "https://wa.me/09032009914",
+        href: whatsappHref(SITE_CONTACT.whatsapp.e164),
+        trackChannel: "whatsapp",
         icon: <IconWhatsapp className="fill-secondary" strokeWidth={0.8} width={24} height={24} />,
     },
     {
         label: "نشانی دفتر",
-        value: "تهران، محله دروس، خیابان شهید یوسف کلاهدوز، پلاک ۱۲۶، طبقه ۳، واحد ۱۵",
+        value: SITE_CONTACT.address.full,
         hint: "",
         href: "#location",
+        trackChannel: null,
         icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8a27c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
@@ -63,14 +77,34 @@ const channels = [
 ];
 
 const hours = [
-    { day: "شنبه تا چهارشنبه", time: "۹:۰۰ تا ۱۸:۰۰" },
-    { day: "پنجشنبه", time: "۹:۰۰ تا ۱۳:۰۰" },
+    ...OPENING_HOURS.map((h) => ({ day: h.label, time: h.display })),
     { day: "جمعه و تعطیلات", time: "ثبت سفارش آنلاین ۲۴ ساعته" },
 ];
+
+const officeLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "@id": `${SITE_BASE_URL}/contact-us#office`,
+    name: SITE_NAME,
+    url: absoluteUrl("/contact-us"),
+    image: absoluteUrl(SITE_LOGO.path),
+    telephone: SITE_CONTACT.phone.e164,
+    email: SITE_CONTACT.email,
+    address: buildPostalAddress(),
+    areaServed: "IR",
+    openingHoursSpecification: OPENING_HOURS.map((h) => ({
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: h.days,
+        opens: h.opens,
+        closes: h.closes,
+    })),
+    parentOrganization: { "@id": ORGANIZATION_ID },
+};
 
 export default function ContactUsPage() {
     return (
         <div className="bg-suppliment">
+            <JsonLd data={officeLd} />
             {/* ── Hero ── */}
             <section className="relative bg-primary overflow-hidden">
                 <img src="/images/footer/pattern1.svg" alt="" className="w-[420px] absolute right-0 top-0 opacity-40 pointer-events-none" />
@@ -105,9 +139,13 @@ export default function ContactUsPage() {
                     <div className="grid grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1 gap-5">
                         {channels.map((c, i) => (
                             <Reveal key={c.label} delay={i * 0.08}>
-                                <Link
+                                <a
                                     href={c.href}
-                                    target={c.href.startsWith("http") ? "_blank" : "_self"}
+                                    target={c.href.startsWith("http") ? "_blank" : undefined}
+                                    rel={c.href.startsWith("http") ? "noopener" : undefined}
+                                    data-track-event={c.trackChannel ? "contact_click" : undefined}
+                                    data-track-channel={c.trackChannel ?? undefined}
+                                    data-track-source="contact_page"
                                     className="group h-full bg-white rounded-2xl border border-neutral-100 shadow-sm p-6 flex flex-col gap-3 hover:shadow-lg hover:-translate-y-1 duration-200"
                                 >
                                     <div className="w-12 h-12 rounded-2xl bg-secondary/10 group-hover:bg-secondary/20 flex items-center justify-center duration-200">
@@ -116,7 +154,7 @@ export default function ContactUsPage() {
                                     <span className="text-neutral-500 text-xs">{c.label}</span>
                                     <span className="peyda font-bold text-primary dir-ltr text-right group-hover:text-secondary duration-200">{c.value}</span>
                                     <span className="text-neutral-400 text-xs leading-6">{c.hint}</span>
-                                </Link>
+                                </a>
                             </Reveal>
                         ))}
                     </div>
@@ -144,7 +182,7 @@ export default function ContactUsPage() {
                                                 <path d="M12 6v6l4 2" />
                                             </svg>
                                         </span>
-                                        <h3 className="peyda font-bold text-primary">ساعات پاسخ‌گویی</h3>
+                                        <h2 className="peyda font-bold text-primary">ساعات پاسخ‌گویی</h2>
                                     </div>
                                     <div className="flex flex-col divide-y divide-neutral-100">
                                         {hours.map((h) => (
@@ -168,26 +206,24 @@ export default function ContactUsPage() {
                                                 <circle cx="12" cy="10" r="3" />
                                             </svg>
                                         </span>
-                                        <h3 className="peyda font-bold text-white">نشانی دفتر مرکزی</h3>
+                                        <h2 className="peyda font-bold text-white">نشانی دفتر مرکزی</h2>
                                     </div>
-                                    <p className="relative z-10 text-white/60 leading-8 text-sm">
-                                       تهران، محله دروس، خیابان شهید یوسف کلاهدوز، پلاک ۱۲۶، طبقه ۳، واحد ۱۵
-                                    </p>
-                                    <div className="relative z-10 h-px bg-white/10" />
-                                    <div className="relative z-10 flex items-center gap-3">
-                                        <span className="text-white/50 text-sm">ما را دنبال کنید:</span>
-                                        <div className="flex items-center gap-2">
-                                            <Link href="/" className="bg-secondary h-9 w-9 rounded-xl flex items-center justify-center hover:opacity-90 duration-200">
-                                                <IconInstagram viewBox="0 0 32 32" className="stroke-white fill-white" strokeWidth={1} width={22} height={22} />
-                                            </Link>
-                                            <Link href="/" className="bg-secondary h-9 w-9 rounded-xl flex items-center justify-center hover:opacity-90 duration-200">
-                                                <IconTelegram viewBox="0 0 192 192" className="stroke-white" strokeWidth={18} width={22} height={22} />
-                                            </Link>
-                                            <Link href="/" className="bg-secondary h-9 w-9 rounded-xl flex items-center justify-center hover:opacity-90 duration-200">
-                                                <IconWhatsapp className="fill-white stroke-white" strokeWidth={0.8} width={20} height={20} />
-                                            </Link>
-                                        </div>
-                                    </div>
+                                    <address className="relative z-10 text-white/60 leading-8 text-sm not-italic">{SITE_CONTACT.address.full}</address>
+                                    {SOCIAL_PROFILES.length > 0 && (
+                                        <>
+                                            <div className="relative z-10 h-px bg-white/10" />
+                                            <div className="relative z-10 flex items-center gap-3">
+                                                <span className="text-white/50 text-sm">ما را دنبال کنید:</span>
+                                                <div className="flex items-center gap-2">
+                                                    <SocialLinks
+                                                        tone="white"
+                                                        iconSize={22}
+                                                        itemClassName="bg-secondary h-9 w-9 rounded-xl flex items-center justify-center hover:opacity-90 duration-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </Reveal>
                         </div>
@@ -210,6 +246,8 @@ export default function ContactUsPage() {
                             </div>
                             <Link
                                 href="/new-order"
+                                data-track-event="start_order"
+                                data-track-source="contact_cta"
                                 className="shrink-0 flex items-center justify-center h-12 px-8 rounded-xl bg-secondary text-white text-sm font-semibold hover:opacity-90 duration-200"
                             >
                                 ثبت سفارش ترجمه

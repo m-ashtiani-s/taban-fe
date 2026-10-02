@@ -1,4 +1,11 @@
+import { Metadata } from "next";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
+
+// تا ماه ۲ که صفحه‌ی فرود واقعی سفارش ساخته شود، این روت فقط اسپینرِ ریدایرکت است و نباید ایندکس شود
+export const metadata: Metadata = {
+	title: "ثبت سفارش آنلاین ترجمه رسمی",
+	robots: { index: false, follow: true },
+};
 
 /**
  * روتِ index فلوی سفارش. ورود همیشه از /new-order است (لینک‌های خارجی و handoff هوم‌پیج).

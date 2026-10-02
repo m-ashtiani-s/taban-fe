@@ -19,6 +19,7 @@ import TabanModal from "@/app/_components/common/tabanModal/tabanModal";
 import TabanInput from "@/app/_components/common/tabanInput/tabanInput";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconArrowLine, IconCircleUser } from "@/app/_components/icon/icons";
+import { track } from "@/utils/analytics";
 
 type AuthStep = "username" | "login" | "otp" | "password";
 /**
@@ -199,7 +200,10 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 		mutationFn: (vars: { u: string; p: string; ref?: string }) =>
 			withMappedError(() => AuthEndpoints.setPassword(vars.u, vars.p, vars.ref)),
 		meta: { showNotification: true },
-		onSuccess: (data) => finalizeAuth(data?.data),
+		onSuccess: (data) => {
+			track("sign_up", { source_page: "auth_modal" });
+			finalizeAuth(data?.data);
+		},
 	});
 
 	const changePasswordApi = useMutation({
@@ -332,7 +336,7 @@ export default function AuthModal({ open, setOpen, onSuccess, title, description
 	return (
 		<TabanModal open={open} setOpen={setOpen} title={title ?? "ورود به حساب کاربری"} onClose={() => setOpen(false)}>
 			<div className="flex flex-col items-center gap-1 pb-2">
-				<Image src="/images/logo2.svg" width={56} height={56} alt="logo" />
+				<Image src="/images/logo2.svg" width={56} height={56} alt="رسمی‌یاب" />
 				<div className="peyda font-bold text-lg text-primary mt-2">{stepTitle}</div>
 				{description && step === "username" && (
 					<div className="text-xs text-neutral-500 text-center leading-6 max-w-xs">{description}</div>

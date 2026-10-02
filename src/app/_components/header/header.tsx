@@ -61,7 +61,7 @@ export const Header = () => {
 				<div className="container mx-auto flex justify-between items-center py-2">
 					<div className="flex gap-12 items-center">
 						<Link href="/" className="flex items-center gap-2">
-							<Image src="/images/logo2White.svg" width={48} height={32} alt="logo" />
+							<Image src="/images/logo2White.svg" width={48} height={32} alt="رسمی‌یاب، دارالترجمه رسمی آنلاین" />
 							<div className="text-white/85 morabba text-xl">رسمــی‌یاب</div>
 						</Link>
 						<div className=" gap-3 hidden lg:!flex text-sm peyda">
@@ -134,6 +134,8 @@ export const Header = () => {
 							variant="contained"
 							isLink
 							href="/new-order"
+							data-track-event="start_order"
+							data-track-source="header_button"
 							className="!text-neutral-800 font-semibold group !border-none rounded flex items-center gap-2 !bg-white shadow"
 						>
 							<IconTranslate stroke="black" strokeWidth={0} className=" fill-primary duration-200" />
@@ -188,7 +190,7 @@ export const Header = () => {
 								<span onClick={menuHandler} className="cursor-pointer lg:!hidden">
 									<Image
 										src="/images/menu.svg"
-										alt="menu"
+										alt="منوی سایت"
 										width={24}
 										height={24}
 										className="max-lg:!w-5 max-lg:!h-5"
@@ -201,7 +203,7 @@ export const Header = () => {
 										width={90}
 										height={56}
 										src="/images/logo2.svg"
-										alt="logo"
+										alt="رسمی‌یاب، دارالترجمه رسمی آنلاین"
 										className="max-lg:!w-10 py-2"
 									/>
 									<div className="text-primary/85 morabba text-xl">رسمــی‌یاب</div>

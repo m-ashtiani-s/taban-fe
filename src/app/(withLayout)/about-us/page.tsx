@@ -1,31 +1,18 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 import Reveal from "@/app/_components/common/reveal/reveal";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import { IconTranslate } from "@/app/_components/icon/icons";
-import CountUp from "./_components/countUp/countUp";
-import { aboutValues, milestones } from "./_constants/content";
+import { buildMetadata } from "@/config/site";
+import { aboutValues } from "./_constants/content";
 
-export const metadata: Metadata = {
-    title: "درباره رسمی‌یاب",
+export const metadata: Metadata = buildMetadata({
+    title: "درباره رسمی‌یاب | دارالترجمه رسمی آنلاین",
+    absoluteTitle: true,
     description:
-        "با رسمی‌یاب آشنا شوید؛ دارالترجمه‌ی رسمی آنلاین با بیش از ۱۰ سال تجربه، شبکه‌ای از مترجمان رسمی قوه قضائیه و هزاران ترجمه‌ی موفق در سراسر کشور.",
-    alternates: { canonical: "/about-us" },
-    openGraph: {
-        title: "درباره رسمی‌یاب",
-        description: "دارالترجمه‌ی رسمی آنلاین با بیش از ۱۰ سال تجربه و شبکه‌ای از مترجمان رسمی.",
-        url: "/about-us",
-        type: "website",
-    },
-};
-
-const stats = [
-    { to: 10, prefix: "+", suffix: "", label: "سال تجربه" },
-    { to: 5000, prefix: "+", suffix: "", label: "ترجمه‌ی موفق" },
-    { to: 25, prefix: "+", suffix: "", label: "زبان زنده‌ی دنیا" },
-    { to: 98, prefix: "", suffix: "٪", label: "رضایت مشتریان" },
-];
+        "با رسمی‌یاب آشنا شوید؛ سامانه‌ی آنلاین ثبت سفارش ترجمه‌ی رسمی مدارک با مهر مترجم رسمی قوه قضائیه، قیمت شفاف و پیگیری آنلاین سفارش در سراسر کشور.",
+    path: "/about-us",
+});
 
 export default function AboutUsPage() {
     return (
@@ -38,7 +25,7 @@ export default function AboutUsPage() {
                     رسمی‌یاب
                 </div>
 
-                <div className="container max-lg:px-4 relative z-10 flex flex-col items-center text-center gap-6 pt-28 pb-20">
+                <div className="container max-lg:px-4 relative z-10 flex flex-col items-center text-center gap-6 pt-28 pb-24">
                     <Reveal y={16}>
                         <span className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
                             <span className="h-px w-8 bg-secondary" />
@@ -64,6 +51,8 @@ export default function AboutUsPage() {
                                 variant="contained"
                                 isLink
                                 href="/new-order"
+                                data-track-event="start_order"
+                                data-track-source="about_hero"
                                 className="font-semibold !border-none rounded-xl flex items-center gap-2 !bg-secondary"
                             >
                                 <IconTranslate stroke="black" strokeWidth={0} className="fill-white" />
@@ -77,24 +66,6 @@ export default function AboutUsPage() {
                             >
                                 تماس با ما
                             </TabanButton>
-                        </div>
-                    </Reveal>
-                </div>
-            </section>
-
-            {/* ── Stats ── */}
-            <section className="relative z-20 -mt-12">
-                <div className="container max-lg:px-4">
-                    <Reveal>
-                        <div className="bg-white rounded-3xl shadow-xl border border-neutral-100 grid grid-cols-4 max-md:grid-cols-2 divide-x divide-x-reverse divide-neutral-100">
-                            {stats.map((s) => (
-                                <div key={s.label} className="flex flex-col items-center justify-center gap-1 py-8 max-md:py-6">
-                                    <span className="peyda text-primary font-extrabold text-3xl max-lg:text-2xl">
-                                        <CountUp to={s.to} prefix={s.prefix} suffix={s.suffix} />
-                                    </span>
-                                    <span className="text-neutral-500 text-sm">{s.label}</span>
-                                </div>
-                            ))}
                         </div>
                     </Reveal>
                 </div>
@@ -118,9 +89,9 @@ export default function AboutUsPage() {
                                 فراتر از یک مهر نیاز دارند؛ آن‌ها به آرامش خاطر نیاز دارند.
                             </p>
                             <p className="text-neutral-600 leading-8">
-                                امروز رسمی‌یاب با شبکه‌ای از مترجمان رسمی قوه قضائیه و یک سامانه‌ی آنلاین کامل، تمام
-                                مراحل ثبت سفارش تا تحویل مدرک را در بستری شفاف و قابل پیگیری انجام می‌دهد؛ بدون اینکه
-                                لازم باشد حتی یک بار از خانه بیرون بیایید.
+                                امروز رسمی‌یاب با همکاری مترجمان رسمی قوه قضائیه و یک سامانه‌ی آنلاین، تمام مراحل ثبت
+                                سفارش تا تحویل مدرک را در بستری شفاف و قابل پیگیری انجام می‌دهد؛ بدون اینکه لازم باشد
+                                حتی یک بار از خانه بیرون بیایید.
                             </p>
                             <div className="flex">
                                 <TabanButton isLink href="/blog" className="rounded-xl">
@@ -219,50 +190,6 @@ export default function AboutUsPage() {
                 </div>
             </section>
 
-            {/* ── Timeline ── */}
-            <section className="py-24 max-lg:py-16">
-                <div className="container max-lg:px-4">
-                    <Reveal className="flex flex-col items-center text-center gap-3 mb-14">
-                        <span className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
-                            <span className="h-px w-8 bg-secondary" />
-                            مسیر ما
-                            <span className="h-px w-8 bg-secondary" />
-                        </span>
-                        <h2 className="peyda text-3xl max-lg:text-2xl font-bold text-primary">از کجا تا اینجا</h2>
-                    </Reveal>
-
-                    <div className="relative max-w-3xl mx-auto">
-                        {/* خط عمودی تایم‌لاین */}
-                        <div className="absolute top-2 bottom-2 right-[15px] md:right-1/2 md:translate-x-1/2 w-px bg-gradient-to-b from-secondary/10 via-secondary/40 to-secondary/10" />
-
-                        <div className="flex flex-col gap-10">
-                            {milestones.map((m, i) => (
-                                <Reveal key={m.year} delay={i * 0.08}>
-                                    <div className={`relative flex items-center gap-6 md:gap-0 ${i % 2 === 0 ? "md:flex-row-reverse" : ""}`}>
-                                        {/* نقطه */}
-                                        <div className="absolute right-0 md:right-1/2 md:translate-x-1/2 w-8 h-8 rounded-full bg-white border-2 border-secondary flex items-center justify-center z-10 shrink-0">
-                                            <span className="w-3 h-3 rounded-full bg-secondary" />
-                                        </div>
-
-                                        {/* فاصله سمت مقابل در دسکتاپ */}
-                                        <div className="hidden md:block md:w-1/2" />
-
-                                        {/* کارت */}
-                                        <div className={`mr-12 md:mr-0 md:w-1/2 ${i % 2 === 0 ? "md:pr-12" : "md:pl-12"}`}>
-                                            <div className="bg-white rounded-2xl border border-neutral-100 p-5 shadow-sm hover:shadow-md duration-200">
-                                                <span className="peyda inline-block text-secondary font-extrabold text-lg mb-1">{m.year}</span>
-                                                <h3 className="peyda font-semibold text-primary">{m.title}</h3>
-                                                <p className="text-sm text-neutral-500 leading-7 mt-1">{m.desc}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Reveal>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             {/* ── CTA ── */}
             <section className="pb-24 max-lg:pb-16">
                 <div className="container max-lg:px-4">
@@ -283,6 +210,8 @@ export default function AboutUsPage() {
                                     variant="contained"
                                     isLink
                                     href="/new-order"
+                                    data-track-event="start_order"
+                                    data-track-source="about_cta"
                                     className="font-semibold !border-none rounded-xl flex items-center gap-2 !bg-secondary shrink-0"
                                 >
                                     <IconTranslate stroke="black" strokeWidth={0} className="fill-white" />

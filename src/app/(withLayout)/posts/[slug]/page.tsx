@@ -1,81 +1,56 @@
 import Link from "next/link";
-import { SITE_URL } from "@/config/global";
-import { SITE_BASE_URL, SITE_NAME } from "@/config/site";
-import { BlogPostDetailDto } from "@/types/blogPostDetail.type";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ORGANIZATION_ID, WEBSITE_ID, absoluteUrl, buildBreadcrumbList, buildMetadata } from "@/config/site";
+import { getPostBySlug, resolveRankMathCanonical } from "@/server/wordpress";
+import JsonLd from "@/app/_components/jsonLd/jsonLd";
+import { stripHtml } from "@/utils/stripHtml";
 import Comments from "../_components/postComment/commentsList";
 import PostComment from "../_components/postComment/postcomment";
 
-function stripHtml(input?: string | null): string {
-    return (input || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-}
+// بدون generateStaticParams روت هر بار سمت سرور رندر می‌شد؛ لیست خالی یعنی هر مقاله با اولین بازدید ساخته و
+// کش می‌شود (ISR) و انتشار/ویرایش در وردپرس از طریق وبهوک revalidateTag("posts") فوراً منعکس می‌شود
+export const revalidate = 600;
 
-type GetPostResult = {
-    post: BlogPostDetailDto | null;
-    transient: boolean;
-};
-
-async function getPost(slug: string): Promise<GetPostResult> {
-    try {
-        const res = await fetch(`${SITE_URL}/api/wordpress/posts/${slug}`, {
-            next: { revalidate: 1 },
-        });
-        if (res.status === 404) return { post: null, transient: false };
-        if (!res.ok) return { post: null, transient: true };
-        const data = await res.json();
-        if (!data || !data.id) return { post: null, transient: false };
-        return { post: data as BlogPostDetailDto, transient: false };
-    } catch {
-        return { post: null, transient: true };
-    }
+export function generateStaticParams() {
+    return [];
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-    const { post } = await getPost(params?.slug);
+    const post = await getPostBySlug(params?.slug);
 
-    if (!post || !post.id) {
+    if (!post) {
         return { title: "مقاله یافت نشد", robots: { index: false, follow: false } };
     }
 
     const seoTitle = post.rank_math?.title?.trim();
-    const description = post.rank_math?.description?.trim() || stripHtml(post.excerpt) || undefined;
-    const url = `/posts/${post.slug}`;
-
-    return {
-        title: seoTitle ? { absolute: seoTitle } : post.title,
+    const description = post.rank_math?.description?.trim() || stripHtml(post.excerpt) || "";
+    const rankMathRobots = post.rank_math?.robots ?? [];
+    const metadata = buildMetadata({
+        title: seoTitle || post.title,
+        absoluteTitle: !!seoTitle,
         description,
-        alternates: { canonical: url },
-        openGraph: {
-            type: "article",
-            title: seoTitle || post.title,
-            description,
-            url,
-            images: post.image ? [{ url: post.image }] : undefined,
+        path: `/posts/${post.slug}`,
+        ogType: "article",
+        images: post.image ? [post.image] : undefined,
+        article: {
             publishedTime: post.dateIso || undefined,
             modifiedTime: post.modifiedIso || post.dateIso || undefined,
             authors: post.author ? [post.author] : undefined,
         },
-        twitter: {
-            card: "summary_large_image",
-            title: seoTitle || post.title,
-            description,
-            images: post.image ? [post.image] : undefined,
-        },
-    };
+        robots: rankMathRobots.includes("noindex") ? { index: false, follow: !rankMathRobots.includes("nofollow") } : undefined,
+    });
+
+    const customCanonical = resolveRankMathCanonical(post.rank_math?.canonical);
+    return customCanonical ? { ...metadata, alternates: { canonical: customCanonical } } : metadata;
 }
 
 export default async function Page({ params }: { params: { slug: string } }) {
-    const { post, transient } = await getPost(params?.slug);
+    // خطای موقت وردپرس از getPostBySlug پرتاب می‌شود تا صفحه ۵۰۰ بدهد، نه یک صفحه‌ی خالی ۲۰۰
+    const post = await getPostBySlug(params?.slug);
+    if (!post) notFound();
 
-    if (!post && transient) {
-        throw new Error("در حال حاضر امکان دریافت مقاله وجود ندارد. لطفاً بعداً تلاش کنید.");
-    }
-    if (!post || !post.id) {
-        notFound();
-    }
-
-    const canonicalUrl = `${SITE_BASE_URL}/posts/${post.slug}`;
+    const canonicalUrl = absoluteUrl(`/posts/${post.slug}`);
     const displayDate = post.date?.split(" ")[0];
 
     const articleLd = {
@@ -87,28 +62,22 @@ export default async function Page({ params }: { params: { slug: string } }) {
         datePublished: post.dateIso || undefined,
         dateModified: post.modifiedIso || post.dateIso || undefined,
         author: post.author ? { "@type": "Person", name: post.author } : undefined,
-        publisher: {
-            "@type": "Organization",
-            name: SITE_NAME,
-            logo: { "@type": "ImageObject", url: `${SITE_BASE_URL}/images/logo2.svg` },
-        },
+        publisher: { "@id": ORGANIZATION_ID },
+        isPartOf: { "@id": WEBSITE_ID },
+        inLanguage: "fa-IR",
         mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
     };
 
-    const breadcrumbLd = {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        itemListElement: [
-            { "@type": "ListItem", position: 1, name: "خانه", item: SITE_BASE_URL },
-            { "@type": "ListItem", position: 2, name: "مجله", item: `${SITE_BASE_URL}/blog` },
-            { "@type": "ListItem", position: 3, name: post.title, item: canonicalUrl },
-        ],
-    };
+    const breadcrumbLd = buildBreadcrumbList([
+        { name: "خانه", path: "/" },
+        { name: "مجله", path: "/blog" },
+        { name: post.title, path: `/posts/${post.slug}` },
+    ]);
 
     return (
         <article className="bg-suppliment min-h-[100dvh]">
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+            <JsonLd data={articleLd} />
+            <JsonLd data={breadcrumbLd} />
 
             {/* ── Hero ── */}
             <section className="relative overflow-hidden bg-primary">
@@ -188,7 +157,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
                         <aside className="lg:w-[30%] flex flex-col gap-5 lg:sticky lg:top-24 lg:self-start">
                             {/* اطلاعات مقاله */}
                             <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                                <h3 className="peyda text-primary font-bold text-base border-b border-neutral-1 pb-3">اطلاعات مقاله</h3>
+                                <div className="peyda text-primary font-bold text-base border-b border-neutral-1 pb-3">اطلاعات مقاله</div>
                                 {displayDate && (
                                     <div className="flex items-center gap-3 text-sm text-neutral-5">
                                         <span className="w-8 h-8 rounded-lg bg-suppliment flex items-center justify-center shrink-0">
@@ -217,12 +186,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
                             {/* CTA */}
                             <div className="bg-primary rounded-2xl p-6 flex flex-col gap-4">
-                                <h3 className="peyda text-white font-bold">نیاز به ترجمه رسمی دارید؟</h3>
+                                <div className="peyda text-white font-bold">نیاز به ترجمه رسمی دارید؟</div>
                                 <p className="text-white/55 text-sm leading-loose">
                                     ثبت سفارش آنلاین ترجمه رسمی مدارک با قیمت شفاف و تحویل سریع.
                                 </p>
                                 <Link
-                                    href="/"
+                                    href="/new-order"
+                                    data-track-event="start_order"
+                                    data-track-source="article_sidebar"
                                     className="flex items-center justify-center h-10 rounded-xl bg-secondary text-white text-sm font-semibold hover:opacity-90 transition-opacity duration-200"
                                 >
                                     ثبت سفارش

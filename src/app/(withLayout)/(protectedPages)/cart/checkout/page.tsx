@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ResultError } from "@/types/result";
@@ -15,6 +15,7 @@ import { OrderEndpoints } from "@/app/(withLayout)/(protectedPages)/profile/orde
 import { FormErrors } from "@/types/formErrors.type";
 import { findError } from "@/utils/formErrorsFinder";
 import { toCurrency } from "@/utils/string";
+import { tomanToRial, track } from "@/utils/analytics";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanTextarea from "@/app/_components/common/tabanTextarea/tabanTextarea";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
 	const router = useRouter();
 	const showNotification = useNotificationStore((s) => s.showNotification);
 	const queryClient = useQueryClient();
+	const checkoutTracked = useRef(false);
 
 	const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
 	const [addrPage, setAddrPage] = useState<number>(1);
@@ -63,6 +65,17 @@ export default function CheckoutPage() {
 	useEffect(() => {
 		if (formSubmitted) formValidator();
 	}, [selectedAddressId]);
+
+	useEffect(() => {
+		const loadedCart = cartQuery.data?.data;
+		if (checkoutTracked.current || !loadedCart?.items?.length) return;
+		checkoutTracked.current = true;
+		track("begin_checkout", {
+			value: tomanToRial(loadedCart.cartSumWithDiscount ?? loadedCart.cartSum),
+			currency: "IRR",
+			items: loadedCart.items.map((item) => ({ item_id: item.payload.translationItemId })),
+		});
+	}, [cartQuery.data]);
 
 	const loadAddresses = async (page: number) => {
 		setAddressesLoading(true);

@@ -48,14 +48,14 @@ export const TabanEndpoints = {
 	getComments: async (id: number) => {
 		const res = await httpClient.call<Res<PostComment[]>>({
 			method: "GET",
-			url: `${WP_URL}wp-json/wp/v2/comments?post_id=${id}&_embed`,
+			url: `${WP_URL}/wp-json/wp/v2/comments?post_id=${id}&_embed`,
 		});
 		return res?.data;
 	},
 	submitComment: async (data: { post_id: number; author_name: string; author_email?: string; content: string }) => {
 		const res = await httpClient.call<Res<unknown>>({
 			method: "POST",
-			url: `${WP_URL}wp-json/custom/v1/submit-comment`,
+			url: `${WP_URL}/wp-json/custom/v1/submit-comment`,
 			data,
 		});
 		return res?.data;

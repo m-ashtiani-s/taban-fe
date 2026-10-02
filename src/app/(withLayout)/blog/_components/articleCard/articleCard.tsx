@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { convertToJalaliDate } from "@/utils/dateConverts";
+import { stripHtml } from "@/utils/stripHtml";
 import { ArticleCardProps } from "./articleCard.type";
-
-function stripHtml(html?: string | null) {
-    return (html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-}
 
 export default function ArticleCard({ post }: ArticleCardProps) {
     const date = convertToJalaliDate(post.date);
@@ -19,6 +16,8 @@ export default function ArticleCard({ post }: ArticleCardProps) {
                     <img
                         src={post.image}
                         alt={post.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                 ) : (

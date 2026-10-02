@@ -18,6 +18,7 @@ import { useOrderRates } from "./_hooks/useOrderRates";
 import { StepKey, slugToStep, stepToSlug } from "./_config/steps";
 import { OrderFlowProvider } from "./_context/orderFlow.context";
 import OrderStepper from "./_components/orderStepper/orderStepper";
+import { track } from "@/utils/analytics";
 
 /** ساخت نام‌های پیش‌فرض مدارک (وقتی کاربر خودش نام نمی‌گذارد، مثلا تک‌مدرک) */
 function buildDefaultNames(title: string, count: number): Record<string, string> {
@@ -265,6 +266,11 @@ function NewOrderFlow({ children }: { children: React.ReactNode }) {
 		if (initializing || currentStep === null) return;
 		if (!steps.includes(currentStep)) goToStep("language", { replace: true });
 	}, [steps, currentStep, initializing, goToStep]);
+
+	useEffect(() => {
+		if (initializing || currentStep === null) return;
+		track("order_step_view", { step: stepToSlug(currentStep), item_id: itemId, language_id: languageId });
+	}, [currentStep, initializing]);
 
 	const currentIndex = currentStep ? Math.max(0, steps.indexOf(currentStep)) : 0;
 	const isFirst = currentIndex === 0;

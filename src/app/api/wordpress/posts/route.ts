@@ -1,43 +1,21 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
-import { WP_URL } from "@/config/global";
-import { BlogPostDtoApi } from "../../_dtos/blogPostDto.type";
-import { Paginate } from "@/types/paginate";
-import { BlogPostDto } from "@/types/blogPost.type";
+import { getPostsPage } from "@/server/wordpress";
 
 export async function GET(req: Request) {
 	const { searchParams } = new URL(req.url);
-	const page = parseInt(searchParams.get("page") || "1");
-	const pageSize = parseInt(searchParams.get("pageSize") || "10");
+	const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+	const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10) || 10));
 	const term = searchParams.get("term") || "";
 
 	try {
-		const endpoint = `${WP_URL}/wp-json/wp/v2/posts?_embed&per_page=${pageSize}&page=${page}&orderby=post_index&order=desc${term ? `&search=${encodeURIComponent(term)}` : ""}`;
-		console.log("object");
-		const response = await axios.get<BlogPostDtoApi[]>(endpoint);
-
-		const posts: BlogPostDto[] = response.data.map((post) => ({
-			id: post.id,
-			slug: post.slug,
-			title: post.title.rendered,
-			excerpt: post.excerpt.rendered,
-			date: post.date,
-			image: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
-		}));
-
-		const paginatedResult: Paginate<BlogPostDto> = {
-			page,
-			pageSize,
-			totalPages: parseInt(response.headers["x-wp-totalpages"] ?? "1"),
-			totalElements: parseInt(response.headers["x-wp-total"] ?? String(posts.length)),
-			elements: posts,
-		};
-
-		return NextResponse.json(paginatedResult);
+		const result = await getPostsPage({ page, pageSize, term });
+		if (!result) {
+			return NextResponse.json({ field: "posts", success: false, data: null, message: "این صفحه از مقالات وجود ندارد" }, { status: 404 });
+		}
+		return NextResponse.json(result);
 	} catch (error: any) {
-		console.log(error);
 		return NextResponse.json(
-			{ field: "posts", success: false, data: null, message: error.message || "مشکلی در تایید کد تایید رخ داد" },
+			{ field: "posts", success: false, data: null, message: error?.message || "خطا در دریافت مقالات" },
 			{ status: 500 }
 		);
 	}

@@ -1,4 +1,4 @@
-import { httpClient } from "@/httpClient/HttpClient";
+import { RequestConfig, httpClient } from "@/httpClient/HttpClient";
 import { Res } from "@/types/responseType";
 import { TranslationItem } from "@/types/translationItem.type";
 import { Language } from "@/types/language.type";
@@ -20,11 +20,12 @@ export const TranslationEndpoints = {
 		});
 		return res?.data;
 	},
-	getTranslationItems: async (translationItemCategoryId?: string) => {
+	getTranslationItems: async (translationItemCategoryId?: string, requestOptions?: Pick<RequestConfig, "timeout" | "signal">) => {
 		const res = await httpClient.call<Res<TranslationItem[]>>({
 			method: "GET",
 			url: `v1/translation/translation-items`,
 			params: { ...(translationItemCategoryId ? { categoryId: translationItemCategoryId } : undefined) },
+			...requestOptions,
 		});
 		return res?.data;
 	},

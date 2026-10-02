@@ -7,7 +7,7 @@ export const menuItems: Route[] = [
 	},
 	{
 		title: "وبلاگ رسمی یاب",
-		href: "/blog/",
+		href: "/blog",
 		childrens: [],
 	},
 	{
@@ -17,12 +17,12 @@ export const menuItems: Route[] = [
 	},
 	{
 		title: "درباره ما",
-		href: "/about-us/",
+		href: "/about-us",
 		childrens: [],
 	},
 	{
 		title: "تماس با ما",
-		href: "/contact-us/",
+		href: "/contact-us",
 		childrens: [],
 	},
 ];

@@ -67,6 +67,8 @@ export default function BottomNav() {
 						<li key={item.key}>
 							<Link
 								href={item.href}
+								data-track-event={item.key === "order" ? "start_order" : undefined}
+								data-track-source={item.key === "order" ? "mobile_bottom_nav" : undefined}
 								className="group flex flex-col items-center justify-center gap-1 pt-2 pb-2.5 px-1"
 							>
 								<span

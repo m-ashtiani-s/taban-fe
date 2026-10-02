@@ -1,3 +1,5 @@
+import { RankMathSeo } from "./rankMath.type";
+
 export type BlogPostDetailDto = {
     id: number;
     slug: string;
@@ -11,9 +13,5 @@ export type BlogPostDetailDto = {
     modifiedIso: string | null;
     image: string | null;
     author: string | null;
-    rank_math:{
-		title:string;
-		description:string;
-		focus_keyword:string
-	}
+    rank_math?: RankMathSeo;
 };

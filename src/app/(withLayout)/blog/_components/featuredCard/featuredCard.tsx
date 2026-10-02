@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { convertToJalaliDate } from "@/utils/dateConverts";
+import { stripHtml } from "@/utils/stripHtml";
 import { FeaturedCardProps } from "./featuredCard.type";
-
-function stripHtml(html?: string | null) {
-    return (html || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-}
 
 export default function FeaturedCard({ post }: FeaturedCardProps) {
     const date = convertToJalaliDate(post.date);
@@ -18,6 +15,7 @@ export default function FeaturedCard({ post }: FeaturedCardProps) {
                 <img
                     src={post.image}
                     alt={post.title}
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
             ) : (
@@ -29,9 +27,9 @@ export default function FeaturedCard({ post }: FeaturedCardProps) {
             </div>
             <div className="absolute bottom-0 right-0 left-0 p-8 max-lg:p-5 flex flex-col gap-3">
                 <span className="text-secondary text-xs font-semibold">{date}</span>
-                <h2 className="peyda text-white text-2xl lg:text-[28px] font-extrabold leading-snug line-clamp-2 group-hover:text-secondary transition-colors duration-200">
+                <h3 className="peyda text-white text-2xl lg:text-[28px] font-extrabold leading-snug line-clamp-2 group-hover:text-secondary transition-colors duration-200">
                     {post.title}
-                </h2>
+                </h3>
                 <p className="text-white/55 text-sm leading-relaxed line-clamp-2 max-lg:hidden">{excerpt}</p>
                 <div className="flex items-center gap-2 text-secondary text-sm font-semibold mt-1 group-hover:gap-3 transition-all duration-200">
                     ادامه مطلب

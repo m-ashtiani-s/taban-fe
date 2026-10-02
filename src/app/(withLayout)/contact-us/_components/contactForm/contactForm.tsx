@@ -71,7 +71,7 @@ export default function ContactForm() {
                         <path d="M20 6 9 17l-5-5" />
                     </svg>
                 </div>
-                <h3 className="peyda text-xl font-bold text-primary">پیام شما ثبت شد!</h3>
+                <h2 className="peyda text-xl font-bold text-primary">پیام شما ثبت شد!</h2>
                 <p className="text-neutral-500 leading-7 max-w-sm">
                     از تماس شما سپاسگزاریم. کارشناسان رسمی‌یاب در اولین فرصت پاسخ‌گوی شما خواهند بود.
                 </p>
@@ -94,7 +94,7 @@ export default function ContactForm() {
     return (
         <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-8 max-lg:p-6 flex flex-col gap-5">
             <div className="flex flex-col gap-1">
-                <h3 className="peyda text-xl font-bold text-primary">برای ما پیام بگذارید</h3>
+                <h2 className="peyda text-xl font-bold text-primary">برای ما پیام بگذارید</h2>
                 <p className="text-neutral-500 text-sm">فرم زیر را پر کنید؛ در کوتاه‌ترین زمان با شما تماس می‌گیریم.</p>
             </div>
 

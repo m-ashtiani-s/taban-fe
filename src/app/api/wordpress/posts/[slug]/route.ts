@@ -1,45 +1,16 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
-import { WP_URL } from "@/config/global";
-import { BlogPostDtoApi } from "../../../_dtos/blogPostDto.type";
-import { BlogPostDetailDto } from "@/types/blogPostDetail.type";
-import { convertToJalali } from "@/utils/dateConverts";
+import { getPostBySlug } from "@/server/wordpress";
 
-export async function GET(req: Request, { params }: { params: { slug: string } }) {
+export async function GET(_req: Request, { params }: { params: { slug: string } }) {
 	try {
-		const endpoint = `${WP_URL}/wp-json/wp/v2/posts?slug=${params.slug}&_embed`;
-		const response = await axios.get<BlogPostDtoApi[]>(endpoint);
-
-		if (!response.data.length) {
+		const post = await getPostBySlug(params.slug);
+		if (!post) {
 			return NextResponse.json({ message: "پست پیدا نشد" }, { status: 404 });
 		}
-
-		const post = response.data[0];
-
-		const result: BlogPostDetailDto = {
-			id: post.id,
-			slug: post.slug,
-			title: post.title?.rendered,
-			content: post.content?.rendered,
-			excerpt: post.excerpt?.rendered,
-			date: convertToJalali(post.date ?? ""),
-			// تاریخ‌های وردپرس timezone ندارند؛ از نسخه‌ی GMT با پسوند Z استفاده می‌کنیم تا ISO معتبر باشد
-			dateIso: post.date_gmt ? `${post.date_gmt}Z` : post.date ?? null,
-			modifiedIso: post.modified_gmt ? `${post.modified_gmt}Z` : post.modified ?? null,
-			image: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
-			author: post._embedded?.["author"]?.[0]?.name ?? null,
-			rank_math: post?.rank_math,
-		};
-
-		return NextResponse.json(result);
+		return NextResponse.json(post);
 	} catch (error: any) {
 		return NextResponse.json(
-			{
-				field: "post",
-				success: false,
-				data: null,
-				message: error.message || "خطا در دریافت پست",
-			},
+			{ field: "post", success: false, data: null, message: error?.message || "خطا در دریافت پست" },
 			{ status: 500 }
 		);
 	}

@@ -16,6 +16,7 @@ import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import { useNotificationStore } from "@/stores/notification.store";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
+import { track } from "@/utils/analytics";
 
 export default function HeroOrderStart() {
 	const router = useRouter();
@@ -51,6 +52,7 @@ export default function HeroOrderStart() {
 		const params = new URLSearchParams({ item: selectedItem.translationItemId });
 		if (selectedLanguage) params.set("lang", selectedLanguage.languageId);
 		if (count > 1) params.set("count", String(count));
+		track("start_order", { source_page: "home_widget", item_id: selectedItem.translationItemId, language_id: selectedLanguage?.languageId });
 		router.push(`/new-order?${params.toString()}`);
 	};
 
