@@ -6,9 +6,9 @@ import { FaqItem } from "@/types/faq.type";
  * ادعای «بهترین/سریع‌ترین» ندارد. نسخه‌ی نهایی طبق «بریف محتوای ماه اول» جایگزین می‌شود.
  */
 export const HOME_HERO = {
-	h1: "دارالترجمه رسمی آنلاین رسمی‌یاب",
+	h1: "دارالترجمه آنلاین رسمی‌یاب",
 	tagline: "ترجمه رسمی مدارک با مهر مترجم رسمی دادگستری، به شکل",
-	taglineHighlight: "آنلاین و حضوری",
+	taglineHighlight: "آنلاین",
 };
 
 export type HomeServiceCard = { title: string; desc: string };
