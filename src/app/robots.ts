@@ -1,9 +1,10 @@
 import { MetadataRoute } from "next";
 import { ALLOW_INDEXING } from "@/config/global";
-import { absoluteUrl } from "@/config/site";
+import { IS_SOFT_LAUNCH, absoluteUrl } from "@/config/site";
 
 export default function robots(): MetadataRoute.Robots {
-	if (!ALLOW_INDEXING) {
+	// در لانچ تدریجی خزش باز است تا گوگل noindexِ بقیه‌ی صفحات را ببیند؛ ایندکس با متای هر صفحه کنترل می‌شود
+	if (!ALLOW_INDEXING && !IS_SOFT_LAUNCH) {
 		return { rules: [{ userAgent: "*", disallow: "/" }] };
 	}
 

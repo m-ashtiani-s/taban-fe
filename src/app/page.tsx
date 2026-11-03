@@ -17,7 +17,7 @@ import { HOME_CUSTOMER_PANEL, HOME_ENTERPRISE, HOME_FAQS, HOME_HERO, HOME_SERVIC
 import BlogPreview from "./_homeAssets/_components/blogPreview/blogPreview";
 import Faq from "./_components/faq/faq";
 import JsonLd from "./_components/jsonLd/jsonLd";
-import { SITE_DESCRIPTION, SITE_TITLE, buildFaqPage, buildMetadata } from "@/config/site";
+import { SITE_DESCRIPTION, SITE_TITLE, buildFaqPage, buildMetadata, softLaunchRobots } from "@/config/site";
 import { docLandingPath } from "@/config/docLandings";
 import { getPostsPage } from "@/server/wordpress";
 import { getLiveDocLandings } from "@/server/docLandings";
@@ -27,6 +27,7 @@ export const metadata: Metadata = buildMetadata({
 	absoluteTitle: true,
 	description: SITE_DESCRIPTION,
 	path: "/",
+	robots: softLaunchRobots("/"),
 });
 
 // بلوک مجله تزئینی است؛ قطعی وردپرس نباید صفحه‌ی اصلی را خراب کند

@@ -6,7 +6,7 @@ import "./globals.css";
 import { Notifications } from "./_components/notification/notification";
 import AppBootstrap from "./_components/appBootstrap/appBootstrap";
 import TopBanner from "./_components/topBanner/topBanner";
-import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_LOCALE, SITE_NAME, SITE_TITLE, buildSiteGraph } from "@/config/site";
+import { INDEXABLE_ROBOTS, SITE_BASE_URL, SITE_DESCRIPTION, SITE_LOCALE, SITE_NAME, SITE_TITLE, buildSiteGraph } from "@/config/site";
 import { ALLOW_INDEXING } from "@/config/global";
 import { QueryProvider } from "./queryProvider";
 import JsonLd from "./_components/jsonLd/jsonLd";
@@ -33,9 +33,7 @@ export const metadata: Metadata = {
 		title: SITE_TITLE,
 		description: SITE_DESCRIPTION,
 	},
-	robots: ALLOW_INDEXING
-		? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } }
-		: { index: false, follow: false },
+	robots: ALLOW_INDEXING ? INDEXABLE_ROBOTS : { index: false, follow: false },
 	verification: {
 		google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
 		other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,

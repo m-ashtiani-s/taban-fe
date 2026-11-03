@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
-import { absoluteUrl } from "@/config/site";
+import { ALLOW_INDEXING } from "@/config/global";
+import { IS_SOFT_LAUNCH, SOFT_LAUNCH_INDEXABLE_PATHS, absoluteUrl } from "@/config/site";
 import { DOC_HUB, DOC_LANDINGS_BASE_PATH, docLandingPath } from "@/config/docLandings";
 import { getAllPostSlugs } from "@/server/wordpress";
 import { getLiveDocLandings } from "@/server/docLandings";
@@ -13,6 +14,10 @@ export const revalidate = 3600;
 const STATIC_PATHS = ["/", "/about-us", "/contact-us", "/rules"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+	if (!ALLOW_INDEXING) {
+		return IS_SOFT_LAUNCH ? SOFT_LAUNCH_INDEXABLE_PATHS.map((path) => ({ url: absoluteUrl(path) })) : [];
+	}
+
 	const [posts, liveLandings] = await Promise.all([getAllPostSlugs(), getLiveDocLandings()]);
 
 	// /blog بدون مقاله noindex است، پس فقط وقتی دست‌کم یک مقاله منتشر شده در sitemap می‌آید

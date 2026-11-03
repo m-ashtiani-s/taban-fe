@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { SITE_URL } from "./global";
+import { ALLOW_INDEXING, SITE_URL } from "./global";
 import { FaqItem } from "@/types/faq.type";
 
 /**
@@ -14,8 +14,29 @@ export const SITE_DESCRIPTION =
 	"ترجمه رسمی مدارک با مهر مترجم رسمی دادگستری؛ ثبت سفارش آنلاین، محاسبه‌ی لحظه‌ای هزینه، تاییدات دادگستری و امور خارجه و ارسال به سراسر کشور.";
 export const SITE_LOCALE = "fa_IR";
 
+const CANONICAL_SITE_URL = "https://rasmiyab.com";
+
 /** آدرس پایه‌ی سایت (با fallback تا در نبود env هم build/runtime نشکند) */
-export const SITE_BASE_URL = (SITE_URL || "https://rasmiyab.com").replace(/\/$/, "");
+export const SITE_BASE_URL = (SITE_URL || CANONICAL_SITE_URL).replace(/\/$/, "");
+
+/**
+ * لانچ تدریجی: تا وقتی ALLOW_INDEXING کل سایت را باز نکرده، فقط این مسیرها روی دامنه‌ی اصلی ایندکس می‌شوند و
+ * بقیه‌ی صفحات noindex می‌مانند. شرط دامنه برای این است که استیجینگ و محیط محلی (SITE_URL دیگر) هرگز ایندکس نشوند.
+ * صفحه‌ای که آماده‌ی ایندکس شد به این فهرست اضافه می‌شود؛ با ALLOW_INDEXING=true این فهرست بی‌اثر است.
+ */
+export const SOFT_LAUNCH_INDEXABLE_PATHS = ["/"];
+export const IS_SOFT_LAUNCH = !ALLOW_INDEXING && SITE_BASE_URL === CANONICAL_SITE_URL && SOFT_LAUNCH_INDEXABLE_PATHS.length > 0;
+
+export const INDEXABLE_ROBOTS: Metadata["robots"] = {
+	index: true,
+	follow: true,
+	googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+};
+
+/** robots صفحه‌ای که در لانچ تدریجی باز شده؛ undefined یعنی همان robots لایوت ریشه */
+export function softLaunchRobots(path: string): Metadata["robots"] | undefined {
+	return IS_SOFT_LAUNCH && SOFT_LAUNCH_INDEXABLE_PATHS.includes(path) ? INDEXABLE_ROBOTS : undefined;
+}
 
 export const ORGANIZATION_ID = `${SITE_BASE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_BASE_URL}/#website`;
