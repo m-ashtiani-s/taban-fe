@@ -16,7 +16,7 @@ export const Footer = async () => {
 					<div className="flex flex-col gap-6 w-full items-center">
 						<img src="/images/logo2White.svg" alt="رسمی‌یاب" width={96} height={108} className="w-24 h-auto max-lg:!w-16" />
 						<div className="flex flex-col w-full items-center gap-3">
-							<div className="peyda text-neutral-200 font-medium text-2xl">درباره دارالترجمه رسمی‌یاب بخوانید</div>
+							<div className="peyda text-neutral-200 font-medium text-2xl">درباره رسمی‌یاب بخوانید</div>
 							<p className="w-full lg:!px-16 max-lg:!px-4 text-neutral-200 text-center leading-8">{FOOTER_INTRO}</p>
 						</div>
 					</div>
@@ -64,7 +64,7 @@ export const Footer = async () => {
 				</div>
 				<div className="container border-t border-t-suppliment-full">
 					<div className=" bg-primary rounded-t-3xl py-4 flex items-center justify-between text-neutral-200 max-lg:!px-4 max-lg:!flex-col max-lg:!items-center max-lg:!gap-2">
-						<div className="w-full text-right text-sm max-lg:!text-center">تمامی حقوق مادی و معنوی این وبسایت متعلق به دارالترجمه رسمی رسمی‌یاب میباشد.</div>
+						<div className="w-full text-right text-sm max-lg:!text-center">تمامی حقوق مادی و معنوی این وب‌سایت متعلق به رسمی‌یاب است.</div>
 						<div className="w-full flex items-center gap-2 justify-end max-lg:!justify-center">
 							<SocialLinks
 								tone="light"

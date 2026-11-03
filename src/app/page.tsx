@@ -330,22 +330,29 @@ export default async function Home() {
 						<Faq items={HOME_FAQS} />
 					</div>
 				</section>
-				<div className="h-32"></div>
-				<section>
-					<div className="container">
-						<Reveal className="flex items-center justify-between max-lg:!flex-col gap-4">
-							<div className="flex items-center gap-2 peyda font-semibold">
-								<h2 className="text-primary  text-lg">مجله رسمی‌یاب</h2>
-								<div className="h-10 w-0.5 bg-secondary"></div>
-								<div className="text-secondary  text-lg">جدیدترین نکات و مقالات</div>
+				{/* بلوک مجله فقط وقتی مقاله‌ای منتشر شده باشد؛ تیتر و اسلایدر خالی محتوای بی‌ارزش است */}
+				{!!blogPageData?.elements?.length && (
+					<>
+						<div className="h-32"></div>
+						<section>
+							<div className="container">
+								<Reveal className="flex items-center justify-between max-lg:!flex-col gap-4">
+									<div className="flex items-center gap-2 peyda font-semibold">
+										<h2 className="text-primary  text-lg">مجله رسمی‌یاب</h2>
+										<div className="h-10 w-0.5 bg-secondary"></div>
+										<div className="text-secondary  text-lg">جدیدترین نکات و مقالات</div>
+									</div>
+									<TabanButton isLink href="/blog" className="">
+										وبلاگ رسمی‌یاب
+									</TabanButton>
+								</Reveal>
+								<div className="w-full mt-8">
+									<BlogPreview posts={blogPageData.elements} />
+								</div>
 							</div>
-							<TabanButton isLink href="/blog" className="">
-								وبلاگ رسمی‌یاب
-							</TabanButton>
-						</Reveal>
-						<div className="w-full mt-8">{!blogPageData ? null : <BlogPreview posts={blogPageData?.elements} />}</div>
-					</div>
-				</section>
+						</section>
+					</>
+				)}
 			</main>
 			<Footer />
 		</>

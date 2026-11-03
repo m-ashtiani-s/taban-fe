@@ -61,7 +61,7 @@ export const Header = () => {
 				<div className="container mx-auto flex justify-between items-center py-2">
 					<div className="flex gap-12 items-center">
 						<Link href="/" className="flex items-center gap-2">
-							<Image src="/images/logo2White.svg" width={48} height={32} alt="رسمی‌یاب، دارالترجمه رسمی آنلاین" />
+							<Image src="/images/logo2White.svg" width={48} height={32} alt="رسمی‌یاب، ثبت سفارش آنلاین ترجمه رسمی" />
 							<div className="text-white/85 morabba text-xl">رسمــی‌یاب</div>
 						</Link>
 						<div className=" gap-3 hidden lg:!flex text-sm peyda">
@@ -203,7 +203,7 @@ export const Header = () => {
 										width={90}
 										height={56}
 										src="/images/logo2.svg"
-										alt="رسمی‌یاب، دارالترجمه رسمی آنلاین"
+										alt="رسمی‌یاب، ثبت سفارش آنلاین ترجمه رسمی"
 										className="max-lg:!w-10 py-2"
 									/>
 									<div className="text-primary/85 morabba text-xl">رسمــی‌یاب</div>

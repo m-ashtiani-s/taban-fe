@@ -324,3 +324,105 @@ input::-webkit-inner-spin-button {
 	-webkit-appearance: none;
 	margin: 0;
 }
+
+/*
+ * متن صفحات فرود مدرک (renderRichText): فهرست‌ها به شکل تیک طلایی، فهرست شماره‌دار به شکل گام‌های متصل،
+ * تیتر H3 با نوار طلایی. فقط داخل .doc-prose اعمال می‌شود تا بقیه‌ی سایت دست نخورد.
+ */
+.doc-prose {
+	color: #4b5563;
+	line-height: 2;
+}
+.doc-prose > * + * {
+	margin-top: 1rem;
+}
+.doc-prose p {
+	line-height: 2;
+}
+.doc-prose strong {
+	color: #1f2937;
+	font-weight: 700;
+}
+.doc-prose a {
+	color: #8c7650;
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+.doc-prose h3 {
+	font-family: peyda, Tahoma, sans-serif !important;
+	color: #1a3047;
+	font-weight: 800;
+	font-size: 1.2rem;
+	line-height: 1.7;
+	margin-top: 2rem;
+	padding: 0.35rem 0.9rem 0.35rem 0;
+	border-right: 3px solid #b8a27c;
+	background: linear-gradient(to left, rgba(184, 162, 124, 0.12), transparent 70%);
+	border-radius: 0 0 0 0;
+}
+.doc-prose ul {
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+.doc-prose ul > li {
+	position: relative;
+	padding-right: 2rem;
+}
+.doc-prose ul > li::before {
+	content: "";
+	position: absolute;
+	right: 0;
+	top: 0.45rem;
+	width: 1.3rem;
+	height: 1.3rem;
+	border-radius: 9999px;
+	background-color: rgba(184, 162, 124, 0.18);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238c7650' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 13 4 4L19 7'/%3E%3C/svg%3E");
+	background-size: 0.8rem;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+.doc-prose ol {
+	list-style: none;
+	counter-reset: doc-step;
+	display: flex;
+	flex-direction: column;
+}
+.doc-prose ol > li {
+	counter-increment: doc-step;
+	position: relative;
+	padding-right: 3.25rem;
+	padding-bottom: 1.1rem;
+	min-height: 2.5rem;
+}
+.doc-prose ol > li::before {
+	content: counter(doc-step, persian);
+	position: absolute;
+	right: 0;
+	top: 0.15rem;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 9999px;
+	background: #1a3047;
+	color: #fff;
+	font-family: peyda, Tahoma, sans-serif !important;
+	font-weight: 700;
+	font-size: 0.95rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 0 4px #f5f2ed;
+}
+.doc-prose ol > li:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	right: 1.08rem;
+	top: 2.6rem;
+	bottom: 0.1rem;
+	border-right: 2px dashed #dcdcdc;
+}
+.doc-prose ol > li:last-child {
+	padding-bottom: 0;
+}

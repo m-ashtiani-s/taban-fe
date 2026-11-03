@@ -10,12 +10,14 @@ export const revalidate = 3600;
  * فقط صفحات ۲۰۰ و index با همان URLی که canonicalشان است (absoluteUrl همان انکدینگ canonical را می‌سازد).
  * صفحات استاتیک lastModified ندارند چون تاریخ واقعی آخرین تغییر محتوایشان ثبت نمی‌شود؛ «الان» گوگل را گمراه می‌کند.
  */
-const STATIC_PATHS = ["/", "/blog", "/about-us", "/contact-us", "/rules"];
+const STATIC_PATHS = ["/", "/about-us", "/contact-us", "/rules"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const [posts, liveLandings] = await Promise.all([getAllPostSlugs(), getLiveDocLandings()]);
 
-	const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map((path) => ({ url: absoluteUrl(path) }));
+	// /blog بدون مقاله noindex است، پس فقط وقتی دست‌کم یک مقاله منتشر شده در sitemap می‌آید
+	const staticPaths = posts.length ? [...STATIC_PATHS, "/blog"] : STATIC_PATHS;
+	const staticEntries: MetadataRoute.Sitemap = staticPaths.map((path) => ({ url: absoluteUrl(path) }));
 
 	const hubEntries: MetadataRoute.Sitemap =
 		DOC_HUB.status === "published" ? [{ url: absoluteUrl(DOC_LANDINGS_BASE_PATH), ...(DOC_HUB.updatedAt ? { lastModified: DOC_HUB.updatedAt } : {}) }] : [];

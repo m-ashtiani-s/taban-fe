@@ -10,12 +10,20 @@ import { toCurrency } from "@/utils/string";
 import TabanButton from "@/app/_components/common/tabanButton/tabanButton";
 import TabanLoading from "@/app/_components/common/tabanLoading/tabanLoading";
 import ErrorComponent from "@/app/_components/errorComponent/errorComponent";
-import { IconTranslate } from "@/app/_components/icon/icons";
+import { IconMoney, IconTranslate } from "@/app/_components/icon/icons";
 import { LivePriceProps } from "./livePrice.type";
 
 // قیمت عمداً کلاینتی و زنده از API است (نه عدد تایپ‌شده در محتوا)؛ بقیه‌ی صفحه سروری می‌ماند
-export default function LivePrice({ translationItemId, documentName, sourcePage }: LivePriceProps) {
+export default function LivePrice({ translationItemId: fixedItemId, items = [], documentName, sourcePage }: LivePriceProps) {
+	// صفحه‌ی تک‌مدرکی مدرکش ثابت است؛ صفحه‌ی دسته‌ای (مثل مدارک تحصیلی) اول مدرک را از کاربر می‌گیرد
+	const hasItemPicker = !fixedItemId && items.length > 1;
+	const [pickedItemId, setPickedItemId] = useState<string | null>(!fixedItemId && items.length === 1 ? items[0].translationItemId : null);
 	const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
+
+	const translationItemId = fixedItemId ?? pickedItemId;
+	const pickedItem = items.find((item) => item.translationItemId === translationItemId);
+	const priceSubject = pickedItem?.title ?? documentName;
+	const canPrice = !!fixedItemId || items.length > 0;
 
 	const filters = { translationItemId: translationItemId ?? undefined, languageId: selectedLanguage?.languageId };
 	const hasSelection = !!translationItemId && !!selectedLanguage;
@@ -23,7 +31,7 @@ export default function LivePrice({ translationItemId, documentName, sourcePage 
 	const languagesQuery = useQuery({
 		queryKey: ["translation", "languages"],
 		queryFn: () => withMappedError(() => TranslationEndpoints.getLanguages()),
-		enabled: !!translationItemId,
+		enabled: canPrice,
 	});
 	const baseRateQuery = useQuery({
 		queryKey: ["translation", "baseRate", filters],
@@ -47,11 +55,45 @@ export default function LivePrice({ translationItemId, documentName, sourcePage 
 
 	return (
 		<div className="not-prose my-6 rounded-2xl border border-secondary/30 bg-suppliment/60 p-5 lg:p-6 flex flex-col gap-5">
-			{!translationItemId ? (
+			<div className="flex items-center gap-3">
+				<span className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
+					<IconMoney width={22} height={22} className="stroke-white" />
+				</span>
+				<div className="flex flex-col">
+					<span className="peyda font-bold text-primary">محاسبه‌ی آنلاین هزینه</span>
+					<span className="text-xs text-neutral-500">نرخ‌ها مستقیم از سامانه‌ی سفارش خوانده می‌شوند</span>
+				</div>
+			</div>
+			{!canPrice ? (
 				<p className="text-sm text-neutral-600 leading-7">قیمت دقیق ترجمه‌ی {documentName} پس از انتخاب زبان و تاییدات، در فرم ثبت سفارش نمایش داده می‌شود.</p>
 			) : (
 				<>
-					<div className="text-sm font-semibold text-neutral-700 peyda">زبان ترجمه را انتخاب کنید تا هزینه را ببینید</div>
+					{hasItemPicker && (
+						<div className="flex flex-col gap-3">
+							<div className="text-sm font-semibold text-neutral-700 peyda">۱. مدرک را انتخاب کنید</div>
+							<div className="flex flex-wrap gap-2.5">
+								{items.map((item) => {
+									const active = pickedItemId === item.translationItemId;
+									return (
+										<button
+											key={item.translationItemId}
+											type="button"
+											aria-pressed={active}
+											onClick={() => setPickedItemId(active ? null : item.translationItemId)}
+											className={`text-sm peyda rounded-xl border px-3.5 py-2 duration-200 ${
+												active ? "bg-primary border-primary text-white" : "bg-white border-neutral-200 text-neutral-600 hover:border-primary/40"
+											}`}
+										>
+											{item.title}
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
+					<div className="text-sm font-semibold text-neutral-700 peyda">
+						{hasItemPicker ? "۲. زبان ترجمه را انتخاب کنید" : "زبان ترجمه را انتخاب کنید تا هزینه را ببینید"}
+					</div>
 					{languagesQuery.error ? (
 						<ErrorComponent executeFunction={() => languagesQuery.refetch()} errorText={languagesQuery.error.description} />
 					) : languagesQuery.isPending ? (
@@ -82,6 +124,9 @@ export default function LivePrice({ translationItemId, documentName, sourcePage 
 						</div>
 					)}
 
+					{hasItemPicker && !translationItemId && selectedLanguage && (
+						<p className="text-sm text-neutral-600 leading-7">برای دیدن هزینه، مدرک را هم انتخاب کنید.</p>
+					)}
 					{hasSelection &&
 						(baseRateQuery.error || certificationQuery.error ? (
 							<ErrorComponent
@@ -97,7 +142,7 @@ export default function LivePrice({ translationItemId, documentName, sourcePage 
 							</div>
 						) : !baseRate ? (
 							<p className="text-sm text-neutral-600 leading-7">
-								برای ترجمه‌ی {documentName} به زبان {selectedLanguage?.languageName} هنوز نرخی ثبت نشده است؛ زبان دیگری را انتخاب کنید یا با پشتیبانی تماس بگیرید.
+								برای ترجمه‌ی {priceSubject} به زبان {selectedLanguage?.languageName} هنوز نرخی ثبت نشده است؛ زبان دیگری را انتخاب کنید یا با پشتیبانی تماس بگیرید.
 							</p>
 						) : (
 							<dl className="bg-white rounded-xl border border-neutral-100 divide-y divide-neutral-100 text-sm">

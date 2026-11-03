@@ -18,7 +18,7 @@ export const aboutValues: AboutValue[] = [
     {
         icon: <IconJustice width={26} height={26} className="stroke-primary" />,
         title: "اعتبار رسمی و قانونی",
-        desc: "همه‌ی ترجمه‌ها توسط مترجمان رسمی قوه قضائیه و با مهر و امضای معتبر انجام می‌شود.",
+        desc: "همه‌ی ترجمه‌ها در دارالترجمه‌های رسمی همکار و با مهر و امضای مترجم رسمی قوه قضائیه انجام می‌شود.",
     },
     {
         icon: <IconGuarantee width={26} height={26} className="stroke-primary" />,

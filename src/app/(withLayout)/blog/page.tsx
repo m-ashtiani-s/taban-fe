@@ -14,7 +14,7 @@ import { blogPageHref } from "./_utils/blogPageHref";
 type BlogSearchParams = { page?: string; term?: string };
 
 const PER_PAGE = 9;
-const BLOG_DESCRIPTION = "جدیدترین مقالات و راهنماهای ترجمه رسمی مدارک، تاییدات دادگستری و امور خارجه، مهاجرت و خدمات دارالترجمه‌ی رسمی‌یاب.";
+const BLOG_DESCRIPTION = "جدیدترین مقالات و راهنماهای ترجمه رسمی مدارک، تاییدات دادگستری و امور خارجه، مهاجرت و ثبت سفارش آنلاین ترجمه رسمی در رسمی‌یاب.";
 
 export async function generateMetadata({ searchParams }: { searchParams: BlogSearchParams }): Promise<Metadata> {
     const page = parseBlogPage(searchParams?.page) ?? 1;
@@ -29,12 +29,17 @@ export async function generateMetadata({ searchParams }: { searchParams: BlogSea
         };
     }
 
+    // تا وقتی مجله هیچ مقاله‌ای ندارد، /blog فقط پیام «مقاله‌ای یافت نشد» است و نباید ایندکس شود (soft 404)
+    const firstPage = page === 1 ? await getPostsPage({ page: 1, pageSize: PER_PAGE, term: "" }).catch(() => null) : null;
+    const isEmpty = page === 1 && firstPage?.totalElements === 0;
+
     const pageSuffix = page > 1 ? ` — صفحه ${convertToPersianNumber(page)}` : "";
     return buildMetadata({
         title: `مجله رسمی‌یاب | مقالات تخصصی ترجمه رسمی${pageSuffix}`,
         absoluteTitle: true,
         description: page > 1 ? `${BLOG_DESCRIPTION} صفحه ${convertToPersianNumber(page)}.` : BLOG_DESCRIPTION,
         path: page > 1 ? `/blog?page=${page}` : "/blog",
+        robots: isEmpty ? { index: false, follow: true } : undefined,
     });
 }
 
