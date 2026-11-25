@@ -15,6 +15,7 @@ import { convertToJalaliDate } from "@/utils/dateConverts";
 import { convertToPersianNumber } from "@/utils/enNumberToPersian";
 import { DocLandingSection } from "@/types/docLanding.type";
 import LivePrice from "../_components/livePrice/livePrice";
+import LandingPhoto from "../_components/landingPhoto/landingPhoto";
 import { renderRichText } from "../_utils/renderRichText";
 
 type DocLandingPageProps = { params: { slug: string } };
@@ -86,6 +87,7 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 	const priceGroup = groups.find((group) => group.heading.widget === "price" || group.children.some((child) => child.widget === "price"));
 	const orderHref = landing.translationItemId ? `/new-order?item=${landing.translationItemId}` : "/new-order";
 	const draftPlaceholder = <p className="text-neutral-400 italic">متن این بخش در دست نگارش است.</p>;
+	const heroPhotoVisible = !!landing.heroPhoto && (landing.heroPhoto.ready || landing.isPreview);
 	const tocItems = [...groups.map((group) => ({ id: group.id, title: group.heading.heading })), ...(faqItems.length ? [{ id: "porsesh-ha", title: "پرسش‌های متداول" }] : [])];
 
 	const serviceLd = {
@@ -100,6 +102,17 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 	};
 
 	const livePrice = <LivePrice translationItemId={landing.translationItemId} items={landing.items} documentName={landing.name} sourcePage={path} />;
+
+	const renderPhoto = (section: DocLandingSection) =>
+		section.photo && (
+			<LandingPhoto
+				photo={section.photo}
+				isPreview={landing.isPreview}
+				placement={`بخش «${section.heading}»`}
+				sizes="(max-width: 1024px) 100vw, 760px"
+				className="rounded-2xl mb-6"
+			/>
+		);
 
 	const renderBody = (section: DocLandingSection) => (
 		<>
@@ -184,39 +197,52 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 						)}
 					</div>
 
-					{/* تصویرسازی سبک برگه‌ی ترجمه‌ی رسمی؛ تزئینی و بدون متن واقعی */}
-					<div aria-hidden className="max-lg:hidden relative h-[340px]">
-						<div className="absolute inset-y-8 left-14 right-2 rotate-[-5deg] rounded-3xl bg-white/[0.06] border border-white/10" />
-						<div className="absolute inset-y-0 left-6 right-10 rounded-3xl bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] p-7 flex flex-col">
-							<div className="flex items-center justify-between">
-								<div className="flex flex-col gap-1.5">
-									<span className="h-2.5 w-24 rounded-full bg-primary/80" />
-									<span className="h-2 w-16 rounded-full bg-neutral-2" />
+					{/* تا عکس واقعی هیرو آماده نشده، تصویرسازی سبک برگه‌ی ترجمه‌ی رسمی (تزئینی و بدون متن واقعی) می‌آید */}
+					{heroPhotoVisible && landing.heroPhoto ? (
+						<div className="relative">
+							<div className="absolute inset-0 translate-x-4 translate-y-4 rotate-[-3deg] rounded-3xl bg-white/[0.06] border border-white/10 max-lg:hidden" />
+							<LandingPhoto
+								photo={landing.heroPhoto}
+								isPreview={landing.isPreview}
+								placement="هیروی بالای صفحه (کنار تیتر اصلی)"
+								sizes="(max-width: 1024px) 100vw, 380px"
+								className="relative rounded-3xl shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]"
+							/>
+						</div>
+					) : (
+						<div aria-hidden className="max-lg:hidden relative h-[340px]">
+							<div className="absolute inset-y-8 left-14 right-2 rotate-[-5deg] rounded-3xl bg-white/[0.06] border border-white/10" />
+							<div className="absolute inset-y-0 left-6 right-10 rounded-3xl bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] p-7 flex flex-col">
+								<div className="flex items-center justify-between">
+									<div className="flex flex-col gap-1.5">
+										<span className="h-2.5 w-24 rounded-full bg-primary/80" />
+										<span className="h-2 w-16 rounded-full bg-neutral-2" />
+									</div>
+									<span className="peyda text-[11px] font-bold text-secondary border border-secondary/40 rounded-full px-3 py-1">ترجمه رسمی</span>
 								</div>
-								<span className="peyda text-[11px] font-bold text-secondary border border-secondary/40 rounded-full px-3 py-1">ترجمه رسمی</span>
-							</div>
-							<div className="mt-7 flex flex-col gap-3">
-								{["w-full", "w-11/12", "w-10/12", "w-full", "w-8/12", "w-9/12"].map((width, i) => (
-									<span key={i} className={`h-2 rounded-full bg-neutral-1 ${width}`} />
-								))}
-							</div>
-							<div className="mt-auto flex items-end justify-between">
-								<div className="flex flex-col gap-1.5">
-									<span className="h-2 w-20 rounded-full bg-neutral-2" />
-									<span className="h-2 w-14 rounded-full bg-neutral-1" />
+								<div className="mt-7 flex flex-col gap-3">
+									{["w-full", "w-11/12", "w-10/12", "w-full", "w-8/12", "w-9/12"].map((width, i) => (
+										<span key={i} className={`h-2 rounded-full bg-neutral-1 ${width}`} />
+									))}
 								</div>
-								<div className="w-24 h-24 rounded-full border-2 border-dashed border-secondary/70 flex items-center justify-center rotate-[-14deg]">
-									<div className="w-[76px] h-[76px] rounded-full border border-secondary/50 flex items-center justify-center text-center">
-										<span className="peyda text-[10px] leading-4 font-bold text-secondary">
-											مهر و امضای
-											<br />
-											مترجم رسمی
-										</span>
+								<div className="mt-auto flex items-end justify-between">
+									<div className="flex flex-col gap-1.5">
+										<span className="h-2 w-20 rounded-full bg-neutral-2" />
+										<span className="h-2 w-14 rounded-full bg-neutral-1" />
+									</div>
+									<div className="w-24 h-24 rounded-full border-2 border-dashed border-secondary/70 flex items-center justify-center rotate-[-14deg]">
+										<div className="w-[76px] h-[76px] rounded-full border border-secondary/50 flex items-center justify-center text-center">
+											<span className="peyda text-[10px] leading-4 font-bold text-secondary">
+												مهر و امضای
+												<br />
+												مترجم رسمی
+											</span>
+										</div>
 									</div>
 								</div>
 							</div>
 						</div>
-					</div>
+					)}
 				</div>
 			</section>
 
@@ -266,11 +292,13 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 								className={`scroll-mt-28 bg-white rounded-3xl border p-8 max-lg:p-5 ${isPrice ? "border-secondary/40 ring-4 ring-secondary/10" : "border-neutral-100"}`}
 							>
 								<h2 className="peyda text-primary font-extrabold text-[26px] max-lg:text-xl leading-snug mb-5">{group.heading.heading}</h2>
+								{renderPhoto(group.heading)}
 								<div className="doc-prose">
 									{renderBody(group.heading)}
 									{group.children.map((child) => (
 										<Fragment key={child.heading}>
 											<h3>{child.heading}</h3>
+											{renderPhoto(child)}
 											{renderBody(child)}
 										</Fragment>
 									))}

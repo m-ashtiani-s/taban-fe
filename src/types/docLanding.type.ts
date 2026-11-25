@@ -15,6 +15,23 @@ export type DocLandingSection = {
 	/** متن ساده با پاراگراف (خط خالی)، فهرست («- » یا «۱. »)، **پررنگ** و [لینک](/آدرس) */
 	body: string;
 	widget?: DocLandingWidget;
+	photo?: DocLandingPhoto;
+};
+
+/**
+ * عکس واقعی صفحه. تا وقتی فایلش ساخته و در public گذاشته نشده (ready: false)، در پیش‌نمایش پیش‌نویس به‌جایش
+ * باکس پرامپت نمایش داده می‌شود تا با ابزار AI ساخته شود؛ در صفحه‌ی منتشرشده هیچ‌چیز نمایش داده نمی‌شود.
+ */
+export type DocLandingPhoto = {
+	/** مسیر فایل نهایی زیر public، مثل /images/doc-landings/daneshnameh/hero.webp */
+	path: string;
+	ready: boolean;
+	alt: string;
+	width: number;
+	height: number;
+	aspectRatio: string;
+	prompt: string;
+	negativePrompt: string;
 };
 
 export type DocLandingSampleImage = { src: string; alt: string; width: number; height: number };
@@ -47,6 +64,7 @@ export type DocLanding = {
 	faqs: FaqItem[];
 	relatedSlugs: string[];
 	sampleImage?: DocLandingSampleImage;
+	heroPhoto?: DocLandingPhoto;
 	/** تاریخ آخرین بازبینی محتوا (YYYY-MM-DD) برای sitemap و «تاریخ بازبینی» صفحه */
 	updatedAt: string | null;
 };
