@@ -3,6 +3,8 @@ import ImagePrompt from "../imagePrompt/imagePrompt";
 import { LandingPhotoProps } from "./landingPhoto.type";
 
 export default function LandingPhoto({ photo, isPreview, placement, sizes, className }: LandingPhotoProps) {
+	const isPortrait = photo.height > photo.width;
+
 	if (photo.ready) {
 		return (
 			<Image
@@ -11,7 +13,7 @@ export default function LandingPhoto({ photo, isPreview, placement, sizes, class
 				width={photo.width}
 				height={photo.height}
 				sizes={sizes}
-				className={`w-full h-auto object-cover ${className ?? ""}`}
+				className={`w-full h-auto object-cover ${isPortrait ? "max-w-[420px] mx-auto border border-neutral-100" : ""} ${className ?? ""}`}
 			/>
 		);
 	}

@@ -13,6 +13,7 @@ export default function ImagePrompt({ photo, placement, className }: ImagePrompt
 
 	const showNotification = useNotificationStore((s) => s.showNotification);
 
+	const isAi = photo.source === "ai";
 	const sizeLabel = `${convertToPersianNumber(photo.width)}×${convertToPersianNumber(photo.height)}`;
 
 	const copyHandler = async () => {
@@ -30,7 +31,12 @@ export default function ImagePrompt({ photo, placement, className }: ImagePrompt
 		<div className={`rounded-2xl border-2 border-dashed border-secondary/60 bg-white text-neutral-700 p-5 max-lg:p-4 flex flex-col gap-4 ${className ?? ""}`}>
 			<div className="flex items-start justify-between gap-3 flex-wrap">
 				<div className="flex flex-col gap-1">
-					<span className="peyda font-bold text-primary">جای عکس: {placement}</span>
+					<span className="flex items-center gap-2 flex-wrap">
+						<span className={`text-[11px] font-bold rounded-full px-2.5 py-0.5 ${isAi ? "bg-primary/10 text-primary" : "bg-secondary/15 text-secondary"}`}>
+							{isAi ? "ساخت با AI" : "عکس واقعی"}
+						</span>
+						<span className="peyda font-bold text-primary">جای عکس: {placement}</span>
+					</span>
 					<span className="text-xs text-neutral-500">این باکس فقط در پیش‌نمایش پیش‌نویس دیده می‌شود.</span>
 				</div>
 				<TabanButton
@@ -39,7 +45,7 @@ export default function ImagePrompt({ photo, placement, className }: ImagePrompt
 					icon={copied ? <IconCheck className="stroke-success w-4 h-4" strokeWidth={2} /> : <IconCopy className="stroke-secondary w-4 h-4" />}
 					className="!text-sm !py-2 !px-4 rounded-xl"
 				>
-					{copied ? "کپی شد" : "کپی پرامپت"}
+					{copied ? "کپی شد" : isAi ? "کپی پرامپت" : "کپی راهنما"}
 				</TabanButton>
 			</div>
 
@@ -56,20 +62,29 @@ export default function ImagePrompt({ photo, placement, className }: ImagePrompt
 				<dd>{photo.alt}</dd>
 			</dl>
 
-			<div className="flex flex-col gap-1.5">
-				<span className="text-xs text-neutral-500">Prompt</span>
-				<p dir="ltr" className="dir-ltr text-left text-[13px] leading-6 bg-suppliment rounded-xl p-3 whitespace-pre-line max-h-56 overflow-y-auto">
-					{photo.prompt}
-				</p>
-			</div>
-			<div className="flex flex-col gap-1.5">
-				<span className="text-xs text-neutral-500">Negative prompt</span>
-				<p dir="ltr" className="dir-ltr text-left text-[13px] leading-6 bg-neutral-1 rounded-xl p-3">
-					{photo.negativePrompt}
-				</p>
-			</div>
+			{isAi ? (
+				<div className="flex flex-col gap-1.5">
+					<span className="text-xs text-neutral-500">Prompt</span>
+					<p dir="ltr" className="dir-ltr text-left text-[13px] leading-6 bg-suppliment rounded-xl p-3 whitespace-pre-line max-h-56 overflow-y-auto">
+						{photo.prompt}
+					</p>
+				</div>
+			) : (
+				<div className="flex flex-col gap-1.5">
+					<span className="text-xs text-neutral-500">راهنمای عکاسی</span>
+					<p className="text-[13px] leading-7 bg-suppliment rounded-xl p-3 whitespace-pre-line">{photo.prompt}</p>
+				</div>
+			)}
+			{photo.negativePrompt && (
+				<div className="flex flex-col gap-1.5">
+					<span className="text-xs text-neutral-500">Negative prompt</span>
+					<p dir="ltr" className="dir-ltr text-left text-[13px] leading-6 bg-neutral-1 rounded-xl p-3">
+						{photo.negativePrompt}
+					</p>
+				</div>
+			)}
 			<p className="text-xs text-neutral-500 leading-6">
-				بعد از ساخت عکس، فایل را در مسیر بالا بگذارید و در <span dir="ltr">src/config/docLandings.ts</span> مقدار <span dir="ltr">ready</span> همین عکس را
+				بعد از آماده شدن عکس، فایل را در مسیر بالا بگذارید و در <span dir="ltr">src/config/docLandings.ts</span> مقدار <span dir="ltr">ready</span> همین عکس را
 				true کنید.
 			</p>
 		</div>

@@ -25,18 +25,38 @@ const PHOTO_STYLE =
 const PHOTO_NEGATIVE =
 	"readable text, letters, words, numbers, real logos, government emblems, coat of arms, flags, realistic signatures, watermarks, distorted hands, extra fingers, deformed faces, blurry, low resolution, cartoon, illustration, 3D render, oversaturated colors, harsh shadows, cluttered background";
 
-// عکس‌ها هنوز ساخته نشده‌اند: ready: false یعنی در پیش‌نمایش به‌جای عکس، باکس پرامپت ساخت با AI می‌آید
-function buildPhoto(folder: string, name: string, format: "hero" | "inline", alt: string, scene: string): DocLandingPhoto {
-	const isHero = format === "hero";
+const REAL_PHOTO_RULES =
+	"پیش از گذاشتن فایل، نام و نام خانوادگی، نام پدر، کد ملی، شماره‌ی شناسنامه، تاریخ تولد، شماره‌ی دانشجویی، شماره‌ی سریال و بارکد/QR مدرک، عکس صاحب مدرک و امضاها را با مستطیل یکدست (بدون بلور) کامل بپوشانید. از صاحب مدرک رضایت کتبی بگیرید. نور یکنواخت و بدون سایه، کادر صاف (بدون پرسپکتیو)، زمینه‌ی ساده‌ی روشن؛ خروجی WebP.";
+
+type PhotoFormat = "hero" | "inline" | "portrait";
+
+const PHOTO_SIZES: Record<PhotoFormat, Pick<DocLandingPhoto, "width" | "height" | "aspectRatio">> = {
+	hero: { width: 1600, height: 1200, aspectRatio: "4:3" },
+	inline: { width: 1600, height: 900, aspectRatio: "16:9" },
+	portrait: { width: 1200, height: 1600, aspectRatio: "3:4" },
+};
+
+// ready: false یعنی فایل هنوز در public نیست و در پیش‌نمایش به‌جای عکس، باکس پرامپت/راهنمای عکاسی می‌آید
+function buildPhoto(folder: string, name: string, format: PhotoFormat, alt: string, scene: string): DocLandingPhoto {
 	return {
+		source: "ai",
 		path: `/images/doc-landings/${folder}/${name}.webp`,
 		ready: false,
 		alt,
-		width: 1600,
-		height: isHero ? 1200 : 900,
-		aspectRatio: isHero ? "4:3" : "16:9",
+		...PHOTO_SIZES[format],
 		prompt: `${scene}\n\n${PHOTO_STYLE}`,
 		negativePrompt: PHOTO_NEGATIVE,
+	};
+}
+
+function buildRealPhoto(folder: string, name: string, format: PhotoFormat, alt: string, brief: string): DocLandingPhoto {
+	return {
+		source: "real",
+		path: `/images/doc-landings/${folder}/${name}.webp`,
+		ready: false,
+		alt,
+		...PHOTO_SIZES[format],
+		prompt: `${brief}\n\n${REAL_PHOTO_RULES}`,
 	};
 }
 
@@ -72,6 +92,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "کدام مدارک تحصیلی را می‌توان ترجمه رسمی کرد؟",
 				level: 2,
+				photo: buildPhoto("madarek-tahsili", "document-types", "inline", "انواع مدارک تحصیلی قابل ترجمه رسمی؛ دیپلم، پیش‌دانشگاهی، دانشنامه و ریزنمرات", "Top-down flat lay of several different academic documents fanned out in a gentle arc on a cream linen surface: a high-school diploma, a pre-university certificate, a university degree certificate in a navy cover and a multi-page transcript, each a slightly different paper tone and size. A small brass paperclip and a fountain pen for scale, soft even daylight."),
 				// TODO: پس از انتشار صفحات دانشنامه و ریزنمرات، دو مورد اول به آن‌ها لینک شوند (انکر = کلمه‌ی اصلی همان صفحه)
 				body: `هر مدرکی که مدرسه یا دانشگاه صادر کرده و تاییدیه‌ی مرجع صادرکننده را دارد، ترجمه‌ی رسمی می‌شود. پرتکرارترین مدارک برای ترجمه رسمی مدارک دانشگاهی این‌ها هستند:
 
@@ -86,6 +107,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه مدرک موقت",
 				level: 3,
+				photo: buildRealPhoto("madarek-tahsili", "provisional-certificate", "portrait", "نمونه‌ی گواهی موقت پایان تحصیلات (مدرک موقت) برای ترجمه رسمی", "اسکن یا عکس صاف از یک «گواهی موقت پایان تحصیلات» واقعی (ترجیحاً دانشگاه دولتی)، کل برگه در کادر و با حاشیه‌ی کم. هدف این است که کاربر ببیند مدرک موقت چه شکلی است و با دانشنامه اشتباهش نگیرد."),
 				body: `ترجمه رسمی مدرک موقت، یعنی گواهی موقت پایان تحصیلات، هم ممکن است، به شرط آن‌که تاییدیه‌ی تحصیلی آن صادر شده باشد. پیش از ترجمه مدرک موقت این سه نکته را بدانید:
 
 - مدرک موقت مدت اعتبار دارد که روی خود گواهی نوشته شده؛ ترجمه‌ی آن هم فقط در همان مدت به کار می‌آید.
@@ -95,6 +117,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه مدرک دانشگاه آزاد",
 				level: 3,
+				photo: buildRealPhoto("madarek-tahsili", "azad-degree", "portrait", "نمونه‌ی دانشنامه‌ی دانشگاه آزاد اسلامی برای ترجمه رسمی", "عکس صاف از روی یک دانشنامه‌ی واقعی دانشگاه آزاد اسلامی (هر مقطع)، کل برگه در کادر. اگر برگه مهر تایید سازمان مرکزی دارد، مهر در کادر بماند ولی شماره‌ی ثبتش پوشانده شود."),
 				body: "مدارک دانشگاه آزاد اسلامی مثل مدارک دانشگاه‌های دولتی ترجمه رسمی می‌شوند، اما مسیر گرفتن تاییدیه‌شان جداست. تاییدیه‌ی مدارک دانشگاه آزاد را سازمان مرکزی دانشگاه آزاد صادر می‌کند، نه سامانه‌ی سجاد وزارت علوم. اگر فارغ‌التحصیل یکی از واحدهای دانشگاه آزاد هستید، پیش از سفارش از واحد خود بپرسید که تاییدیه‌ی مدرک صادر شده است یا نه.",
 			},
 			{
@@ -138,6 +161,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه مدارک تحصیلی به انگلیسی",
 				level: 2,
+				photo: buildPhoto("madarek-tahsili", "english-translation", "inline", "ترجمه مدرک تحصیلی به انگلیسی؛ مقایسه‌ی اصل مدرک و ترجمه", "A Persian-language university document and its English translation lying side by side on a bright desk, both pages showing only unreadable placeholder lines, the translation clipped with a small round blue ink stamp. A translator's hand holds a pen above the English page as if checking a line. Clean, precise, quiet mood, top-down three-quarter view."),
 				body: `بیشتر سفارش‌های مدارک تحصیلی به انگلیسی است، چون زبان پذیرش اغلب دانشگاه‌ها و سفارت‌هاست. در ترجمه مدرک تحصیلی به انگلیسی به این نکته‌ها دقت کنید:
 
 - **املای نام**: نام و نام خانوادگی دقیقاً مطابق گذرنامه نوشته می‌شود. مغایرت املای نام میان ترجمه‌ها و گذرنامه از دلایل رایج ایراد گرفتن پرونده است.
@@ -150,6 +174,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "نمونه ترجمه مدارک تحصیلی به انگلیسی",
 				level: 3,
+				photo: buildRealPhoto("madarek-tahsili", "translation-sample", "portrait", "نمونه ترجمه رسمی مدرک تحصیلی به انگلیسی با مهر مترجم رسمی", "اسکن صفحه‌ی اول یک ترجمه‌ی رسمی واقعی مدرک تحصیلی به انگلیسی که از طریق رسمی‌یاب انجام شده، با سربرگ دارالترجمه و مهر مترجم رسمی. فقط اطلاعات شخصی پوشانده شود؛ سربرگ، مهر مترجم و ساختار ترجمه دیده شود چون هدف همین بخش نشان دادن کیفیت ترجمه است. با دارالترجمه‌ی همکار برای نمایش سربرگش هماهنگ کنید."),
 				widget: "sample",
 				// تا وقتی sampleImage واقعی (با اطلاعات شخصی پوشیده) اضافه نشده، این بخش در صفحه‌ی منتشرشده نمایش داده نمی‌شود
 				body: "ترجمه‌ی رسمی روی سربرگ مترجم رسمی و با مهر و امضای او صادر می‌شود. در نمونه‌ی زیر ترجمه‌ی انگلیسی یک دانشنامه‌ی کارشناسی را می‌بینید؛ اطلاعات شخصی آن پوشانده شده است.",
@@ -226,6 +251,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه مدرک لیسانس و کارشناسی",
 				level: 2,
+				photo: buildRealPhoto("daneshnameh", "bachelor-degree", "portrait", "نمونه‌ی دانشنامه‌ی کارشناسی (مدرک لیسانس) برای ترجمه رسمی", "عکس صاف از روی یک دانشنامه‌ی کارشناسی واقعی دانشگاه دولتی، کل برگه در کادر با حاشیه‌ی کم. هدف این است که کاربر بداند «دانشنامه» کدام برگه است (نه گواهی موقت و نه ریزنمرات)."),
 				body: `آنچه در زبان روزمره «مدرک لیسانس» یا «مدرک کارشناسی» می‌گوییم، همان دانشنامه‌ی کارشناسی است. پس ترجمه مدرک لیسانس و ترجمه مدرک کارشناسی همان ترجمه رسمی دانشنامه است و سفارش جداگانه‌ای نمی‌خواهد.
 
 دانشنامه را با گواهی موقت پایان تحصیلات اشتباه نگیرید:
@@ -270,6 +296,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه دانشنامه به انگلیسی",
 				level: 2,
+				photo: buildRealPhoto("daneshnameh", "translation-sample", "portrait", "نمونه ترجمه رسمی دانشنامه به انگلیسی با مهر مترجم رسمی", "اسکن صفحه‌ی اول یک ترجمه‌ی رسمی واقعی دانشنامه به انگلیسی که از طریق رسمی‌یاب انجام شده، با سربرگ دارالترجمه و مهر مترجم رسمی. معادل‌های انگلیسی مقطع و رشته خوانا بماند؛ فقط اطلاعات شخصی پوشانده شود. با دارالترجمه‌ی همکار برای نمایش سربرگش هماهنگ کنید."),
 				body: "بیشتر سفارش‌های دانشنامه به انگلیسی است. در ترجمه‌ی انگلیسی دانشنامه سه چیز اهمیت دارد: معادل درست مقطع، عنوان دقیق رشته و گرایش، و املای نام مطابق گذرنامه. مترجم رسمی عنوان رشته را عیناً از روی دانشنامه ترجمه می‌کند و آن را با رشته‌ای در نظام آموزشی کشور مقصد عوض نمی‌کند؛ تطبیق رشته کار موسسه‌ی ارزشیابی یا دانشگاه مقصد است.",
 			},
 			{
@@ -280,6 +307,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه مدرک کارشناسی ارشد به انگلیسی",
 				level: 3,
+				photo: buildPhoto("daneshnameh", "masters-graduate", "inline", "فارغ‌التحصیل کارشناسی ارشد پس از دریافت دانشنامه", "A smiling Iranian woman in her late twenties wearing a light headscarf and a dark graduation gown, holding a closed navy degree folder in a university courtyard with soft autumn trees blurred behind her. Natural golden-hour light, medium shot, genuine and proud expression, no university logos visible."),
 				body: "دانشنامه‌ی کارشناسی ارشد Master's Degree ترجمه می‌شود؛ مثلاً کارشناسی ارشد مدیریت بازرگانی به شکل Master's Degree in Business Administration. روند ترجمه و تاییدات با کارشناسی یکی است و اگر هر دو مقطع را لازم دارید، دانشنامه‌ی هر کدام جداگانه ترجمه می‌شود.",
 			},
 			{
@@ -290,6 +318,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "اشتباهات رایج در ترجمه دانشنامه",
 				level: 2,
+				photo: buildPhoto("daneshnameh", "name-check", "inline", "تطبیق املای نام در گذرنامه و ترجمه دانشنامه پیش از ثبت سفارش", "Close-up of hands comparing an open passport data page with a translated degree page on a desk, a pen tip resting under a line on the translation as if checking spelling. Both documents show only unreadable placeholder lines and a blurred photo area. Shallow depth of field, focus on the pen and the two pages."),
 				body: `بیشتر ایرادهایی که دانشگاه یا موسسه‌ی ارزشیابی به ترجمه‌ی دانشنامه می‌گیرد، از همین چند اشتباه است:
 
 - **املای متفاوت نام**: اگر نام شما در ترجمه‌ی دانشنامه، ریزنمرات و گذرنامه یکسان نباشد، پرونده ایراد می‌خورد. اطلاعات گذرنامه را دقیق وارد کنید.
@@ -371,6 +400,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "مدارک لازم برای ترجمه ریزنمرات",
 				level: 2,
+				photo: buildPhoto("riznomarat", "requirements", "inline", "مدارک لازم برای ترجمه رسمی ریزنمرات دانشگاهی", "A sealed university envelope with a plain navy wax-style seal lying on a desk next to a neat stack of multi-page transcripts held with a black binder clip, and a closed passport. Soft daylight from the side, orderly and calm composition, three-quarter top-down view."),
 				body: `برای ترجمه رسمی ریزنمرات این سه مورد لازم است:
 
 - **ریزنمرات رسمی دانشگاه** با مهر و امضای اداره‌ی آموزش
@@ -382,6 +412,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "نکات ترجمه رسمی ریز نمرات",
 				level: 2,
+				photo: buildRealPhoto("riznomarat", "transcript-sample", "portrait", "نمونه ترجمه رسمی ریزنمرات دانشگاهی به انگلیسی با جدول دروس و نمرات", "اسکن یک صفحه از ترجمه‌ی رسمی واقعی ریزنمرات به انگلیسی که از طریق رسمی‌یاب انجام شده؛ جدول نام درس، واحد و نمره خوانا بماند تا کاربر ساختار ترجمه را ببیند. نام دانشجو، شماره‌ی دانشجویی و هر اطلاعات شناسایی پوشانده شود. با دارالترجمه‌ی همکار برای نمایش سربرگش هماهنگ کنید."),
 				body: `در ترجمه رسمی ریز نمرات، دقت در جزئیات از هر مدرک دیگری مهم‌تر است:
 
 - **نام دروس**: نام هر درس عیناً از روی ریزنمرات ترجمه می‌شود و در همه‌ی ترم‌ها یکسان می‌ماند. معادل رشته هم باید با ترجمه‌ی دانشنامه یکی باشد.
@@ -401,6 +432,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "اشتباهات رایج در سفارش ترجمه ریزنمرات",
 				level: 2,
+				photo: buildPhoto("riznomarat", "page-count", "inline", "بررسی تعداد برگ‌ها و نسخه‌های ریزنمرات پیش از ثبت سفارش ترجمه", "An Iranian man in his twenties at a home desk counting and ordering the pages of a multi-page transcript into labelled paper folders, sticky notes in muted gold on two folders, a laptop slightly blurred beside him. Calm focused mood, soft window light, medium close-up on hands and papers."),
 				body: `این اشتباهات کار ترجمه را عقب می‌اندازند یا ترجمه را برای مقصد ناکافی می‌کنند:
 
 - **بارگذاری فقط برگ اول**: همه‌ی برگ‌های ریزنمرات باید ترجمه شود؛ برگ ناقص یعنی ترجمه‌ی ناقص و محاسبه‌ی نادرست هزینه.

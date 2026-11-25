@@ -82,7 +82,9 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 	const answeredFaqs = landing.faqs.filter((faq) => faq.answer.trim());
 	const faqItems = landing.isPreview ? landing.faqs.map((faq) => ({ ...faq, answer: faq.answer || "پاسخ در دست نگارش است." })) : answeredFaqs;
 	// بخش نمونه‌ی ترجمه بدون تصویر واقعی در صفحه‌ی منتشرشده کلاً حذف می‌شود (تیتر بی‌محتوا نمی‌ماند)
-	const visibleSections = landing.sections.filter((section) => section.widget !== "sample" || !!landing.sampleImage || landing.isPreview);
+	const visibleSections = landing.sections.filter(
+		(section) => section.widget !== "sample" || !!landing.sampleImage || !!section.photo?.ready || landing.isPreview
+	);
 	const groups = groupSections(visibleSections);
 	const priceGroup = groups.find((group) => group.heading.widget === "price" || group.children.some((child) => child.widget === "price"));
 	const orderHref = landing.translationItemId ? `/new-order?item=${landing.translationItemId}` : "/new-order";
@@ -119,6 +121,7 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 			{section.body ? renderRichText(section.body) : landing.isPreview && draftPlaceholder}
 			{section.widget === "price" && livePrice}
 			{section.widget === "sample" &&
+				!section.photo &&
 				(landing.sampleImage ? (
 					<figure className="my-6">
 						<Image
