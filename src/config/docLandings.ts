@@ -1,4 +1,4 @@
-import { DocHub, DocLanding } from "@/types/docLanding.type";
+import { DocHub, DocLanding, DocLandingPhoto } from "@/types/docLanding.type";
 
 /**
  * منبع واحد صفحات فرود مدرک: generateStaticParams، sitemap، لینک‌های فوتر و صفحه‌ی اصلی همه از اینجا
@@ -18,6 +18,27 @@ export const DOC_LANDING_TRUST_POINTS = [
 	{ icon: "money", title: "هزینه پیش از پرداخت", desc: "بر اساس نرخنامه‌ی رسمی ترجمه" },
 	{ icon: "truck", title: "بدون مراجعه‌ی حضوری", desc: "ثبت آنلاین و ارسال به سراسر کشور" },
 ] as const;
+
+const PHOTO_STYLE =
+	"Photorealistic editorial photograph, full-frame camera, 50mm lens, soft natural window light, shallow depth of field, calm and uncluttered composition. Warm neutral palette with subtle accents of deep navy (#1a3047) and muted gold (#b8a27c) on a soft cream tone (#f5f2ed). Contemporary Iranian setting, premium and trustworthy mood, high detail. Every document in the frame shows only soft, unreadable placeholder lines instead of real text; any stamp is a plain ink mark with no legible letters, numbers or emblem.";
+
+const PHOTO_NEGATIVE =
+	"readable text, letters, words, numbers, real logos, government emblems, coat of arms, flags, realistic signatures, watermarks, distorted hands, extra fingers, deformed faces, blurry, low resolution, cartoon, illustration, 3D render, oversaturated colors, harsh shadows, cluttered background";
+
+// عکس‌ها هنوز ساخته نشده‌اند: ready: false یعنی در پیش‌نمایش به‌جای عکس، باکس پرامپت ساخت با AI می‌آید
+function buildPhoto(folder: string, name: string, format: "hero" | "inline", alt: string, scene: string): DocLandingPhoto {
+	const isHero = format === "hero";
+	return {
+		path: `/images/doc-landings/${folder}/${name}.webp`,
+		ready: false,
+		alt,
+		width: 1600,
+		height: isHero ? 1200 : 900,
+		aspectRatio: isHero ? "4:3" : "16:9",
+		prompt: `${scene}\n\n${PHOTO_STYLE}`,
+		negativePrompt: PHOTO_NEGATIVE,
+	};
+}
 
 export const DOC_HUB: DocHub = {
 	status: "draft",
@@ -79,6 +100,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "پیش‌نیازهای ترجمه رسمی مدارک تحصیلی",
 				level: 2,
+				photo: buildPhoto("madarek-tahsili", "prerequisites", "inline", "آماده کردن اصل مدارک تحصیلی برای ترجمه رسمی", "Close-up of a young Iranian woman wearing a light headscarf, her hands sorting original academic documents into a clear document folder on a white table: a diploma certificate, a high-school transcript and a few loose pages. Faces partly out of frame, focus on hands and papers, organised and calm feeling."),
 				body: `مترجم رسمی مدرک تحصیلی را فقط وقتی ترجمه می‌کند که اصالت آن از سوی مرجع صادرکننده تایید شده باشد. پیش از ثبت سفارش این سه مورد را آماده کنید:
 
 ۱. **تاییدیه‌ی تحصیلی**: مرجع آن به محل تحصیل شما بستگی دارد (فهرست پایین).
@@ -135,6 +157,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "تایید دادگستری، امور خارجه و سفارت",
 				level: 2,
+				photo: buildPhoto("madarek-tahsili", "legalization", "inline", "مهرهای تایید دادگستری و امور خارجه روی ترجمه رسمی", "Macro close-up of a translated document page carrying several overlapping round and rectangular ink stamps in blue and violet and a small gold foil seal sticker. The stamps are in sharp focus with visible paper texture; the rest of the page falls into soft blur."),
 				body: `ترجمه رسمی به‌تنهایی برای بیشتر مقصدها کافی نیست؛ تاییدات زیر به همین ترتیب روی آن انجام می‌شود:
 
 ۱. **تایید دادگستری**: اداره‌ی امور مترجمان قوه قضائیه مهر و امضای مترجم رسمی را تایید می‌کند.
@@ -146,6 +169,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "مراحل ثبت سفارش آنلاین و زمان تحویل",
 				level: 2,
+				photo: buildPhoto("madarek-tahsili", "online-order", "inline", "ثبت سفارش آنلاین ترجمه رسمی با گرفتن عکس از مدرک تحصیلی", "An Iranian man in his late twenties at home, photographing his university diploma with a smartphone on a wooden kitchen table to upload it online. The phone screen shows a generic, text-free upload interface. A glass of tea and a closed laptop nearby, warm late-afternoon light."),
 				body: `ثبت سفارش ترجمه مدارک تحصیلی در رسمی‌یاب چهار گام دارد:
 
 ۱. **انتخاب مدرک و زبان**: مدرک تحصیلی، زبان مقصد، تعداد نسخه‌ها و تاییدات را مشخص کنید.
@@ -179,6 +203,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			},
 		],
 		relatedSlugs: ["دانشنامه", "ریزنمرات-دانشگاهی"],
+		heroPhoto: buildPhoto("madarek-tahsili", "hero", "hero", "ترجمه رسمی مدارک تحصیلی؛ دانشنامه و ریزنمرات همراه با ترجمه‌ی مهرشده", "A neatly arranged set of academic documents on a light oak desk: a university degree certificate inside an open dark navy leather folder, a printed transcript sheet, and its English translation on cream paper stapled on top with a round blue ink stamp. A fountain pen and reading glasses rest beside them. Three-quarter top-down angle, generous calm negative space on the left side."),
 		updatedAt: null,
 	},
 	{
@@ -213,6 +238,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "مدارک لازم و پیش‌نیازها",
 				level: 2,
+				photo: buildPhoto("daneshnameh", "requirements", "inline", "مدارک لازم برای ترجمه رسمی دانشنامه", "Top-down flat lay on a light desk: an original university degree certificate, a transcript, an official university letter and a closed passport arranged in a neat grid with even spacing. Soft, even daylight, minimal shadows, clean and orderly."),
 				body: `پیش از ثبت سفارش ترجمه دانشنامه این چهار مورد را آماده کنید:
 
 ۱. **اصل دانشنامه**: ترجمه‌ی رسمی از روی اصل مدرک انجام می‌شود؛ ابتدا تصویر آن را در فرم سفارش بارگذاری می‌کنید.
@@ -275,6 +301,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "تایید دادگستری و امور خارجه",
 				level: 2,
+				photo: buildPhoto("daneshnameh", "legalization", "inline", "بررسی ترجمه رسمی دانشنامه پیش از تایید دادگستری و امور خارجه", "Hands of a professional translator in a calm office comparing a stamped translation with the original degree certificate, pointing at a line with a pen. A brass desk lamp and softly blurred bookshelves in the background."),
 				body: `برای ارائه‌ی ترجمه دانشنامه به دانشگاه یا سفارت، معمولاً این تاییدات به همین ترتیب لازم است:
 
 ۱. **تایید دادگستری**: مهر و امضای مترجم رسمی را تایید می‌کند.
@@ -309,6 +336,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			},
 		],
 		relatedSlugs: ["مدارک-تحصیلی", "ریزنمرات-دانشگاهی"],
+		heroPhoto: buildPhoto("daneshnameh", "hero", "hero", "ترجمه رسمی دانشنامه کارشناسی و کارشناسی ارشد به همراه ترجمه‌ی مهرشده", "An Iranian university degree certificate presented in an open, embossed navy-blue cover with thin gold corner details, lying next to its stamped English translation on cream paper, on a dark walnut desk. Elegant, formal, quiet mood, soft side light, three-quarter angle."),
 		updatedAt: null,
 	},
 	{
@@ -331,6 +359,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "ترجمه ریز نمرات دانشگاه برای اپلای",
 				level: 2,
+				photo: buildPhoto("riznomarat", "apply", "inline", "ترجمه ریزنمرات دانشگاه برای اپلای و پذیرش تحصیلی", "A young Iranian woman wearing a light headscarf, seated at a desk preparing a university application abroad: a laptop open to a generic, text-free application portal, a stack of translated transcripts in a sealed envelope and her closed passport on the desk. Focused, hopeful mood, natural window light, shot from a side angle."),
 				body: `برای اپلای، ترجمه ریز نمرات دانشگاه تقریباً همیشه همراه دانشنامه خواسته می‌شود. بهتر است این دو را در یک سفارش ثبت کنید:
 
 - معادل نام رشته و مقطع در هر دو ترجمه یکسان می‌ماند.
@@ -382,6 +411,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			{
 				heading: "تایید دادگستری و امور خارجه",
 				level: 2,
+				photo: buildPhoto("riznomarat", "delivery", "inline", "ترجمه‌های رسمی ریزنمرات مهروموم‌شده و آماده‌ی تحویل", "A neat stack of sealed translation envelopes, each closed with a plain gold wax-style seal and tied with a thin navy ribbon, on a cream desk; one envelope slightly open showing stamped pages. Soft light, premium and careful feel."),
 				body: `ریزنمرات هم مثل دانشنامه برای استفاده در خارج از کشور معمولاً به تایید دادگستری و امور خارجه نیاز دارد. ترتیب کار این است:
 
 ۱. **ترجمه با مهر مترجم رسمی**
@@ -413,6 +443,7 @@ export const DOC_LANDINGS: DocLanding[] = [
 			},
 		],
 		relatedSlugs: ["دانشنامه", "مدارک-تحصیلی"],
+		heroPhoto: buildPhoto("riznomarat", "hero", "hero", "ترجمه رسمی ریزنمرات دانشگاهی به انگلیسی", "A multi-page university transcript with a grade table made of unreadable placeholder rows, fanned out on a bright desk next to its stamped English translation, a yellow highlighter and a laptop slightly out of focus. Clean, modern, academic workspace, three-quarter angle."),
 		updatedAt: null,
 	},
 	{
