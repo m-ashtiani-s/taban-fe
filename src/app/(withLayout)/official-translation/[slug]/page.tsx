@@ -23,7 +23,7 @@ type DocLandingPageProps = { params: { slug: string } };
 type SectionGroup = { id: string; heading: DocLandingSection; children: DocLandingSection[] };
 
 const TRUST_ICONS: Record<(typeof DOC_LANDING_TRUST_POINTS)[number]["icon"], ReactNode> = {
-	justice: <IconJustice width={24} height={24} className="stroke-secondary" />,
+	justice: <IconJustice viewBox="0 0 48 48" width={26} height={26} className="fill-secondary stroke-0" />,
 	guarantee: <IconGuarantee width={24} height={24} className="stroke-secondary" />,
 	money: <IconMoney width={24} height={24} className="stroke-secondary" />,
 	truck: <IconTruck width={24} height={24} className="stroke-secondary" />,

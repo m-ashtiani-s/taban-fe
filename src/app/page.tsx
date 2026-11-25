@@ -1,10 +1,11 @@
+import { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
 import TabanButton from "./_components/common/tabanButton/tabanButton";
 import { Footer } from "./_components/footer/footer";
 import { Header } from "./_components/header/header";
-import { IconTranslate } from "./_components/icon/icons";
+import { IconDocument, IconEmbassy, IconGuarantee, IconJustice, IconTick, IconTranslate } from "./_components/icon/icons";
 import CommentsSlider from "./_homeAssets/_components/commentsSlider/commentsSlider";
 import { comments } from "@/constants/comments";
 import { BlogPostDto } from "@/types/blogPost.type";
@@ -13,7 +14,18 @@ import HeroOrderStart from "./_homeAssets/_components/heroOrderStart/heroOrderSt
 import Reveal from "./_components/common/reveal/reveal";
 import { steps } from "./_homeAssets/_constants/steps";
 import { services } from "./_homeAssets/_constants/services";
-import { HOME_CUSTOMER_PANEL, HOME_ENTERPRISE, HOME_FAQS, HOME_HERO, HOME_SERVICES } from "./_homeAssets/_constants/homeContent";
+import {
+	HOME_CHOOSE,
+	HOME_CUSTOMER_PANEL,
+	HOME_ENTERPRISE,
+	HOME_FAQS,
+	HOME_HERO,
+	HOME_ONLINE,
+	HOME_SERVICES,
+	HOME_TRANSLATORS,
+	HOME_WHAT_IS,
+	HomeUseCase,
+} from "./_homeAssets/_constants/homeContent";
 import BlogPreview from "./_homeAssets/_components/blogPreview/blogPreview";
 import Faq from "./_components/faq/faq";
 import JsonLd from "./_components/jsonLd/jsonLd";
@@ -29,6 +41,13 @@ export const metadata: Metadata = buildMetadata({
 	path: "/",
 	robots: softLaunchRobots("/"),
 });
+
+const USE_CASE_ICONS: Record<HomeUseCase["icon"], ReactNode> = {
+	education: <IconDocument width={24} height={24} className="fill-secondary stroke-0" />,
+	visa: <IconEmbassy viewBox="0 0 50 64" width={24} height={24} className="stroke-secondary stroke-2" />,
+	work: <IconGuarantee width={24} height={24} className="stroke-secondary" />,
+	evaluation: <IconJustice viewBox="0 0 48 48" width={26} height={26} className="fill-secondary stroke-0" />,
+};
 
 // بلوک مجله تزئینی است؛ قطعی وردپرس نباید صفحه‌ی اصلی را خراب کند
 async function getLatestPosts(): Promise<Paginate<BlogPostDto> | null> {
@@ -121,6 +140,34 @@ export default async function Home() {
 						</div>
 					</div>
 				</section>
+				<div className="h-24 max-lg:!h-16"></div>
+				<section className="container max-lg:!px-4">
+					<div className="grid lg:grid-cols-2 gap-12 max-lg:gap-8 items-center">
+						<Reveal className="flex flex-col gap-5">
+							<span className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
+								<span className="h-px w-8 bg-secondary" />
+								ترجمه رسمی به زبان ساده
+							</span>
+							<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary leading-snug">{HOME_WHAT_IS.title}</h2>
+							{HOME_WHAT_IS.paragraphs.map((paragraph) => (
+								<p key={paragraph} className="text-neutral-600 leading-8">
+									{paragraph}
+								</p>
+							))}
+						</Reveal>
+						<div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+							{HOME_WHAT_IS.useCases.map((useCase, i) => (
+								<Reveal key={useCase.title} delay={i * 0.08} className="h-full">
+									<div className="h-full bg-suppliment/60 border border-neutral-100 rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/30 hover:shadow-lg duration-200">
+										<span className="w-12 h-12 rounded-xl bg-white flex items-center justify-center">{USE_CASE_ICONS[useCase.icon]}</span>
+										<h3 className="peyda font-semibold text-neutral-800">{useCase.title}</h3>
+										<p className="text-sm text-neutral-500 leading-7">{useCase.desc}</p>
+									</div>
+								</Reveal>
+							))}
+						</div>
+					</div>
+				</section>
 				<div className="h-20"></div>
 				<section>
 					<div className="container relative py-20">
@@ -160,10 +207,13 @@ export default async function Home() {
 				<section className="bg-white border-y border-neutral-100 py-16">
 					<div className="container max-lg:!px-4">
 						<Reveal className="flex flex-col items-center text-center gap-3 mb-12">
-							<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">
-								ثبت سفارش تنها در <span className="text-secondary">۴ گام</span>
-							</h2>
-							<p className="text-neutral-500 text-sm">از انتخاب مدرک تا تحویل، همه‌چیز ساده و آنلاین</p>
+							<span className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
+								<span className="h-px w-8 bg-secondary" />
+								ثبت سفارش در ۴ گام
+								<span className="h-px w-8 bg-secondary" />
+							</span>
+							<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">{HOME_ONLINE.title}</h2>
+							<p className="text-neutral-500 leading-8 max-w-3xl">{HOME_ONLINE.intro}</p>
 						</Reveal>
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
@@ -193,6 +243,39 @@ export default async function Home() {
 								<IconTranslate stroke="black" strokeWidth={0} className="fill-white" />
 								همین حالا سفارش بده
 							</TabanButton>
+						</div>
+					</div>
+				</section>
+				<div className="h-24"></div>
+				<section className="container max-lg:!px-4">
+					<div className="relative overflow-hidden rounded-3xl bg-primary px-10 py-14 max-lg:px-6 max-lg:py-10">
+						<img src="/images/footer/pattern1.svg" alt="" className="w-80 absolute right-0 top-0 opacity-25 pointer-events-none" />
+						<img src="/images/footer/pattern2.svg" alt="" className="w-80 absolute left-0 bottom-0 opacity-20 pointer-events-none" />
+						<div className="relative z-10 grid lg:grid-cols-[minmax(0,1fr)_360px] gap-10 items-center">
+							<Reveal className="flex flex-col gap-4">
+								<span className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
+									<span className="h-px w-8 bg-secondary" />
+									چه کسی ترجمه می‌کند؟
+								</span>
+								<h2 className="peyda text-white text-2xl lg:text-3xl font-bold">{HOME_TRANSLATORS.title}</h2>
+								{HOME_TRANSLATORS.paragraphs.map((paragraph) => (
+									<p key={paragraph} className="text-white/70 leading-8">
+										{paragraph}
+									</p>
+								))}
+							</Reveal>
+							<Reveal delay={0.1}>
+								<ul className="flex flex-col gap-3">
+									{HOME_TRANSLATORS.points.map((point) => (
+										<li key={point} className="flex items-center gap-3 bg-white/[0.06] border border-white/10 rounded-2xl px-5 py-4 text-white peyda font-semibold">
+											<span className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+												<IconTick width={20} height={20} strokeWidth={2.5} className="stroke-white" />
+											</span>
+											{point}
+										</li>
+									))}
+								</ul>
+							</Reveal>
 						</div>
 					</div>
 				</section>
@@ -298,14 +381,42 @@ export default async function Home() {
 					</>
 				)}
 				<div className="h-32"></div>
+				<section className="container max-lg:!px-4">
+					<div className="grid lg:grid-cols-[380px_minmax(0,1fr)] gap-10 items-start">
+						<Reveal className="flex flex-col gap-4 lg:sticky lg:top-28">
+							<span className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
+								<span className="h-px w-8 bg-secondary" />
+								پیش از سفارش بدانید
+							</span>
+							<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary leading-snug">{HOME_CHOOSE.title}</h2>
+							<p className="text-neutral-600 leading-8">{HOME_CHOOSE.intro}</p>
+						</Reveal>
+						<ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							{HOME_CHOOSE.criteria.map((criterion, i) => (
+								<li key={criterion.title}>
+									<Reveal delay={i * 0.08} className="h-full">
+										<div className="h-full bg-suppliment/60 border border-neutral-100 rounded-2xl p-6 flex flex-col gap-3">
+											<span className="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center">
+												<IconTick width={20} height={20} strokeWidth={2.5} className="stroke-secondary" />
+											</span>
+											<h3 className="peyda font-semibold text-lg text-neutral-800">{criterion.title}</h3>
+											<p className="text-sm text-neutral-500 leading-7">{criterion.desc}</p>
+										</div>
+									</Reveal>
+								</li>
+							))}
+						</ul>
+					</div>
+				</section>
+				<div className="h-32"></div>
 				<section className="container max-lg:!px-4 py-12">
 					<Reveal className="flex flex-col items-center text-center gap-3 mb-10">
 						<div className="inline-flex items-center gap-2 text-secondary text-sm font-medium">
 							<span className="h-px w-8 bg-secondary" />
-							چرا رسمی‌یاب؟
+							یک تجربه‌ی متفاوت از ترجمه رسمی
 							<span className="h-px w-8 bg-secondary" />
 						</div>
-						<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">یک تجربه‌ی متفاوت از ترجمه رسمی</h2>
+						<h2 className="text-2xl lg:text-3xl font-bold peyda text-primary">چرا رسمی‌یاب؟</h2>
 					</Reveal>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -331,7 +442,7 @@ export default async function Home() {
 						<Faq items={HOME_FAQS} />
 					</div>
 				</section>
-				{/* بلوک مجله فقط وقتی مقاله‌ای منتشر شده باشد؛ تیتر و اسلایدر خالی محتوای بی‌ارزش است */}
+				{/* بلوک مجله موقتاً غیرفعال است تا مقاله‌های اول منتشر شوند؛ برای برگرداندن، کامنت را بردارید
 				{!!blogPageData?.elements?.length && (
 					<>
 						<div className="h-32"></div>
@@ -354,6 +465,7 @@ export default async function Home() {
 						</section>
 					</>
 				)}
+				*/}
 			</main>
 			<Footer />
 		</>
