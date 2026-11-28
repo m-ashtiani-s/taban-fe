@@ -18,15 +18,8 @@ export type DocLandingSection = {
 	photo?: DocLandingPhoto;
 };
 
-/** ai: با ابزار ساخت تصویر ساخته می‌شود؛ real: عکس یا اسکن واقعی که تیم خودش می‌گیرد (مثل نمونه‌ی مدرک) */
-export type DocLandingPhotoSource = "ai" | "real";
-
-/**
- * عکس صفحه. تا وقتی فایلش در public گذاشته نشده (ready: false)، در پیش‌نمایش پیش‌نویس به‌جایش باکسی با
- * پرامپت ساخت یا راهنمای عکاسی نمایش داده می‌شود؛ در صفحه‌ی منتشرشده هیچ‌چیز نمایش داده نمی‌شود.
- */
+/** عکس صفحه. تا وقتی فایلش در public گذاشته نشده (ready: false)، هیچ‌جا نمایش داده نمی‌شود. */
 export type DocLandingPhoto = {
-	source: DocLandingPhotoSource;
 	/** مسیر فایل نهایی زیر public، مثل /images/doc-landings/daneshnameh/hero.webp */
 	path: string;
 	ready: boolean;
@@ -34,9 +27,6 @@ export type DocLandingPhoto = {
 	width: number;
 	height: number;
 	aspectRatio: string;
-	/** برای ai پرامپت انگلیسی؛ برای real راهنمای فارسیِ عکاسی و پوشاندن اطلاعات شخصی */
-	prompt: string;
-	negativePrompt?: string;
 };
 
 export type DocLandingSampleImage = { src: string; alt: string; width: number; height: number };

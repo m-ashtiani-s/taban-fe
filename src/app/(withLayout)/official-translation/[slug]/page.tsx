@@ -89,7 +89,7 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 	const priceGroup = groups.find((group) => group.heading.widget === "price" || group.children.some((child) => child.widget === "price"));
 	const orderHref = landing.translationItemId ? `/new-order?item=${landing.translationItemId}` : "/new-order";
 	const draftPlaceholder = <p className="text-neutral-400 italic">متن این بخش در دست نگارش است.</p>;
-	const heroPhotoVisible = !!landing.heroPhoto && (landing.heroPhoto.ready || landing.isPreview);
+	const heroPhotoVisible = !!landing.heroPhoto?.ready;
 	const tocItems = [...groups.map((group) => ({ id: group.id, title: group.heading.heading })), ...(faqItems.length ? [{ id: "porsesh-ha", title: "پرسش‌های متداول" }] : [])];
 
 	const serviceLd = {
@@ -106,22 +106,14 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 	const livePrice = <LivePrice translationItemId={landing.translationItemId} items={landing.items} documentName={landing.name} sourcePage={path} />;
 
 	const renderPhoto = (section: DocLandingSection) =>
-		section.photo && (
-			<LandingPhoto
-				photo={section.photo}
-				isPreview={landing.isPreview}
-				placement={`بخش «${section.heading}»`}
-				sizes="(max-width: 1024px) 100vw, 760px"
-				className="rounded-2xl mb-6"
-			/>
-		);
+		section.photo && <LandingPhoto photo={section.photo} sizes="(max-width: 1024px) 100vw, 760px" className="rounded-2xl mb-6" />;
 
 	const renderBody = (section: DocLandingSection) => (
 		<>
 			{section.body ? renderRichText(section.body) : landing.isPreview && draftPlaceholder}
 			{section.widget === "price" && livePrice}
 			{section.widget === "sample" &&
-				!section.photo &&
+				!section.photo?.ready &&
 				(landing.sampleImage ? (
 					<figure className="my-6">
 						<Image
@@ -206,8 +198,6 @@ export default async function DocLandingPage({ params }: DocLandingPageProps) {
 							<div className="absolute inset-0 translate-x-4 translate-y-4 rotate-[-3deg] rounded-3xl bg-white/[0.06] border border-white/10 max-lg:hidden" />
 							<LandingPhoto
 								photo={landing.heroPhoto}
-								isPreview={landing.isPreview}
-								placement="هیروی بالای صفحه (کنار تیتر اصلی)"
 								sizes="(max-width: 1024px) 100vw, 380px"
 								className="relative rounded-3xl shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]"
 							/>
