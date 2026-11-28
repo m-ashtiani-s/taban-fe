@@ -76,10 +76,7 @@ const channels = [
     },
 ];
 
-const hours = [
-    ...OPENING_HOURS.map((h) => ({ day: h.label, time: h.display })),
-    { day: "جمعه و تعطیلات", time: "ثبت سفارش آنلاین ۲۴ ساعته" },
-];
+const hours = OPENING_HOURS.map((h) => ({ day: h.label, time: h.display }));
 
 const officeLd = {
     "@context": "https://schema.org",
